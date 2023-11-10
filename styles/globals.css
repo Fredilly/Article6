@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Remove default margin */
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* This prevents horizontal scrolling */
+  }
