@@ -1,11 +1,11 @@
 import React from 'react';
+import TypewriterText from '../components/TypewriterText'; // Import the TypewriterText component
 import '../styles/globals.css';
 
 const HomePage = () => {
   return (
     <div>
-      <h1 className='text-green-600'>Welcome to My Next.js Site!</h1>
-      <p>This is the homepage.</p>
+      <TypewriterText /> {/* Use the TypewriterText component here */}
     </div>
   );
 };
