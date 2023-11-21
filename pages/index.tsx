@@ -1,11 +1,14 @@
 import React from 'react';
-import TypewriterText from '../components/TypewriterText'; // Import the TypewriterText component
+import ErrorBoundary from '../components/ErrorBoundary';
+import GlobeComponent from '../components/ThreeComponents/GlobeComponent/GlobeComponent';
 import '../styles/globals.css';
 
 const HomePage = () => {
   return (
-    <div>
-      <TypewriterText /> {/* Use the TypewriterText component here */}
+    <div className="w-full h-screen overflow-hidden">
+      <ErrorBoundary>
+        <GlobeComponent />
+      </ErrorBoundary>
     </div>
   );
 };

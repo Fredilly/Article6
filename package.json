@@ -10,12 +10,13 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.0.18",
-    "@react-three/drei": "^9.88.13",
-    "@react-three/fiber": "^8.15.10",
+    "@react-three/drei": "latest",
+    "@react-three/fiber": "latest",
     "next": "14.0.1",
     "react": "^18",
     "react-dom": "^18",
     "three": "^0.158.0",
+    "three-globe": "^2.30.0",
     "typewriter-effect": "^2.21.0"
   },
   "devDependencies": {

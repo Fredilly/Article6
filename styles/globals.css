@@ -1,12 +1,17 @@
+/* globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Remove default margin */
-body, html {
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden; /* This prevents horizontal scrolling */
-  }
+/* Full viewport height and no overflow */
+html, body {
+  height: 100vh; /* Full viewport height */
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevents horizontal scrolling */
+  overflow-y: hidden; /* Prevents vertical scrolling */
+}
 
- 
+canvas {
+  display: block;
+}
