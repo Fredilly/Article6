@@ -1,9 +1,9 @@
-// GlobeComponent.tsx
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import EarthSphere from './EarthSphere';
 import Atmosphere from './Atmosphere';
 import CameraControls from './CameraControls';
+import Plane from '../VehiclesComponent/planes'; // Updated import path
 
 const GlobeComponent = () => {
   return (
@@ -15,6 +15,7 @@ const GlobeComponent = () => {
           <EarthSphere />
           <Atmosphere />
           <CameraControls />
+          <Plane />
         </Suspense>
       </Canvas>
     </div>
