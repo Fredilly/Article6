@@ -1,11 +1,16 @@
+// GlobeComponent.tsx
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import EarthSphere from './EarthSphere';
 import Atmosphere from './Atmosphere';
 import CameraControls from './CameraControls';
-import Plane from '../VehiclesComponent/planes'; // Updated import path
+import Plane from '../VehiclesComponent/planes';
+import TreeComponent from '../TreeComponent/TreeComponent';
 
-const GlobeComponent = () => {
+const GlobeComponent: React.FC = () => {
+  const globeRadius = 1.5; // Your globe's radius
+  const treePosition: [number, number, number] = [0, globeRadius + 0.5, 0]; // Adjust for visibility
+
   return (
     <div style={{ height: '100vh', width: '100vw' }}>
       <Canvas shadows>
@@ -16,6 +21,7 @@ const GlobeComponent = () => {
           <Atmosphere />
           <CameraControls />
           <Plane />
+          <TreeComponent position={treePosition} />
         </Suspense>
       </Canvas>
     </div>
