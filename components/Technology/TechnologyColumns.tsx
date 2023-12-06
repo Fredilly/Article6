@@ -1,7 +1,8 @@
 // components/Technology/TechnologyColumns.tsx
 import React, { useState } from 'react';
-import CardFrontContent from './CardFrontContent';
-import CardBackContent from './CardBackContent';
+import Image from 'next/image';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import useFlip from '../../hooks/useFlip'; // Corrected import path
 
 interface Column {
   title: string;
@@ -18,7 +19,8 @@ const TechnologyColumns: React.FC<TechnologyColumnsProps> = ({ columns }) => {
   const [flipped, setFlipped] = useState<boolean[]>(new Array(columns.length).fill(false));
 
   const handleCardClick = (index: number) => {
-    setFlipped(flipped.map((f, i) => i === index ? !f : f));
+    const newFlipped = flipped.map((f, i) => i === index ? !f : f);
+    setFlipped(newFlipped);
   };
 
   return (
@@ -28,11 +30,22 @@ const TechnologyColumns: React.FC<TechnologyColumnsProps> = ({ columns }) => {
           <div className={`cardInner ${flipped[index] ? 'flipped' : ''} max-w-sm text-center bg-white shadow-md rounded-lg transition-all duration-300 hover:shadow-xl`}>
             {/* Front Side */}
             <div className="cardFront absolute inset-0">
-              <CardFrontContent title={column.title} imageUrl={column.imageUrl} description={column.description} link={column.link} />
+              <div className="h-52 relative w-full overflow-hidden rounded-t-lg">
+                <Image src={column.imageUrl} alt={column.title} layout="fill" objectFit="cover" className="object-center" />
+              </div>
+              <div className="p-4">
+                <h2 className="text-xl font-semibold mb-2 text-green-600 hover:text-green-700">{column.title}</h2>
+                <p className="mb-4 text-gray-600">{column.description}</p>
+                <a href={column.link} onClick={(e) => e.stopPropagation()} className="group text-green-600 border border-green-600 hover:bg-green-600 hover:text-white rounded-full px-4 py-2 transition-colors duration-300 flex items-center justify-center gap-2" download>
+                  <ArrowDownTrayIcon className="h-5 w-5 text-green-600 group-hover:text-white" />
+                  Download PDF
+                </a>
+              </div>
             </div>
             {/* Back Side */}
             <div className="cardBack absolute inset-0">
-              <CardBackContent />
+              {/* Back side content */}
+              {/* Add your content for the back of the card here */}
             </div>
           </div>
         </div>
