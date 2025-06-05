@@ -5,6 +5,10 @@ import type { AppProps } from 'next/app';
 import Layout from '../components/Layout'; // Import your Layout component
 
 function MyApp({ Component, pageProps }: AppProps) {
+  // Allow pages to opt out of the layout by setting `noLayout`
+  const NoLayout = (Component as any).noLayout;
+  const content = <Component {...pageProps} />;
+
   return (
     <>
       <Head>
@@ -12,9 +16,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* You can add more meta tags here as needed */}
       </Head>
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+      {NoLayout ? content : <Layout>{content}</Layout>}
     </>
   );
 }
