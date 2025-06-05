@@ -14,4 +14,8 @@ const HomePage = () => {
   );
 };
 
+// Disable the global layout (Navbar/Footer) for this placeholder page
+// so that only the "Coming Soon" message is visible
+(HomePage as any).noLayout = true;
+
 export default HomePage;
