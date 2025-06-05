@@ -3,13 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Full viewport height and no overflow */
+/* Full viewport height and allow vertical overflow */
 html, body {
   height: 100vh; /* Full viewport height */
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* Prevents horizontal scrolling */
-  overflow-y: hidden; /* Prevents vertical scrolling */
+  overflow-x: hidden; /* Still prevents horizontal scrolling */
+  overflow-y: auto; /* Allows vertical scrolling */
 }
 
 canvas {

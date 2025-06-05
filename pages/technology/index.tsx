@@ -10,7 +10,7 @@ const TechnologyPage = () => {
       title: "Admin System",
       imageUrl: "https://ik.imagekit.io/ufokswd8x/Articlesix/technology/Advanced%20Management.png?updatedAt=1701350114385",
       description: "Description for Advanced Admin System...",
-      link: "/advanced-admin-system.pdf"
+      link: "https://ik.imagekit.io/ufokswd8x/Articlesix/technology/Green%20Sys%20Strategy.pdf?updatedAt=1702251009854"
     },
     {
       title: "Weather Forecast",

@@ -5,7 +5,7 @@ import '../styles/globals.css';
 
 const HomePage = () => {
   return (
-    <div className="w-full h-screen overflow-hidden">
+    <div className="w-full h-screen ">
       <ErrorBoundary>
         <GlobeComponent />
       </ErrorBoundary>

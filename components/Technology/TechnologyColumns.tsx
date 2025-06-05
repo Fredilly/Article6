@@ -1,8 +1,6 @@
-// components/Technology/TechnologyColumns.tsx
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-import useFlip from '../../hooks/useFlip'; // Corrected import path
 
 interface Column {
   title: string;
@@ -24,7 +22,7 @@ const TechnologyColumns: React.FC<TechnologyColumnsProps> = ({ columns }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row justify-center items-start gap-8">
+    <div className="flex flex-col md:flex-row justify-center items-center md:items-start gap-8">
       {columns.map((column, index) => (
         <div key={index} className="card cursor-pointer" style={{ width: '300px', height: '400px', perspective: '1000px' }} onClick={() => handleCardClick(index)}>
           <div className={`cardInner ${flipped[index] ? 'flipped' : ''} max-w-sm text-center bg-white shadow-md rounded-lg transition-all duration-300 hover:shadow-xl`}>
