@@ -21,7 +21,6 @@ const GlobeComponent: React.FC = () => {
           <Atmosphere />
           <CameraControls />
           <Plane />
-          <TreeComponent position={treePosition} />
         </Suspense>
       </Canvas>
     </div>

@@ -1,3 +1,4 @@
+// components/Technology/TechnologyColumns.tsx
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
@@ -41,9 +42,13 @@ const TechnologyColumns: React.FC<TechnologyColumnsProps> = ({ columns }) => {
               </div>
             </div>
             {/* Back Side */}
-            <div className="cardBack absolute inset-0">
-              {/* Back side content */}
-              {/* Add your content for the back of the card here */}
+            <div className="cardBack absolute inset-0 bg-white">
+              <div className="p-4">
+                {/* Add content for the back of the card here */}
+                <h3 className="text-lg font-semibold">Back Card Content</h3>
+                <p>Details about the collaboration, simulation, or any other relevant information.</p>
+                {/* Place additional elements or interactive components here */}
+              </div>
             </div>
           </div>
         </div>

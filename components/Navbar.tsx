@@ -37,7 +37,7 @@ const Navbar: React.FC = () => {
               height={40} // Adjust height as needed
               className="mr-2"
             />
-            <span className="text-lg font-bold">Articlesix</span>
+            <span className="text-lg font-bold">Article6</span>
           </a>
         </Link>
 

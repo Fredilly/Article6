@@ -1,63 +1,54 @@
-import React, { useRef, useEffect } from 'react';
-import { Canvas, useLoader, useFrame, extend } from '@react-three/fiber';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Mesh, Vector3, Matrix4 } from 'three';
+import React, { useRef, useEffect } from 'react'
+import { useLoader, useFrame } from '@react-three/fiber'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { Mesh, Group } from 'three'
 
-const Plane = () => {
-  const planeModel = useLoader(GLTFLoader, '/assets/vehicles/planes/hot_air_balloon.glb');
-  const planeRef = useRef<Mesh>(null);
+interface PlaneProps {
+  rotationSpeed?: number
+  initialAngle?: number
+  altitude?: number
+  inclination?: number // orbit tilt in radians
+  ellipseFactor?: number // non-uniform orbit shape
+}
 
-  const globeRadius = 1.5; // Radius of the globe
-  const planeAltitude = 0.3; // Increased altitude above the globe's surface
+const Plane: React.FC<PlaneProps> = ({
+  rotationSpeed = 0.1,
+  initialAngle = 0,
+  altitude = 0.3,
+  inclination = 0.4, // vertical tilt of orbit
+  ellipseFactor = 1, // makes orbit slightly elliptical
+}) => {
+  const planeModel = useLoader(GLTFLoader, '/assets/vehicles/planes/hot_air_balloon.glb')
+  const planeRef = useRef<Group>(null)
+  const globeRadius = 1.5
 
   useEffect(() => {
     if (planeModel.scene) {
-      planeModel.scene.scale.set(0.005, 0.005, 0.005); // Scale down the plane model
+      planeModel.scene.scale.set(0.005, 0.005, 0.005)
       planeModel.scene.traverse((child) => {
         if (child instanceof Mesh) {
-          child.castShadow = true; // Enable shadow casting for meshes
+          child.castShadow = true
         }
-      });
+      })
     }
-  }, [planeModel]);
+  }, [planeModel])
 
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    const angle = (t / 4) % (2 * Math.PI); // Slower rotation
+    const t = clock.getElapsedTime()
+    const angle = initialAngle + t * rotationSpeed
 
-    const x = (globeRadius + planeAltitude) * Math.sin(angle);
-    const z = (globeRadius + planeAltitude) * Math.cos(angle);
-    const y = 0; // Maintains a constant altitude
+    const r = globeRadius + altitude
+    const x = r * Math.cos(angle) * ellipseFactor
+    const z = r * Math.sin(angle)
+    const y = r * Math.sin(angle * 1.5) * inclination // tilt variation
 
     if (planeRef.current) {
-      planeRef.current.position.set(x, y, z);
-
-      const tangent = new Vector3(Math.cos(angle), 0, -Math.sin(angle));
-      const up = new Vector3(0, 1, 0);
-      const side = new Vector3().crossVectors(up, tangent).normalize();
-
-      const matrix = new Matrix4();
-      matrix.makeBasis(side, up, tangent);
-      planeRef.current.quaternion.setFromRotationMatrix(matrix);
+      planeRef.current.position.set(x, y, z)
+      planeRef.current.lookAt(0, 0, 0)
     }
-  });
+  })
 
-  return <primitive ref={planeRef} object={planeModel.scene} />;
-};
+  return <group ref={planeRef}><primitive object={planeModel.scene} /></group>
+}
 
-const Scene = () => {
-  return (
-    <Canvas shadows>
-      <ambientLight intensity={0.5} />
-      <directionalLight
-        position={[5, 5, 5]}
-        intensity={1}
-        castShadow // Enable shadow casting
-      />
-      <Plane />
-      {/* Other components of your scene */}
-    </Canvas>
-  );
-};
-
-export default Plane;
+export default Plane
