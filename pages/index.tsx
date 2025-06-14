@@ -1,14 +1,16 @@
 import React from 'react';
 import ErrorBoundary from '../components/ErrorBoundary';
 import GlobeComponent from '../components/ThreeComponents/GlobeComponent/GlobeComponent';
+import HeroText from '../components/HeroText';
 import '../styles/globals.css';
 
 const HomePage = () => {
   return (
-    <div className="w-full h-screen ">
+    <div className="relative w-full h-screen">
       <ErrorBoundary>
         <GlobeComponent />
       </ErrorBoundary>
+      <HeroText />
     </div>
   );
 };
