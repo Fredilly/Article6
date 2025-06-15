@@ -1,14 +1,10 @@
-import React from 'react';
-import ErrorBoundary from '../components/ErrorBoundary';
-import GlobeComponent from '../components/ThreeComponents/GlobeComponent/GlobeComponent';
-import '../styles/globals.css';
+import React from "react";
+import Hero from "../components/Hero";
 
 const HomePage = () => {
   return (
-    <div className="w-full h-screen ">
-      <ErrorBoundary>
-        <GlobeComponent />
-      </ErrorBoundary>
+    <div className="w-full h-screen">
+      <Hero />
     </div>
   );
 };
