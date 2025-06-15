@@ -7,15 +7,23 @@ const Hero: React.FC = () => {
       <div className="backdrop-blur-lg bg-white/50 p-8 md:p-12 rounded-xl text-center shadow-lg">
         <h1 className="font-mono text-3xl md:text-4xl text-gray-800 min-h-[2.5rem]">
           <Typewriter
+            onInit={(typewriter) => {
+              typewriter
+                .pauseFor(500)
+                .typeString('Article6 Revives Forests')
+                .pauseFor(2000)
+                .deleteAll()
+                .typeString('Article6 Powers Precision Farming')
+                .pauseFor(2000)
+                .deleteAll()
+                .typeString('Article6 Reduces Carbon')
+                .pauseFor(2000)
+                .deleteAll()
+                .start();
+            }}
             options={{
-              strings: [
-                'Article6 Revives Forests',
-                'Article6 Powers Precision Farming',
-                'Article6 Reduces Carbon'
-              ],
               autoStart: true,
               loop: true,
-              pauseFor: 2000
             }}
           />
         </h1>
