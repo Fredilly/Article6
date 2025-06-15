@@ -8,6 +8,11 @@ const TypewriterText = () => {
       <span className="text-gray-700 text-4xl justify-self-end mr-2">Shaping</span>
       <div className="text-green-600 text-4xl justify-self-start">
         <Typewriter
+          onInit={(typewriter) => {
+            typewriter
+              .pauseFor(1000)
+              .start();
+          }}
           options={{
             strings: ['Environment', 'Future', 'Policy'],
             autoStart: true,
