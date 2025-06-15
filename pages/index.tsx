@@ -1,6 +1,5 @@
-import React from 'react';
-import Hero from '../components/Hero';
-import '../styles/globals.css';
+import React from "react";
+import Hero from "../components/Hero";
 
 const HomePage = () => {
   return (
