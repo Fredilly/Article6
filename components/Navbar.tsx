@@ -25,7 +25,7 @@ const Navbar: React.FC = () => {
   );
 
   return (
-    <nav className="bg-white text-gray-700 shadow-md p-4 w-full">
+    <nav className="bg-white text-gray-700 shadow-md p-4 w-full sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo and Text */}
         <Link href="/" legacyBehavior>
