@@ -12,10 +12,10 @@ const HeroSection: React.FC = () => {
         playsInline
       />
       <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center px-4">
-        <h1 className="text-white text-5xl md:text-7xl font-light tracking-tight drop-shadow-lg">
-          Pioneering <span className="text-green-500 font-medium">Carbon Solutions</span>
+        <h1 className="text-white text-6xl md:text-8xl font-extrabold tracking-tight drop-shadow-xl">
+          Pioneering <span className="text-green-500">Carbon Solutions</span>
         </h1>
-        <p className="mt-6 text-white/80 text-lg md:text-xl">
+        <p className="mt-8 text-white/90 text-xl md:text-2xl font-medium tracking-wide">
           Technology for a sustainable future
         </p>
       </div>
