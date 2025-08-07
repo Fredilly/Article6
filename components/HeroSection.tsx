@@ -5,7 +5,7 @@ const HeroSection: React.FC = () => {
     <div className="relative w-full h-screen overflow-hidden">
       <video
         className="absolute inset-0 w-full h-full object-cover"
-        src="https://ik.imagekit.io/tzublgy5d/Article6/hero360.mp4?updatedAt=1754587990038"
+        src="https://ik.imagekit.io/tzublgy5d/Article6/hero480.mp4?updatedAt=1754588076486"
         autoPlay
         loop
         muted
