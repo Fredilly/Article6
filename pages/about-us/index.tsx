@@ -10,7 +10,7 @@ const AboutUsPage = () => {
           About Us
         </h1>
         <p className="text-lg text-gray-700">
-          At ArticleSix, we are committed to harnessing the power of technology and innovation to drive sustainability and environmental conservation. Our mission is to create a better future by developing and implementing solutions that make a real-world impact.
+          At Article6 Ltd, we are committed to harnessing the power of technology and innovation to drive sustainability and environmental conservation. Our mission is to create a better future by developing and implementing solutions that make a real-world impact.
         </p>
       </div>
 

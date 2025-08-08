@@ -10,7 +10,9 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Head>
         {/* Add the viewport meta tag here */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* You can add more meta tags here as needed */}
+        {/* Site metadata */}
+        <title>Article6 Ltd</title>
+        <meta property="og:site_name" content="Article6 Ltd" />
       </Head>
       <Layout>
         <Component {...pageProps} />

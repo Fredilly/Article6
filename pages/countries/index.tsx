@@ -11,7 +11,7 @@ const CountriesPage = () => {
           Nigeria
         </h1>
         <div className="flex justify-center">
-          <Image src="https://ik.imagekit.io/ufokswd8x/Articlesix/Countries/Nigeria.png?updatedAt=1720782350360" alt="Nigeria Image" width={600} height={400} className="rounded-lg" />
+          <Image src="https://ik.imagekit.io/ufokswd8x/Article6Ltd/Countries/Nigeria.png?updatedAt=1720782350360" alt="Nigeria Image" width={600} height={400} className="rounded-lg" />
         </div>
       </div>
 
@@ -29,7 +29,7 @@ const CountriesPage = () => {
         <div className="bg-white p-8 shadow-sm rounded-lg transition-shadow hover:shadow-md">
           <h2 className="text-4xl font-semibold mb-4 text-green-700">Environment and Sustainability Initiatives</h2>
           <p className="text-lg text-gray-700">
-            Details about ArticleSix&apos;s collaboration with the Green Economy Partnership on sustainability projects in Nigeria. 
+            Details about Article6 Ltd&apos;s collaboration with the Green Economy Partnership on sustainability projects in Nigeria.
             Information on forestry, peatlands for carbon capture, blue carbon, and agriculture initiatives.
           </p>
         </div>
@@ -54,7 +54,7 @@ const CountriesPage = () => {
         <div className="bg-white p-8 shadow-sm rounded-lg transition-shadow hover:shadow-md">
           <h2 className="text-4xl font-semibold mb-4 text-green-700">Current Projects</h2>
           <p className="text-lg text-gray-700">
-            Details about ongoing projects led by ArticleSix in Nigeria. Information on how these projects contribute to sustainability and economic growth.
+            Details about ongoing projects led by Article6 Ltd in Nigeria. Information on how these projects contribute to sustainability and economic growth.
           </p>
         </div>
 
