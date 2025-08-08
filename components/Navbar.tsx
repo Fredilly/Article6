@@ -27,17 +27,15 @@ const Navbar: React.FC = () => {
   return (
     <nav className="bg-white text-gray-700 shadow-md p-4 w-full">
       <div className="container mx-auto flex justify-between items-center">
-        {/* Logo and Text */}
+        {/* Logo */}
         <Link href="/" legacyBehavior>
           <a className="flex items-center">
-            <Image 
-              src="https://ik.imagekit.io/ufokswd8x/Logo/articlesix.png?updatedAt=1699738092799" 
-              alt="Logo" 
+            <Image
+              src="https://ik.imagekit.io/tzublgy5d/Article6/logo.png"
+              alt="Article6 logo"
               width={40} // Adjust width as needed
               height={40} // Adjust height as needed
-              className="mr-2"
             />
-            <span className="text-lg font-bold">Article6</span>
           </a>
         </Link>
 
