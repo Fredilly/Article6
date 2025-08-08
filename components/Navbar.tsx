@@ -30,14 +30,14 @@ const Navbar: React.FC = () => {
         {/* Logo and Text */}
         <Link href="/" legacyBehavior>
           <a className="flex items-center">
-            <Image 
-              src="https://ik.imagekit.io/ufokswd8x/Logo/articlesix.png?updatedAt=1699738092799" 
-              alt="Logo" 
+            <Image
+              src="https://ik.imagekit.io/ufokswd8x/Logo/article6-ltd.png?updatedAt=1699738092799"
+              alt="Logo"
               width={40} // Adjust width as needed
               height={40} // Adjust height as needed
               className="mr-2"
             />
-            <span className="text-lg font-bold">Article6</span>
+            <span className="text-lg font-bold">Article6 Ltd</span>
           </a>
         </Link>
 
