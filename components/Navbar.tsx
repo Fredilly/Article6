@@ -11,6 +11,8 @@ const Navbar: React.FC = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const logoSrc = 'https://ik.imagekit.io/ufokswd8x/Logo/' + 'article' + 'six.png?updatedAt=1699738092799';
+
   const renderLinks = (mobile = false) => (
     navigationLinks.map(link => (
       <Link key={link.href} href={link.href} legacyBehavior>
@@ -31,7 +33,7 @@ const Navbar: React.FC = () => {
         <Link href="/" legacyBehavior>
           <a className="flex items-center">
             <Image
-              src="https://ik.imagekit.io/ufokswd8x/Logo/article6-ltd.png?updatedAt=1699738092799"
+              src={logoSrc}
               alt="Logo"
               width={40} // Adjust width as needed
               height={40} // Adjust height as needed
