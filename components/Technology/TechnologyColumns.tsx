@@ -25,8 +25,14 @@ const TechnologyColumns: React.FC<TechnologyColumnsProps> = ({ columns }) => {
   return (
     <div className="flex flex-col md:flex-row justify-center items-center md:items-start gap-8">
       {columns.map((column, index) => (
-        <div key={index} className="card cursor-pointer" style={{ width: '300px', height: '400px', perspective: '1000px' }} onClick={() => handleCardClick(index)}>
-          <div className={`cardInner ${flipped[index] ? 'flipped' : ''} max-w-sm text-center bg-white shadow-md rounded-lg transition-all duration-300 hover:shadow-xl`}>
+        <div
+          key={index}
+          className="card cursor-pointer w-full sm:w-[300px] h-[400px]"
+          onClick={() => handleCardClick(index)}
+        >
+          <div
+            className={`cardInner ${flipped[index] ? 'flipped' : ''} w-full h-full text-center bg-white shadow-md rounded-lg transition-all duration-300 hover:shadow-xl`}
+          >
             {/* Front Side */}
             <div className="cardFront absolute inset-0">
               <div className="h-52 relative w-full overflow-hidden rounded-t-lg">

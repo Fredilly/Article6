@@ -25,7 +25,7 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className="bg-white text-gray-700 shadow-md p-4 w-full">
-      <div className="container mx-auto flex justify-between items-center">
+      <div className="container mx-auto flex justify-between items-center px-2 md:px-0">
         {/* Logo and Text */}
         <Link href="/" legacyBehavior>
           <a className="flex items-center text-lg font-bold">
@@ -47,8 +47,8 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile Navigation - Menu Overlay */}
-      <div 
-        className={`md:hidden bg-green-100 w-full h-full absolute top-0 left-0 flex flex-col justify-start pt-20 z-50 transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'}`}
+      <div
+        className={`md:hidden fixed inset-0 bg-green-100 flex flex-col justify-start pt-20 z-50 transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'}`}
       >
         <button onClick={toggleMobileMenu} className="absolute top-4 right-4">
           <XMarkIcon className="h-6 w-6" />

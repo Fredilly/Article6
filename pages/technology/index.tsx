@@ -27,15 +27,15 @@ const TechnologyPage = () => {
   ];
 
   return (
-    <div className="container mx-auto py-8 px-6 max-w-4xl"> {/* Adjust max-width as needed */}
+    <div className="container mx-auto py-8 px-4 md:px-6 max-w-4xl"> {/* Adjust max-width as needed */}
       {/* Existing Content and Image */}
       <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-16">
         <div className="md:w-1/2 px-4">
           <div className="text-left max-w-md mx-auto md:mx-0 md:ml-auto">
-            <h1 className="text-5xl lg:text-6xl font-bold mb-6 text-green-600 hover:text-green-700 transition-colors duration-300">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-green-600 hover:text-green-700 transition-colors duration-300">
               Technology
             </h1>
-            <p className="text-base lg:text-lg">
+            <p className="text-base md:text-lg">
               At Article<span className="text-green-600">6</span>, technology is fundamental. We focus on harnessing open-source innovations
               to address long-standing environmental issues. Our approach is pragmatic and
               collaborative, tapping into the latest in analytics and AI to offer real-world solutions
