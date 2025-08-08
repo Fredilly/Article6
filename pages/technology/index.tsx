@@ -36,7 +36,7 @@ const TechnologyPage = () => {
               Technology
             </h1>
             <p className="text-base lg:text-lg">
-              At Articlesix, technology is fundamental. We focus on harnessing open-source innovations
+              At Article6, technology is fundamental. We focus on harnessing open-source innovations
               to address long-standing environmental issues. Our approach is pragmatic and
               collaborative, tapping into the latest in analytics and AI to offer real-world solutions
               to climate change and resource management. We believe in the power of open tech to drive
@@ -47,7 +47,7 @@ const TechnologyPage = () => {
         <div className="md:w-1/2 max-w-md md:max-w-xl h-64 md:h-auto bg-gray-200 rounded-md overflow-hidden md:mr-auto">
           <Image
             src="https://ik.imagekit.io/ufokswd8x/Articlesix/technology/technology_hero.png?updatedAt=1701060098042"
-            alt="Innovative technology solutions at Articlesix"
+            alt="Innovative technology solutions at Article6"
             layout="responsive"
             width={700}
             height={400}
