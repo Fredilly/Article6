@@ -11,7 +11,7 @@ const Navbar: React.FC = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const logoSrc = 'https://ik.imagekit.io/ufokswd8x/Logo/' + 'article' + 'six.png?updatedAt=1699738092799';
+  const logoSrc = 'https://ik.imagekit.io/tzublgy5d/Article6/logo.png';
 
   const renderLinks = (mobile = false) => (
     navigationLinks.map(link => (
