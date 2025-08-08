@@ -82,7 +82,7 @@ const ContactPage = () => {
           ></iframe>
         </div>
         <p className="text-lg text-gray-700 text-center">
-          ArticleSix, 123 Sustainability Street, Melbourne, VIC 3000, Australia
+          Article<span className="text-green-600">6</span>, 123 Sustainability Street, Melbourne, VIC 3000, Australia
         </p>
       </div>
     </div>

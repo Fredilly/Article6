@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image'; // Import the Image component
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { navigationLinks } from '../utils/navigation';
 
@@ -29,15 +28,8 @@ const Navbar: React.FC = () => {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo and Text */}
         <Link href="/" legacyBehavior>
-          <a className="flex items-center">
-            <Image 
-              src="https://ik.imagekit.io/ufokswd8x/Logo/articlesix.png?updatedAt=1699738092799" 
-              alt="Logo" 
-              width={40} // Adjust width as needed
-              height={40} // Adjust height as needed
-              className="mr-2"
-            />
-            <span className="text-lg font-bold">Article6</span>
+          <a className="flex items-center text-lg font-bold">
+            Article<span className="text-green-600">6</span>
           </a>
         </Link>
 
