@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image'; // Import the Image component
+import Image from 'next/image';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { navigationLinks } from '../utils/navigation';
 
@@ -31,10 +31,10 @@ const Navbar: React.FC = () => {
         <Link href="/" legacyBehavior>
           <a className="flex items-center">
             <Image
-              src="https://ik.imagekit.io/tzublgy5d/Article6/logo.png"
-              alt="Article6 logo"
-              width={40} // Adjust width as needed
-              height={40} // Adjust height as needed
+              src="https://ik.imagekit.io/tzublgy5d/Article6/logo.png?"
+              alt="Article6"
+              width={40}
+              height={40}
             />
           </a>
         </Link>
