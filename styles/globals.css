@@ -12,6 +12,10 @@ html, body {
   overflow-y: auto; /* Allows vertical scrolling */
 }
 
+body.mobile-menu-open {
+  overflow: hidden;
+}
+
 canvas {
   display: block;
 }
@@ -44,4 +48,8 @@ canvas {
 
 .cardBack {
   transform: rotateY(180deg);
+}
+
+.nav-link {
+  @apply drop-shadow-md;
 }
