@@ -11,7 +11,7 @@ const pipeline = [
     state: 'Niger State — The Power State',
     status: 'In Discussion',
     summary:
-      'Introductions completed with Perm Sec and Commissioners; proposal + EOI + MOU shared.\nDinner with delegation in Abuja to align on scope.',
+      'Introductions completed with Perm Sec and Commissioners; proposal + EOI + MOU shared.\nDrinks with delegation in Abuja to align on scope.',
   },
   {
     slug: 'kwara',
