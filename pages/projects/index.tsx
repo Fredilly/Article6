@@ -2,19 +2,34 @@ import React from 'react';
 import PipelineCard, { STATUS_COLORS } from '../../components/PipelineCard';
 
 const pipeline = [
-  { state: 'Niger', status: 'In Discussion', summary: 'Exploring AWD rice farming program' },
-  { state: 'Kwara', status: 'Pending Agreement', summary: 'Evaluating forestry + MRV solutions' },
-  { state: 'Plateau', status: 'Early Engagement', summary: 'Initial talks on reforestation initiative' },
-  { state: 'Open Slot', status: 'Available', summary: 'Partner with us to unlock carbon revenue' },
+  {
+    state: 'Niger State — The Power State',
+    status: 'In Discussion',
+    summary:
+      'Introductions completed with Perm Sec and Commissioners; proposal + EOI + MOU shared.\nDinner with delegation in Abuja to align on scope.',
+  },
+  {
+    state: 'Kwara State — The State of Harmony',
+    status: 'Pending Agreement',
+    summary:
+      'Introductions made via Ministry of Agric; EOI + Proposal + MOU + LOS shared.\nAwaiting formal invitation / signing window.',
+  },
+  {
+    state: 'Plateau State — Home of Peace and Tourism',
+    status: 'Early Engagement',
+    summary:
+      'Introductions via Ministry; 4-doc pack shared (EOI, Proposal, MOU, LOS).\nAwaiting review by SA on Carbon Credit and follow-up meeting.',
+  },
 ];
 
 const ProjectsPage: React.FC = () => {
   return (
     <div className="p-8">
-      <p className="mb-4 text-gray-600">
-        All projects shown are in various stages of development and will be updated as formal agreements are signed.
+      <h1 className="text-3xl font-bold mb-4">Current Pipeline</h1>
+      <p className="mb-6 text-gray-600">
+        We’re working with multiple Nigerian states. Each engagement below is shown at its current stage. We update this page as
+        agreements are signed.
       </p>
-      <h1 className="text-3xl font-bold mb-6">Current Pipeline</h1>
       <div className="grid md:grid-cols-2 gap-4 mb-8">
         {pipeline.map((proj) => (
           <PipelineCard key={proj.state} {...proj} />

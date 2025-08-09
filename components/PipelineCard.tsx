@@ -4,7 +4,6 @@ export const STATUS_COLORS: Record<string, string> = {
   'In Discussion': 'bg-yellow-500',
   'Pending Agreement': 'bg-orange-500',
   'Early Engagement': 'bg-blue-500',
-  'Available': 'bg-green-500',
 };
 
 interface PipelineCardProps {
@@ -22,9 +21,9 @@ const PipelineCard: React.FC<PipelineCardProps> = ({ state, status, summary }) =
         {state}
       </h2>
       <p className="text-sm italic mb-2">{status}</p>
-      <p className="text-gray-700">{summary}</p>
-    </div>
-  );
-};
+        <p className="text-gray-700 whitespace-pre-line">{summary}</p>
+      </div>
+    );
+  };
 
 export default PipelineCard;
