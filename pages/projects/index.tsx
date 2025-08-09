@@ -1,9 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
 import PipelineCard, { STATUS_COLORS } from '../../components/PipelineCard';
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 // client-only Nigeria map to avoid SSR router issues
-const NigeriaMap = dynamic(() => import("../../components/NigeriaMap"), { ssr: false });
+const NigeriaMap = dynamic(() => import('../../components/NigeriaMap'), { ssr: false });
 
 const pipeline = [
   {
@@ -37,7 +37,7 @@ const ProjectsPage: React.FC = () => {
         We’re working with multiple Nigerian states. Each engagement below is shown at its current stage. We update this page as
         agreements are signed.
       </p>
-      <NigeriaMap active={["niger","kwara","plateau"]} />
+      <NigeriaMap active={['niger','kwara','plateau']} />
       <div className="grid md:grid-cols-2 gap-4 mb-8">
         {pipeline.map((proj) => (
           <Link key={proj.slug} href={`/states/${proj.slug}`} className="block">
