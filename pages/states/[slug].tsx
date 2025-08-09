@@ -60,6 +60,22 @@ const StateDetailPage: React.FC = () => {
         </div>
       </div>
 
+      {state.images && state.images.length > 0 && (
+        <div className="max-w-5xl mx-auto mt-12">
+          <h2 className="text-xl font-semibold mb-4">Gallery</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {state.images.map((src) => (
+              <img
+                key={src}
+                src={src}
+                alt="Dinner with Niger State delegation, Abuja"
+                className="w-full object-cover rounded-xl border border-gray-200"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex space-x-4">
         <a
           href="https://wa.me/2349066876272"

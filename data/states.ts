@@ -5,6 +5,7 @@ export interface StateInfo {
   status: string;
   timeline: string[];
   docs: { label: string; href: string }[];
+  images?: string[];
 }
 
 export const states: StateInfo[] = [
@@ -23,6 +24,10 @@ export const states: StateInfo[] = [
       { label: 'Proposal (Niger)', href: '/docs/niger_proposal.pdf' },
       { label: 'MOU (Niger)', href: '/docs/niger_mou.pdf' },
       { label: 'LOS (Niger)', href: '/docs/niger_los.pdf' },
+    ],
+    images: [
+      'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting%202.jpeg',
+      'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting.jpeg',
     ],
   },
   {
