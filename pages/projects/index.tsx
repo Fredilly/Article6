@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import PipelineCard, { STATUS_COLORS } from '../../components/PipelineCard';
 import dynamic from "next/dynamic";
+// client-only Nigeria map to avoid SSR router issues
 const NigeriaMap = dynamic(() => import("../../components/NigeriaMap"), { ssr: false });
 
 const pipeline = [
