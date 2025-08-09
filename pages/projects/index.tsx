@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import PipelineCard, { STATUS_COLORS } from '../../components/PipelineCard';
+import NigeriaMap from '../../components/NigeriaMap';
 
 const pipeline = [
   {
@@ -29,6 +30,9 @@ const pipeline = [
 const ProjectsPage: React.FC = () => {
   return (
     <div className="p-8">
+      <div className="max-w-3xl mx-auto mb-8">
+        <NigeriaMap active={pipeline.map((p) => p.slug)} />
+      </div>
       <h1 className="text-3xl font-bold mb-4">Current Pipeline</h1>
       <p className="mb-6 text-gray-600">
         We’re working with multiple Nigerian states. Each engagement below is shown at its current stage. We update this page as
@@ -51,18 +55,6 @@ const ProjectsPage: React.FC = () => {
             </li>
           ))}
         </ul>
-      </div>
-      <div className="w-full max-w-xl mx-auto">
-        <svg viewBox="0 0 700 500" className="w-full h-auto">
-          <path
-            d="M100 150 L200 120 L350 130 L450 110 L550 150 L580 220 L560 300 L600 360 L520 420 L400 380 L300 420 L180 400 L140 300 L100 250 Z"
-            fill="#e5e7eb"
-            stroke="#374151"
-          />
-          <circle cx="300" cy="220" r="10" fill="#F59E0B" />
-          <circle cx="240" cy="260" r="10" fill="#F97316" />
-          <circle cx="380" cy="240" r="10" fill="#3B82F6" />
-        </svg>
       </div>
     </div>
   );
