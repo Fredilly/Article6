@@ -1,9 +1,7 @@
-import dynamic from "next/dynamic";
-const NigeriaMap = dynamic(() => import("../../components/NigeriaMap"), { ssr: false });
+import Link from "next/link";
 
 export default function ProjectsPage() {
   // TODO: replace with real data source
-  const activeStates = ["niger", "kwara", "plateau"];
 
   return (
     <main className="relative">
@@ -17,34 +15,6 @@ export default function ProjectsPage() {
             We’re working with multiple Nigerian states. Each engagement below shows its current stage.
             This page updates as agreements are signed.
           </p>
-        </div>
-      </section>
-
-      {/* Map Card */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 sm:px-6 py-4">
-              <div>
-                <h2 className="text-base sm:text-lg font-semibold">Nigeria Overview</h2>
-                <p className="text-sm text-gray-600">Highlighted states show active engagements.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <span className="h-3 w-3 rounded-sm bg-[#16A34A]" /> Active
-                </span>
-                <span className="inline-flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <span className="h-3 w-3 rounded-sm bg-[#E5E7EB] border border-gray-300" /> Inactive
-                </span>
-              </div>
-            </div>
-
-            <div className="px-3 sm:px-6 pb-6 pt-2 bg-white">
-              <div className="mx-auto max-w-4xl">
-                <NigeriaMap active={activeStates} />
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -67,6 +37,14 @@ export default function ProjectsPage() {
             {/* <StateCard slug="niger" title="Niger State" epithet="The Power State" status="discussion" ... /> */}
             {/* <StateCard slug="kwara" title="Kwara State" epithet="The State of Harmony" status="pending" ... /> */}
             {/* <StateCard slug="plateau" title="Plateau State" epithet="Home of Peace and Tourism" status="pending" ... /> */}
+          </div>
+          <div className="mt-6">
+            <Link
+              href="/country"
+              className="text-sm underline underline-offset-4 hover:no-underline text-muted-foreground"
+            >
+              See national map →
+            </Link>
           </div>
         </div>
       </section>

@@ -24,7 +24,7 @@ function norm(slug: string) {
   return ALIASES[s] ?? s;
 }
 
-export default function NigeriaMap({ active = [] as string[] }) {
+export default function NigeriaMap({ active = [] as string[] }: { active?: string[] }) {
   const router = useRouter();
   const svgRef = useRef<SVGSVGElement>(null);
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
