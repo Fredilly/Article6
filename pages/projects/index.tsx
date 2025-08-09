@@ -1,63 +1,54 @@
-import React from 'react';
-import Link from 'next/link';
-import PipelineCard, { STATUS_COLORS } from '../../components/PipelineCard';
-import dynamic from 'next/dynamic';
-// client-only Nigeria map to avoid SSR router issues
-const NigeriaMap = dynamic(() => import('../../components/NigeriaMap'), { ssr: false });
+import Link from "next/link";
 
-const pipeline = [
-  {
-    slug: 'niger',
-    state: 'Niger State — The Power State',
-    status: 'In Discussion',
-    summary:
-      'Introductions completed with Perm Sec and Commissioners; proposal + EOI + MOU shared.\nDrinks with delegation in Abuja to align on scope.',
-  },
-  {
-    slug: 'kwara',
-    state: 'Kwara State — The State of Harmony',
-    status: 'Pending Agreement',
-    summary:
-      'Introductions made via Ministry of Agric; EOI + Proposal + MOU + LOS shared.\nAwaiting formal invitation / signing window.',
-  },
-  {
-    slug: 'plateau',
-    state: 'Plateau State — Home of Peace and Tourism',
-    status: 'Early Engagement',
-    summary:
-      'Introductions via Ministry; 4-doc pack shared (EOI, Proposal, MOU, LOS).\nAwaiting review by SA on Carbon Credit and follow-up meeting.',
-  },
-];
+export default function ProjectsPage() {
+  // TODO: replace with real data source
 
-const ProjectsPage: React.FC = () => {
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-4">Current Pipeline</h1>
-      <p className="mb-6 text-gray-600">
-        We’re working with multiple Nigerian states. Each engagement below is shown at its current stage. We update this page as
-        agreements are signed.
-      </p>
-      <NigeriaMap active={['niger','kwara','plateau']} />
-      <div className="grid md:grid-cols-2 gap-4 mb-8">
-        {pipeline.map((proj) => (
-          <Link key={proj.slug} href={`/states/${proj.slug}`} className="block">
-            <PipelineCard state={proj.state} status={proj.status} summary={proj.summary} />
-          </Link>
-        ))}
-      </div>
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-2">Status Legend</h3>
-        <ul className="space-y-1">
-          {Object.entries(STATUS_COLORS).map(([status, color]) => (
-            <li key={status} className="flex items-center">
-              <span className={`w-3 h-3 rounded-full mr-2 ${color}`}></span>
-              {status}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-};
+    <main className="relative">
+      {/* Top padding to clear navbar */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-10 pb-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight">
+            State Projects
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm sm:text-base text-gray-600 leading-relaxed">
+            We’re working with multiple Nigerian states. Each engagement below shows its current stage.
+            This page updates as agreements are signed.
+          </p>
+        </div>
+      </section>
 
-export default ProjectsPage;
+      {/* Divider */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="my-8 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+      </div>
+
+      {/* Engagement Cards */}
+      <section className="bg-white pb-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between">
+            <h2 className="text-lg sm:text-xl font-semibold">Engagements</h2>
+            <p className="text-xs sm:text-sm text-gray-500">{/* count placeholder */}Updated weekly</p>
+          </div>
+
+          {/* Grid scales up on desktop; minimal on mobile */}
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Render your <StateCard> list here. Example placeholders: */}
+            {/* <StateCard slug="niger" title="Niger State" epithet="The Power State" status="discussion" ... /> */}
+            {/* <StateCard slug="kwara" title="Kwara State" epithet="The State of Harmony" status="pending" ... /> */}
+            {/* <StateCard slug="plateau" title="Plateau State" epithet="Home of Peace and Tourism" status="pending" ... /> */}
+          </div>
+          <div className="mt-6">
+            <Link
+              href="/country"
+              className="text-sm underline underline-offset-4 hover:no-underline text-muted-foreground"
+            >
+              See national map →
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+

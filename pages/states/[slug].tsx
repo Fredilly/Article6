@@ -1,5 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
+import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { getStateBySlug } from '../../data/states';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -26,6 +28,19 @@ const StateDetailPage: React.FC = () => {
 
   return (
     <div className="p-8 space-y-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="pt-4 pb-2">
+          <Link
+            href="/projects"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+            aria-label="Back to Projects"
+          >
+            <ChevronLeftIcon className="h-4 w-4" aria-hidden />
+            Back to Projects
+          </Link>
+        </div>
+      </div>
+
       <div>
         <h1 className="text-3xl font-bold mb-1">{state.title}</h1>
         <p className="text-gray-600 mb-2">{state.epithet}</p>

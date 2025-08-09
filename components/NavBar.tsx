@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { navigationLinks } from '../utils/navigation';
 
 const NavBar: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   // Close the mobile menu when resizing to desktop widths
   useEffect(() => {
@@ -29,7 +31,7 @@ const NavBar: React.FC = () => {
             <li key={href}>
               <Link
                 href={href}
-                className="hover:text-green-600 transition-colors duration-300"
+                className={`hover:text-green-600 transition-colors duration-300 ${router.pathname === href ? 'text-green-600' : ''}`}
               >
                 {label}
               </Link>
@@ -54,7 +56,7 @@ const NavBar: React.FC = () => {
               <li key={href}>
                 <Link
                   href={href}
-                  className="block py-2 px-4 hover:text-green-600 transition-colors"
+                  className={`block py-2 px-4 hover:text-green-600 transition-colors ${router.pathname === href ? 'text-green-600' : ''}`}
                   onClick={() => setOpen(false)}
                 >
                   {label}
