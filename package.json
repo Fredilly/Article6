@@ -10,20 +10,16 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.0.18",
-    "@react-three/drei": "latest",
-    "@react-three/fiber": "latest",
+    "@svg-maps/nigeria": "^1.0.0",
     "next": "14.0.1",
     "react": "^18",
     "react-dom": "^18",
-    "three": "^0.158.0",
-    "three-globe": "^2.30.0",
     "typewriter-effect": "^2.21.0"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@types/three": "^0.158.2",
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
     "eslint-config-next": "14.0.1",
