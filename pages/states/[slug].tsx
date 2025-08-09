@@ -33,7 +33,7 @@ const StateDetailPage: React.FC = () => {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-2">What we've done so far</h2>
+        <h2 className="text-xl font-semibold mb-2">What we&apos;ve done so far</h2>
         <ul className="list-disc ml-5 space-y-1">
           {state.timeline.map((item) => (
             <li key={item}>{item}</li>
