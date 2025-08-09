@@ -1,6 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
-import PipelineCard, { STATUS_COLORS } from '../../components/PipelineCard';
+import StateCard, { STATUS_COLORS } from '../../components/StateCard';
 import dynamic from 'next/dynamic';
 // client-only Nigeria map to avoid SSR router issues
 const NigeriaMap = dynamic(() => import('../../components/NigeriaMap'), { ssr: false });
@@ -8,21 +7,24 @@ const NigeriaMap = dynamic(() => import('../../components/NigeriaMap'), { ssr: f
 const pipeline = [
   {
     slug: 'niger',
-    state: 'Niger State — The Power State',
+    title: 'Niger State',
+    epithet: 'The Power State',
     status: 'In Discussion',
     summary:
       'Introductions completed with Perm Sec and Commissioners; proposal + EOI + MOU shared.\nDrinks with delegation in Abuja to align on scope.',
   },
   {
     slug: 'kwara',
-    state: 'Kwara State — The State of Harmony',
+    title: 'Kwara State',
+    epithet: 'The State of Harmony',
     status: 'Pending Agreement',
     summary:
       'Introductions made via Ministry of Agric; EOI + Proposal + MOU + LOS shared.\nAwaiting formal invitation / signing window.',
   },
   {
     slug: 'plateau',
-    state: 'Plateau State — Home of Peace and Tourism',
+    title: 'Plateau State',
+    epithet: 'Home of Peace and Tourism',
     status: 'Early Engagement',
     summary:
       'Introductions via Ministry; 4-doc pack shared (EOI, Proposal, MOU, LOS).\nAwaiting review by SA on Carbon Credit and follow-up meeting.',
@@ -31,18 +33,22 @@ const pipeline = [
 
 const ProjectsPage: React.FC = () => {
   return (
-    <div className="p-8">
+    <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
       <h1 className="text-3xl font-bold mb-4">Current Pipeline</h1>
       <p className="mb-6 text-gray-600">
-        We’re working with multiple Nigerian states. Each engagement below is shown at its current stage. We update this page as
-        agreements are signed.
+        We’re working with multiple Nigerian states. Each engagement below is shown at its current stage. We update this page as agreements are signed.
       </p>
-      <NigeriaMap active={['niger','kwara','plateau']} />
-      <div className="grid md:grid-cols-2 gap-4 mb-8">
+      <NigeriaMap active={['niger', 'kwara', 'plateau']} />
+      <div className="grid md:grid-cols-2 gap-4 mb-8 mt-8">
         {pipeline.map((proj) => (
-          <Link key={proj.slug} href={`/states/${proj.slug}`} className="block">
-            <PipelineCard state={proj.state} status={proj.status} summary={proj.summary} />
-          </Link>
+          <StateCard
+            key={proj.slug}
+            slug={proj.slug}
+            title={proj.title}
+            epithet={proj.epithet}
+            status={proj.status}
+            summary={proj.summary}
+          />
         ))}
       </div>
       <div className="mb-8">
@@ -56,7 +62,7 @@ const ProjectsPage: React.FC = () => {
           ))}
         </ul>
       </div>
-    </div>
+    </section>
   );
 };
 
