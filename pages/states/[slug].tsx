@@ -29,7 +29,9 @@ const StateDetailPage: React.FC = () => {
       <div>
         <h1 className="text-3xl font-bold mb-1">{state.title}</h1>
         <p className="text-gray-600 mb-2">{state.epithet}</p>
-        <span className={`inline-block px-2 py-1 rounded text-white text-sm ${statusClass}`}>{state.status}</span>
+        <span className={`inline-block px-2 py-1 rounded text-white text-sm ${statusClass}`}>
+          {state.status}
+        </span>
       </div>
 
       <div>
@@ -44,13 +46,15 @@ const StateDetailPage: React.FC = () => {
       <div>
         <h2 className="text-xl font-semibold mb-2">Documents shared</h2>
         <div className="flex flex-wrap gap-2">
-          {state.documents.map((doc) => (
+          {state.docs.map((doc) => (
             <a
-              key={doc}
-              href="#"
+              key={doc.href}
+              href={doc.href}
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-3 py-1 border rounded-full text-sm"
             >
-              {doc}
+              {doc.label}
             </a>
           ))}
         </div>
@@ -77,3 +81,4 @@ const StateDetailPage: React.FC = () => {
 };
 
 export default StateDetailPage;
+

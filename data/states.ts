@@ -4,7 +4,7 @@ export interface StateInfo {
   epithet: string;
   status: string;
   timeline: string[];
-  documents: string[];
+  docs: { label: string; href: string }[];
 }
 
 export const states: StateInfo[] = [
@@ -14,11 +14,16 @@ export const states: StateInfo[] = [
     epithet: 'The Power State',
     status: 'In Discussion',
     timeline: [
-      'Introductions completed with Perm Sec and Commissioners',
-      'Proposal, EOI, and MOU shared',
-      'Dinner with delegation in Abuja to align on scope',
+      'Intro call with Dr. Ladan (Perm Sec’s office) – proposal discussed',
+      'EOI, Proposal, MOU, LOS sent for review',
+      'Dinner with Niger State delegation in Abuja for alignment',
     ],
-    documents: ['EOI', 'Proposal', 'MOU'],
+    docs: [
+      { label: 'EOI (Niger)', href: '/docs/niger_eoi.pdf' },
+      { label: 'Proposal (Niger)', href: '/docs/niger_proposal.pdf' },
+      { label: 'MOU (Niger)', href: '/docs/niger_mou.pdf' },
+      { label: 'LOS (Niger)', href: '/docs/niger_los.pdf' },
+    ],
   },
   {
     slug: 'kwara',
@@ -26,11 +31,16 @@ export const states: StateInfo[] = [
     epithet: 'The State of Harmony',
     status: 'Pending Agreement',
     timeline: [
-      'Introductions made via Ministry of Agric',
-      'EOI, Proposal, MOU, and LOS shared',
-      'Awaiting formal invitation or signing window',
+      'Introductions via Ministry of Agric; multiple follow-ups',
+      'EOI, Proposal, MOU, LOS shared',
+      'Awaiting formal invitation window to brief EXCO',
     ],
-    documents: ['EOI', 'Proposal', 'MOU', 'LOS'],
+    docs: [
+      { label: 'EOI (Kwara)', href: '/docs/kwara_eoi.pdf' },
+      { label: 'Proposal (Kwara)', href: '/docs/kwara_proposal.pdf' },
+      { label: 'MOU (Kwara)', href: '/docs/kwara_mou.pdf' },
+      { label: 'LOS (Kwara)', href: '/docs/kwara_los.pdf' },
+    ],
   },
   {
     slug: 'plateau',
@@ -38,11 +48,15 @@ export const states: StateInfo[] = [
     epithet: 'Home of Peace and Tourism',
     status: 'Early Engagement',
     timeline: [
-      'Introductions via Ministry',
-      '4-doc pack shared (EOI, Proposal, MOU, LOS)',
-      'Awaiting review by SA on Carbon Credit and follow-up meeting',
+      '4-document pack shared via advisor (EOI, Proposal, MOU, LOS)',
+      'SA on Carbon Credit reviewing; next meeting to be scheduled',
     ],
-    documents: ['EOI', 'Proposal', 'MOU', 'LOS'],
+    docs: [
+      { label: 'EOI (Plateau)', href: '/docs/plateau_eoi.pdf' },
+      { label: 'Proposal (Plateau)', href: '/docs/plateau_proposal.pdf' },
+      { label: 'MOU (Plateau)', href: '/docs/plateau_mou.pdf' },
+      { label: 'LOS (Plateau)', href: '/docs/plateau_los.pdf' },
+    ],
   },
 ];
 
