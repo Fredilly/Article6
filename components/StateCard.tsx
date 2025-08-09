@@ -4,9 +4,9 @@ import React from "react";
 interface StateCardProps {
   slug: string;
   title: string;
-  status: string;
   epithet?: string;
   summary?: string;
+  status?: "pending" | "active" | "discussion" | string;
   tags?: string[];
   updatedAt?: string;
   ctaLabel?: string;
@@ -15,13 +15,14 @@ interface StateCardProps {
 const StateCard: React.FC<StateCardProps> = ({
   slug,
   title,
-  status,
   epithet,
   summary,
+  status,
   tags,
   updatedAt,
   ctaLabel,
 }) => {
+  const safeTags = Array.isArray(tags) ? tags.filter(Boolean) : [];
   return (
     <Link
       href={`/states/${slug}`}
@@ -55,9 +56,9 @@ const StateCard: React.FC<StateCardProps> = ({
             </p>
           )}
 
-          {tags?.length > 0 && (
+          {safeTags.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
-              {tags.slice(0, 4).map((t) => (
+              {safeTags.slice(0, 4).map((t) => (
                 <span
                   key={t}
                   className="inline-flex items-center px-2.5 py-1 rounded-full border border-gray-200 text-xs text-gray-700 bg-gray-50"
