@@ -1,20 +1,24 @@
 import React from 'react';
+import Link from 'next/link';
 import PipelineCard, { STATUS_COLORS } from '../../components/PipelineCard';
 
 const pipeline = [
   {
+    slug: 'niger',
     state: 'Niger State — The Power State',
     status: 'In Discussion',
     summary:
       'Introductions completed with Perm Sec and Commissioners; proposal + EOI + MOU shared.\nDinner with delegation in Abuja to align on scope.',
   },
   {
+    slug: 'kwara',
     state: 'Kwara State — The State of Harmony',
     status: 'Pending Agreement',
     summary:
       'Introductions made via Ministry of Agric; EOI + Proposal + MOU + LOS shared.\nAwaiting formal invitation / signing window.',
   },
   {
+    slug: 'plateau',
     state: 'Plateau State — Home of Peace and Tourism',
     status: 'Early Engagement',
     summary:
@@ -32,7 +36,9 @@ const ProjectsPage: React.FC = () => {
       </p>
       <div className="grid md:grid-cols-2 gap-4 mb-8">
         {pipeline.map((proj) => (
-          <PipelineCard key={proj.state} {...proj} />
+          <Link key={proj.slug} href={`/states/${proj.slug}`} className="block">
+            <PipelineCard state={proj.state} status={proj.status} summary={proj.summary} />
+          </Link>
         ))}
       </div>
       <div className="mb-8">
