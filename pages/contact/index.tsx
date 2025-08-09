@@ -13,8 +13,18 @@ const ContactPage = () => {
           We’d love to hear from you! Reach out to us with any questions, comments, or inquiries about our projects and initiatives.
         </p>
         <p className="text-lg text-gray-700">
-          Email us at: <a href="mailto:contact@article6.org" className="text-green-700 underline">contact@article6.org</a>
+          Email us at: <a href="mailto:contact@article6.org" className="text-green-700 underline" rel="nofollow">contact@article6.org</a>
         </p>
+        <div className="mt-4">
+          <a
+            href="https://wa.me/2349066876272"
+            aria-label="Chat on WhatsApp"
+            rel="nofollow"
+            className="inline-block bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded"
+          >
+            Chat on WhatsApp
+          </a>
+        </div>
       </div>
 
       {/* Contact Form */}
@@ -73,7 +83,7 @@ const ContactPage = () => {
         </p>
         <div className="flex justify-center mb-4">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.1931614783886!2d144.9630582153196!3d-37.814217979751954!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6ad642af0f11fd81%3A0xf0727c6b4c81f2e!2sMelbourne%20CBD%2C%20Victoria%2C%20Australia!5e0!3m2!1sen!2sus!4v1611289221087!5m2!1sen!2sus"
+            src="https://maps.google.com/maps?q=Abuja,%20Nigeria&output=embed"
             width="600"
             height="450"
             allowFullScreen
@@ -82,7 +92,7 @@ const ContactPage = () => {
           ></iframe>
         </div>
         <p className="text-lg text-gray-700 text-center">
-          Article<span className="text-green-600">6</span>, 123 Sustainability Street, Melbourne, VIC 3000, Australia
+          Remote – Abuja • Lagos, Nigeria
         </p>
       </div>
     </div>
