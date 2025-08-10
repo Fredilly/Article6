@@ -6,11 +6,11 @@ export default function ContactPage() {
   const mountedRef = useRef(false);
 
   useEffect(() => {
-    // Guard against double init on Fast Refresh
-    if (mountedRef.current) return;
-    mountedRef.current = true;
-
     function init() {
+      // Guard against double init on Fast Refresh
+      if (mountedRef.current) return;
+      mountedRef.current = true;
+
       // @ts-ignore
       if (window.hbspt?.forms?.create) {
         // @ts-ignore
@@ -34,7 +34,7 @@ export default function ContactPage() {
     if (window.hbspt?.forms?.create) init();
     else {
       const onLoad = () => init();
-      document.addEventListener("hsforms:loaded", onLoad, { once: true });
+      document.addEventListener("hsforms:loaded", onLoad);
       return () => document.removeEventListener("hsforms:loaded", onLoad);
     }
   }, []);
