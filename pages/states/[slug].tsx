@@ -2,7 +2,16 @@ import React from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import GalleryCarousel from '@/components/GalleryCarousel';
+import StateCard from '@/components/StateCard';
+import { projects } from '@/data/projects';
 import { getStateBySlug } from '@/data/states';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 
 const STATUS_STYLES: Record<string, string> = {
   'In Discussion': 'bg-yellow-100 text-yellow-800',
@@ -100,12 +109,18 @@ const StateDetailPage: React.FC = () => {
 
             <aside className="lg:col-span-1">
               <div className="rounded-xl border bg-muted/30 p-4 sticky top-20 space-y-4">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Contacts</p>
-                  <div className="mt-2 space-y-1 text-sm">
-                    <div>Perm Sec: Dr. Ladan</div>
+                {state.contacts && state.contacts.length > 0 && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Contacts</p>
+                    <div className="mt-2 space-y-1 text-sm">
+                      {state.contacts.map((c) => (
+                        <div key={c.role}>
+                          {c.role}: {c.name}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="border-t pt-4">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Focus Areas</p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -134,6 +149,24 @@ const StateDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Other States</h2>
+          <Carousel className="w-full">
+            <CarouselContent className="-ml-4">
+              {projects.map((p) => (
+                <CarouselItem
+                  key={p.slug}
+                  className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3"
+                >
+                  <StateCard {...p} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+        </section>
       </main>
     </>
   );
