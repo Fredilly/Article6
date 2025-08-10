@@ -5,7 +5,8 @@ export interface StateInfo {
   status: string;
   timeline: string[];
   docs: { label: string; href: string }[];
-  images?: string[];
+  nextSteps?: string[];
+  images?: { src: string; alt: string }[];
 }
 
 export const states: StateInfo[] = [
@@ -25,9 +26,19 @@ export const states: StateInfo[] = [
       { label: 'MOU (Niger)', href: '/docs/niger_mou.pdf' },
       { label: 'LOS (Niger)', href: '/docs/niger_los.pdf' },
     ],
+    nextSteps: [
+      'Finalize MOU with state leadership',
+      'Plan field pilot in rice paddies',
+    ],
     images: [
-      'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting%202.jpeg',
-      'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting.jpeg',
+      {
+        src: 'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting%202.jpeg',
+        alt: 'Drinks with Niger State delegation, Abuja',
+      },
+      {
+        src: 'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting.jpeg',
+        alt: 'Field visit – rice paddies',
+      },
     ],
   },
   {
@@ -46,6 +57,10 @@ export const states: StateInfo[] = [
       { label: 'MOU (Kwara)', href: '/docs/kwara_mou.pdf' },
       { label: 'LOS (Kwara)', href: '/docs/kwara_los.pdf' },
     ],
+    nextSteps: [
+      'Present proposal to EXCO',
+      'Secure formal invitation',
+    ],
   },
   {
     slug: 'plateau',
@@ -61,6 +76,10 @@ export const states: StateInfo[] = [
       { label: 'Proposal (Plateau)', href: '/docs/plateau_proposal.pdf' },
       { label: 'MOU (Plateau)', href: '/docs/plateau_mou.pdf' },
       { label: 'LOS (Plateau)', href: '/docs/plateau_los.pdf' },
+    ],
+    nextSteps: [
+      'Schedule review meeting',
+      'Plan site visit',
     ],
   },
 ];
