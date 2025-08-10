@@ -10,8 +10,13 @@ const nextConfig = {
           headers: [
             {
               key: "Content-Security-Policy",
-              value:
-                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js-eu1.hsforms.net; frame-src https://forms-eu1.hsforms.com https://share.hsforms.com; img-src 'self' data: https://forms.hsforms.com https://forms-eu1.hsforms.com; style-src 'self' 'unsafe-inline'; connect-src 'self';",
+              value: [
+                "default-src 'self';",
+                "script-src 'self' https://js-eu1.hsforms.net;",
+                "frame-src 'self' https://forms-eu1.hsforms.com https://share.hsforms.com;",
+                "img-src 'self' https://forms-eu1.hsforms.com https://forms.hsforms.com data:;",
+                "style-src 'self' 'unsafe-inline' https://forms-eu1.hsforms.com https://forms.hsforms.com;",
+              ].join(" "),
             },
           ],
         },
