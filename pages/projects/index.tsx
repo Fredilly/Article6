@@ -1,63 +1,20 @@
-import React from 'react';
-import Link from 'next/link';
-import PipelineCard, { STATUS_COLORS } from '../../components/PipelineCard';
-import dynamic from 'next/dynamic';
-// client-only Nigeria map to avoid SSR router issues
-const NigeriaMap = dynamic(() => import('../../components/NigeriaMap'), { ssr: false });
+import React from "react";
+import StateCard from "@/components/StateCard";
+import { projects } from "@/data/projects";
 
-const pipeline = [
-  {
-    slug: 'niger',
-    state: 'Niger State — The Power State',
-    status: 'In Discussion',
-    summary:
-      'Introductions completed with Perm Sec and Commissioners; proposal + EOI + MOU shared.\nDrinks with delegation in Abuja to align on scope.',
-  },
-  {
-    slug: 'kwara',
-    state: 'Kwara State — The State of Harmony',
-    status: 'Pending Agreement',
-    summary:
-      'Introductions made via Ministry of Agric; EOI + Proposal + MOU + LOS shared.\nAwaiting formal invitation / signing window.',
-  },
-  {
-    slug: 'plateau',
-    state: 'Plateau State — Home of Peace and Tourism',
-    status: 'Early Engagement',
-    summary:
-      'Introductions via Ministry; 4-doc pack shared (EOI, Proposal, MOU, LOS).\nAwaiting review by SA on Carbon Credit and follow-up meeting.',
-  },
-];
-
-const ProjectsPage: React.FC = () => {
+export default function ProjectsPage() {
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-4">Current Pipeline</h1>
-      <p className="mb-6 text-gray-600">
-        We’re working with multiple Nigerian states. Each engagement below is shown at its current stage. We update this page as
-        agreements are signed.
-      </p>
-      <NigeriaMap active={['niger','kwara','plateau']} />
-      <div className="grid md:grid-cols-2 gap-4 mb-8">
-        {pipeline.map((proj) => (
-          <Link key={proj.slug} href={`/states/${proj.slug}`} className="block">
-            <PipelineCard state={proj.state} status={proj.status} summary={proj.summary} />
-          </Link>
+    <main className="max-w-6xl mx-auto p-6 space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
+        <p className="text-muted-foreground">Active and upcoming state engagements.</p>
+      </header>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects.map((p) => (
+          <StateCard key={p.slug} {...p} />
         ))}
       </div>
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-2">Status Legend</h3>
-        <ul className="space-y-1">
-          {Object.entries(STATUS_COLORS).map(([status, color]) => (
-            <li key={status} className="flex items-center">
-              <span className={`w-3 h-3 rounded-full mr-2 ${color}`}></span>
-              {status}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+    </main>
   );
-};
-
-export default ProjectsPage;
+}

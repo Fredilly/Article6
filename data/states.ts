@@ -17,7 +17,7 @@ export const states: StateInfo[] = [
     timeline: [
       'Intro call with Dr. Ladan (Perm Sec’s office) – proposal discussed',
       'EOI, Proposal, MOU, LOS sent for review',
-      'Dinner with Niger State delegation in Abuja for alignment',
+      'Drinks with Niger State delegation in Abuja for alignment',
     ],
     docs: [
       { label: 'EOI (Niger)', href: '/docs/niger_eoi.pdf' },
