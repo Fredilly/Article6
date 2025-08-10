@@ -16,7 +16,7 @@ export const states: StateInfo[] = [
     epithet: 'The Power State',
     status: 'In Discussion',
     timeline: [
-      'Intro call with Dr. Ladan (Perm Sec’s office) – proposal discussed',
+      'Intro call with Dr. Matthew Ahmed (Perm Sec) – proposal discussed',
       'EOI, Proposal, MOU, LOS sent for review',
       'Drinks with Niger State delegation in Abuja for alignment',
     ],
