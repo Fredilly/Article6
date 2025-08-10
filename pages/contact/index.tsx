@@ -6,11 +6,11 @@ export default function ContactPage() {
   const mountedRef = useRef(false);
 
   useEffect(() => {
-    function init() {
-      // Guard against double init on Fast Refresh
-      if (mountedRef.current) return;
-      mountedRef.current = true;
+    // Guard against double init on Fast Refresh
+    if (mountedRef.current) return;
+    mountedRef.current = true;
 
+    const init = () => {
       // @ts-ignore
       if (window.hbspt?.forms?.create) {
         // @ts-ignore
@@ -18,25 +18,26 @@ export default function ContactPage() {
           region: "eu1",
           portalId: "146230713",
           formId: "d19a1261-38af-47d2-a668-bfb5b3b24cd5",
-          target: "#hs-contact-form", // container below
-          css: "", // let site styles prevail
-          onFormReady: () => {
-            // optional: ensure iframe expands to fit
-            const el = document.querySelector("#hs-contact-form iframe");
-            if (el) el.setAttribute("title", "Contact form");
-          },
+          target: "#hs-contact-form",
+          css: "",
         });
       }
-    }
+    };
 
     // If script already loaded, init now; else wait for load event
     // @ts-ignore
     if (window.hbspt?.forms?.create) init();
-    else {
-      const onLoad = () => init();
-      document.addEventListener("hsforms:loaded", onLoad);
-      return () => document.removeEventListener("hsforms:loaded", onLoad);
-    }
+    else document.addEventListener("hsforms:loaded", init, { once: true });
+
+    // Show fallback if form didn't load (e.g. ad blocker)
+    const timeout = setTimeout(() => {
+      if (!document.querySelector("#hs-contact-form iframe")) {
+        const fb = document.getElementById("hs-contact-fallback");
+        if (fb) fb.classList.remove("hidden");
+      }
+    }, 3000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   return (
@@ -99,10 +100,33 @@ export default function ContactPage() {
             <div className="relative rounded-2xl border bg-white p-4 md:p-6 shadow-sm min-h-[560px]">
               {/* HubSpot will inject an iframe into this div */}
               <div id="hs-contact-form" />
+              <div
+                id="hs-contact-fallback"
+                className="hidden mt-4 text-sm"
+              >
+                If the form doesn’t load, please use our
+                <a
+                  className="underline"
+                  href="https://share.hsforms.com/eu1/d19a1261-38af-47d2-a668-bfb5b3b24cd5?portalId=146230713"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {" "}contact form
+                </a>{" "}
+                or email
+                {" "}
+                <a className="underline" href="mailto:hello@article6.org">
+                  hello@article6.org
+                </a>
+                .
+              </div>
               <noscript>
                 <p className="text-sm mt-4">
                   JavaScript is required to load this form. Please email us:
-                  <a className="underline ml-1" href="mailto:hello@article6.org">hello@article6.org</a>.
+                  <a className="underline ml-1" href="mailto:hello@article6.org">
+                    hello@article6.org
+                  </a>
+                  .
                 </p>
               </noscript>
             </div>
