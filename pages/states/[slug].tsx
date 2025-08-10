@@ -83,7 +83,7 @@ const StateDetailPage: React.FC = () => {
               <img
                 key={src}
                 src={src}
-                alt="Dinner with Niger State delegation, Abuja"
+                alt="Drinks with Niger State delegation, Abuja"
                 className="w-full object-cover rounded-xl border border-gray-200"
               />
             ))}
