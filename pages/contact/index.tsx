@@ -1,7 +1,44 @@
 import Head from "next/head";
 import Script from "next/script";
+import { useEffect, useRef } from "react";
 
 export default function ContactPage() {
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    // Guard against double init on Fast Refresh
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+
+    function init() {
+      // @ts-ignore
+      if (window.hbspt?.forms?.create) {
+        // @ts-ignore
+        window.hbspt.forms.create({
+          region: "eu1",
+          portalId: "146230713",
+          formId: "d19a1261-38af-47d2-a668-bfb5b3b24cd5",
+          target: "#hs-contact-form", // container below
+          css: "", // let site styles prevail
+          onFormReady: () => {
+            // optional: ensure iframe expands to fit
+            const el = document.querySelector("#hs-contact-form iframe");
+            if (el) el.setAttribute("title", "Contact form");
+          },
+        });
+      }
+    }
+
+    // If script already loaded, init now; else wait for load event
+    // @ts-ignore
+    if (window.hbspt?.forms?.create) init();
+    else {
+      const onLoad = () => init();
+      document.addEventListener("hsforms:loaded", onLoad, { once: true });
+      return () => document.removeEventListener("hsforms:loaded", onLoad);
+    }
+  }, []);
+
   return (
     <>
       <Head>
@@ -10,22 +47,25 @@ export default function ContactPage() {
           name="description"
           content="Get in touch with Article6. We’ll get back to you within 48 hours."
         />
-        <script type="application/ld+json"
+        <script
+          type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "ContactPage",
               name: "Contact Article6",
-              url: "https://www.article6.org/contact"
+              url: "https://www.article6.org/contact",
             }),
           }}
         />
       </Head>
 
-      {/* Ensure the script loads once, after hydration */}
+      {/* Load HubSpot v2 loader (EU) once */}
       <Script
-        src="https://js-eu1.hsforms.net/forms/embed/146230713.js"
+        id="hsforms-v2"
+        src="https://js-eu1.hsforms.net/forms/embed/v2.js"
         strategy="afterInteractive"
+        onLoad={() => document.dispatchEvent(new Event("hsforms:loaded"))}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 md:pt-24 pb-16">
@@ -56,17 +96,12 @@ export default function ContactPage() {
 
           {/* Right: form card */}
           <div className="lg:col-span-2">
-            <div className="relative rounded-2xl border bg-white p-4 md:p-6 shadow-sm">
-              {/* HubSpot embed container – DO NOT change attributes */}
-              <div
-                className="hs-form-frame min-h-[560px]"
-                data-region="eu1"
-                data-form-id="d19a1261-38af-47d2-a668-bfb5b3b24cd5"
-                data-portal-id="146230713"
-              />
+            <div className="relative rounded-2xl border bg-white p-4 md:p-6 shadow-sm min-h-[560px]">
+              {/* HubSpot will inject an iframe into this div */}
+              <div id="hs-contact-form" />
               <noscript>
                 <p className="text-sm mt-4">
-                  JavaScript is required to load this form. Please email us instead:
+                  JavaScript is required to load this form. Please email us:
                   <a className="underline ml-1" href="mailto:hello@article6.org">hello@article6.org</a>.
                 </p>
               </noscript>
