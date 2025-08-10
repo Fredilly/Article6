@@ -7,6 +7,7 @@ export interface StateInfo {
   docs: { label: string; href: string }[];
   nextSteps?: string[];
   images?: { src: string; alt: string }[];
+  contacts?: { role: string; name: string }[];
 }
 
 export const states: StateInfo[] = [
@@ -16,7 +17,7 @@ export const states: StateInfo[] = [
     epithet: 'The Power State',
     status: 'In Discussion',
     timeline: [
-      'Intro call with Dr. Ladan (Perm Sec’s office) – proposal discussed',
+      'Intro call with Dr. Matthew Ahmed (Perm Sec) – proposal discussed',
       'EOI, Proposal, MOU, LOS sent for review',
       'Drinks with Niger State delegation in Abuja for alignment',
     ],
@@ -40,6 +41,7 @@ export const states: StateInfo[] = [
         alt: 'Field visit – rice paddies',
       },
     ],
+    contacts: [{ role: 'Perm Sec', name: 'Dr Matthew Ahmed' }],
   },
   {
     slug: 'kwara',
@@ -61,6 +63,9 @@ export const states: StateInfo[] = [
       'Present proposal to EXCO',
       'Secure formal invitation',
     ],
+    contacts: [
+      { role: 'Hon Commissioner of Agriculture', name: 'Alabi Afeez' },
+    ],
   },
   {
     slug: 'plateau',
@@ -80,6 +85,12 @@ export const states: StateInfo[] = [
     nextSteps: [
       'Schedule review meeting',
       'Plan site visit',
+    ],
+    contacts: [
+      {
+        role: 'Special advisor to the governor on carbon',
+        name: 'Mr. Yakubu Nuhu',
+      },
     ],
   },
 ];

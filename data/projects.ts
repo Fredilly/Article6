@@ -14,7 +14,7 @@ export const projects: Project[] = [
     slug: "niger",
     title: "Niger State",
     epithet: "The Power State",
-    summary: "Intro call with the Perm Sec's office; proposal shared.",
+    summary: "Intro call with Dr Matthew Ahmed (Perm Sec); proposal shared.",
     status: "discussion",
   },
   {
