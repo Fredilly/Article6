@@ -8,8 +8,7 @@ type NigeriaData = {
 };
 
 const ALIASES: Record<string, string> = {
-  fct: "federal-capital-territory",
-  "cross-river": "cross-river",
+  nassarawa: "nasarawa",
 };
 
 function norm(slug: string) {
@@ -20,11 +19,11 @@ function norm(slug: string) {
 export default function NigeriaMap({
   active = [] as string[],
   links = {} as Record<string, string>,
-  titles = {} as Record<string, string>,
+  onHover,
 }: {
   active?: string[];
   links?: Record<string, string>;
-  titles?: Record<string, string>;
+  onHover?: (slug: string | null) => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
@@ -43,7 +42,7 @@ export default function NigeriaMap({
   };
 
   return (
-    <div className="relative max-w-3xl mx-auto px-4">
+    <div className="relative w-full">
       <svg
         ref={svgRef}
         viewBox="0 0 1000 1000"
@@ -54,28 +53,27 @@ export default function NigeriaMap({
       >
         <g transform={`scale(${scaleX} ${scaleY})`}>
           {data.locations.map((loc) => {
-            const slug = loc.id.toLowerCase();
+            const raw = loc.id.toLowerCase();
+            const slug = ALIASES[raw] ?? raw;
             const name = loc.name;
             const isActive = activeSet.has(slug);
             const link = links[slug];
-            const titleText = titles[slug] ?? name;
             const pathProps = {
               "data-slug": slug,
-              "data-name": name,
               d: loc.path,
-              className: `transition-colors ${
-                link ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2" : ""
-              }`,
+              className: "transition-colors",
               style: {
                 fill: isActive ? "#16A34A" : "#E5E7EB",
                 stroke: "#D1D5DB",
                 strokeWidth: 1.5,
               },
               onMouseEnter: () => {
-                setTip({ x: 0, y: 0, text: titleText });
+                setTip({ x: 0, y: 0, text: name });
+                onHover?.(slug);
               },
               onMouseLeave: () => {
                 setTip(null);
+                onHover?.(null);
               },
               onMouseOver: (e: React.MouseEvent<SVGPathElement>) => {
                 (e.currentTarget as SVGPathElement).style.fill = "#22C55E";
@@ -83,25 +81,33 @@ export default function NigeriaMap({
               onMouseOut: (e: React.MouseEvent<SVGPathElement>) => {
                 (e.currentTarget as SVGPathElement).style.fill = isActive ? "#16A34A" : "#E5E7EB";
               },
+              onFocus: (e: React.FocusEvent<SVGPathElement>) => {
+                onHover?.(slug);
+                (e.currentTarget as SVGPathElement).style.fill = "#22C55E";
+              },
+              onBlur: (e: React.FocusEvent<SVGPathElement>) => {
+                onHover?.(null);
+                (e.currentTarget as SVGPathElement).style.fill = isActive ? "#16A34A" : "#E5E7EB";
+              },
             } as React.SVGProps<SVGPathElement>;
 
             const pathEl = (
               <path {...pathProps}>
-                <title>{titleText}</title>
+                <title>{name}</title>
               </path>
             );
 
             return link ? (
               <a
-                key={loc.id}
+                key={slug}
                 href={link}
                 aria-label={`Open ${name} page`}
-                className="focus:outline-none focus:ring-2 focus:ring-offset-2"
+                className="focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
               >
                 {pathEl}
               </a>
             ) : (
-              React.cloneElement(pathEl, { key: loc.id })
+              React.cloneElement(pathEl, { key: slug })
             );
           })}
         </g>

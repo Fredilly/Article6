@@ -1,27 +1,133 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
+import Head from "next/head";
+import Link from "next/link";
 import NigeriaMap from "@/components/NigeriaMap";
-import { stateTitles } from "@/data/stateMeta";
-
-const LINKS = {
-  niger: "/states/niger",
-  kwara: "/states/kwara",
-  plateau: "/states/plateau",
-};
+import { STATES, ACTIVE, PIPELINE, META, SLUGS } from "@/data/country";
 
 export default function CountryPage() {
+  const [q, setQ] = useState("");
+  const [tab, setTab] = useState<"all" | "active" | "pipeline">("all");
+
+  const pool = tab === "active" ? ACTIVE : tab === "pipeline" ? PIPELINE : SLUGS;
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return pool;
+    return pool.filter((slug) => STATES[slug].name.toLowerCase().includes(needle));
+  }, [q, pool]);
+
+  const links = Object.fromEntries(filtered.map((slug) => [slug, `/states/${slug}`]));
+  const active = ACTIVE;
+
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Nigeria Overview</h1>
-        <p className="text-muted-foreground">States we’re actively engaging.</p>
-      </header>
-      <section className="rounded-2xl border bg-white p-4">
-        <NigeriaMap
-          active={["niger", "kwara", "plateau"]}
-          links={LINKS}
-          titles={stateTitles}
+    <>
+      <Head>
+        <title>Nigeria Overview | Article6</title>
+        <meta
+          name="description"
+          content="States we're actively engaging in Nigeria."
         />
-      </section>
-    </main>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: "Home", item: "/" },
+                { "@type": "ListItem", position: 2, name: "Nigeria Overview", item: "/country" },
+              ],
+            }),
+          }}
+        />
+      </Head>
+      <main className="max-w-7xl mx-auto p-6 space-y-6">
+        <header className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">Nigeria Overview</h1>
+          <p className="text-muted-foreground">States we’re actively engaging.</p>
+        </header>
+
+        {/* Controls */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex gap-2 rounded-xl border bg-white p-1 w-full md:w-auto">
+            {(["all", "active", "pipeline"] as const).map((k) => (
+              <button
+                key={k}
+                onClick={() => setTab(k)}
+                className={`px-3 py-1.5 rounded-lg text-sm ${
+                  tab === k ? "bg-black text-white" : "hover:bg-muted"
+                }`}
+              >
+                {k[0].toUpperCase() + k.slice(1)}
+              </button>
+            ))}
+          </div>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search state…"
+            className="w-full md:w-64 rounded-xl border px-3 py-2 text-sm"
+            aria-label="Search state"
+          />
+        </div>
+
+        {/* Main grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: Map card */}
+          <section className="lg:col-span-2 rounded-2xl border bg-white p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Interactive map</span>
+              {/* Legend */}
+              <div className="flex items-center gap-3 text-xs">
+                <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#16A34A]" /> Active</span>
+                <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#E5E7EB]" /> Other</span>
+              </div>
+            </div>
+            <NigeriaMap active={active} links={links} />
+          </section>
+
+          {/* Right: State list */}
+          <aside className="lg:col-span-1">
+            <div className="rounded-2xl border bg-white p-4 space-y-3 max-h-[70vh] overflow-auto">
+              {filtered.map((slug) => (
+                <Link
+                  key={slug}
+                  href={`/states/${slug}`}
+                  className="flex items-center justify-between rounded-xl border px-3 py-2 hover:bg-muted min-h-12"
+                >
+                  <div className="text-sm">
+                    <div className="font-medium">{STATES[slug].name}</div>
+                    {META[slug]?.tag && (
+                      <div className="text-xs text-muted-foreground">{META[slug].tag}</div>
+                    )}
+                  </div>
+                  {active.includes(slug) && (
+                    <span className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-800">Active</span>
+                  )}
+                </Link>
+              ))}
+              {filtered.length === 0 && (
+                <div className="text-sm text-muted-foreground">No states match “{q}”.</div>
+              )}
+            </div>
+          </aside>
+        </div>
+
+        {/* CTA */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+          <Link
+            href="/projects"
+            className="inline-flex items-center rounded-xl border px-4 py-2 text-sm hover:bg-accent"
+          >
+            View Projects
+          </Link>
+          <Link
+            href="/contact"
+            className="inline-flex items-center rounded-xl bg-black text-white px-4 py-2 text-sm hover:opacity-90"
+          >
+            Request Brief
+          </Link>
+        </div>
+      </main>
+    </>
   );
 }
