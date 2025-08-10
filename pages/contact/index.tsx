@@ -24,10 +24,15 @@ export default function ContactPage() {
       }
     };
 
+    let onLoad: (() => void) | undefined;
+
     // If script already loaded, init now; else wait for load event
     // @ts-ignore
     if (window.hbspt?.forms?.create) init();
-    else document.addEventListener("hsforms:loaded", init, { once: true });
+    else {
+      onLoad = () => init();
+      document.addEventListener("hsforms:loaded", onLoad, { once: true });
+    }
 
     // Show fallback if form didn't load (e.g. ad blocker)
     const timeout = setTimeout(() => {
@@ -37,7 +42,10 @@ export default function ContactPage() {
       }
     }, 3000);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      if (onLoad) document.removeEventListener("hsforms:loaded", onLoad);
+    };
   }, []);
 
   return (
