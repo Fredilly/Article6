@@ -1,62 +1,92 @@
-// pages/technology/index.tsx
 import React from 'react';
-import Image from 'next/image';
-import TechnologyColumns from '../../components/Technology/TechnologyColumns';
+import Link from 'next/link';
+import DashboardImage from '../../components/DashboardImage';
+import WaitlistCTA from '../../components/WaitlistCTA';
 
 const TechnologyPage = () => {
-  // Data for the three columns
-  const columns = [
-    {
-      title: "Admin System",
-      imageUrl: "https://ik.imagekit.io/ufokswd8x/" + "Article" + "six/technology/Advanced%20Management.png?updatedAt=1701350114385",
-      description: "Description for Advanced Admin System...",
-      link: "https://ik.imagekit.io/ufokswd8x/" + "Article" + "six/technology/Green%20Sys%20Strategy.pdf?updatedAt=1702251009854"
-    },
-    {
-      title: "Weather Forecast",
-      imageUrl: "https://ik.imagekit.io/ufokswd8x/" + "Article" + "six/technology/Weather%20forecast.png?updatedAt=1701350113262",
-      description: "Insightful details about the Weather Forecast feature...",
-      link: "/weather-forecast-link"
-    },
-    {
-      title: "Transparency",
-      imageUrl: "https://ik.imagekit.io/ufokswd8x/" + "Article" + "six/technology/Transparency.png?updatedAt=1701350111212",
-      description: "Overview of our Transparency initiative...",
-      link: "/transparency-link"
-    }
-  ];
-
   return (
-    <div className="container mx-auto py-8 px-6 max-w-4xl"> {/* Adjust max-width as needed */}
-      {/* Existing Content and Image */}
-      <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-16">
-        <div className="md:w-1/2 px-4">
-          <div className="text-left max-w-md mx-auto md:mx-0 md:ml-auto">
-            <h1 className="text-5xl lg:text-6xl font-bold mb-6 text-green-600 hover:text-green-700 transition-colors duration-300">
-              Technology
-            </h1>
-            <p className="text-base lg:text-lg">
-              At Article<span className="text-green-600">6</span>, technology is fundamental. We focus on harnessing open-source innovations
-              to address long-standing environmental issues. Our approach is pragmatic and
-              collaborative, tapping into the latest in analytics and AI to offer real-world solutions
-              to climate change and resource management. We believe in the power of open tech to drive
-              meaningful change.
-            </p>
-          </div>
-        </div>
-        <div className="md:w-1/2 max-w-md md:max-w-xl h-64 md:h-auto bg-gray-200 rounded-md overflow-hidden md:mr-auto">
-          <Image
-            src={"https://ik.imagekit.io/ufokswd8x/" + "Article" + "six/technology/technology_hero.png?updatedAt=1701060098042"}
-            alt="Innovative technology solutions at Article6"
-            layout="responsive"
-            width={700}
-            height={400}
-          />
-        </div>
-      </div>
+    <div className="container mx-auto px-6 py-12 space-y-24">
+      {/* Hero Section */}
+      <section className="text-center max-w-3xl mx-auto space-y-6">
+        <h1 className="text-3xl md:text-5xl font-bold">
+          MRV-AI — Measurement, Reporting & Verification at National Scale
+        </h1>
+        <p className="text-lg md:text-xl text-gray-700">
+          Transparent, audit-ready carbon data for forestry, rice, and EWD initiatives — built for Nigerian states.
+        </p>
+        <Link
+          href="/contact"
+          className="inline-block rounded-xl px-6 py-3 bg-black text-white"
+        >
+          Join the Waitlist
+        </Link>
+      </section>
 
-      {/* Columns Section */}
-      <TechnologyColumns columns={columns} />
+      {/* Government-facing Copy */}
+      <section className="max-w-4xl mx-auto text-gray-700 text-center md:text-left">
+        <p>
+          MRV-AI is a service that continuously monitors your environmental programs, from forestry conservation to rice AWD adoption, delivering audit-ready evidence for carbon credit issuance and development reporting.
+          With remote sensing, AI reasoning, and on-ground verification where needed, we cut reporting times from months to days — and keep every dataset ready for international validation.
+        </p>
+      </section>
+
+      {/* Service Pillars Grid */}
+      <section className="grid gap-8 md:grid-cols-3">
+        <div className="rounded-2xl border p-6">
+          <h3 className="text-lg font-semibold mb-2">Forestry MRV</h3>
+          <p className="text-sm text-gray-700">
+            Track forest cover, biomass change, and illegal encroachment using satellite NDVI and change detection. Integrate ranger patrol logs and IoT sensors for high-risk zones.
+          </p>
+        </div>
+        <div className="rounded-2xl border p-6">
+          <h3 className="text-lg font-semibold mb-2">Rice MRV (AWD)</h3>
+          <p className="text-sm text-gray-700">
+            Measure water use and field emissions reductions with satellite flood mapping and optional water-level IoT devices. Link farmer adoption rates to measurable carbon savings.
+          </p>
+        </div>
+        <div className="rounded-2xl border p-6">
+          <h3 className="text-lg font-semibold mb-2">EWD MRV</h3>
+          <p className="text-sm text-gray-700">
+            Monitor energy access, water resource projects, and development indicators. Track progress on solar installations, boreholes, and irrigation schemes.
+          </p>
+        </div>
+      </section>
+
+      {/* Dashboard Mockup Section */}
+      <section className="grid md:grid-cols-2 gap-12 items-center">
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Operational Dashboard</h2>
+          <ul className="list-disc pl-5 space-y-2 text-gray-700">
+            <li>State-level &amp; LGA drill-down</li>
+            <li>Project KPIs with live map overlays</li>
+            <li>Carbon credit potential in tonnes</li>
+            <li>Evidence packs for FERA/LOS stages</li>
+          </ul>
+        </div>
+        <DashboardImage
+          src={'Article' + 'six/technology/dashboard_mock.png?tr=w-1200'}
+          alt="Dashboard with metrics and map overlays"
+        />
+      </section>
+
+      {/* Additional Dashboard Images */}
+      <section className="grid md:grid-cols-3 gap-6">
+        <DashboardImage
+          src={'Article' + 'six/technology/dashboard_mock_1.png?tr=w-1200'}
+          alt="Dashboard view 1"
+        />
+        <DashboardImage
+          src={'Article' + 'six/technology/dashboard_mock_2.png?tr=w-1200'}
+          alt="Dashboard view 2"
+        />
+        <DashboardImage
+          src={'Article' + 'six/technology/dashboard_mock_3.png?tr=w-1200'}
+          alt="Dashboard view 3"
+        />
+      </section>
+
+      {/* Waitlist CTA Section */}
+      <WaitlistCTA />
     </div>
   );
 };
