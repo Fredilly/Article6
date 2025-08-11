@@ -64,7 +64,7 @@ const TechnologyPage = () => {
           </ul>
         </div>
         <DashboardImage
-          src={'Article' + 'six/technology/dashboard_mock.png?tr=w-1200'}
+          src="https://ik.imagekit.io/tzublgy5d/Article6/forest%20mrv.png?tr=w-1200"
           alt="Dashboard with metrics and map overlays"
         />
       </section>

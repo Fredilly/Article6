@@ -6,7 +6,9 @@ interface DashboardImageProps {
 }
 
 export default function DashboardImage({ src, alt }: DashboardImageProps) {
-  const url = `https://ik.imagekit.io/ufokswd8x/${src}`;
+  const url = src.startsWith('http')
+    ? src
+    : `https://ik.imagekit.io/ufokswd8x/${src}`;
   return (
     <div className="relative w-full h-64 md:h-96">
       <Image
