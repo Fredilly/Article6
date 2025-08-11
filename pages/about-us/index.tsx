@@ -27,25 +27,25 @@ export default function AboutUs() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-white/0" />
         </div>
         <div className="relative mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-20 md:py-28">
-          <div className="max-w-3xl">
-            <GlassCard className="p-6 md:p-8">
-              <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-white">
-                From commitment to verified impact.
-              </h1>
-              <p className="mt-4 text-white/90">
-                Article6 matches nation states with the right technologies and delivery teams to run climate programs
-                that are measurable, auditable, and built to last.
-              </p>
-              <div className="mt-6">
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center rounded-2xl bg-black text-white px-5 py-3 shadow hover:opacity-90"
-                >
-                  Join the Waitlist
-                </Link>
-              </div>
-            </GlassCard>
-          </div>
+            <div className="max-w-3xl">
+              <GlassCard className="p-6 md:p-8 border-0 shadow-none hover:shadow-none bg-white/15 backdrop-blur-xl">
+                <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-white">
+                  From commitment to verified impact.
+                </h1>
+                <p className="mt-4 text-white/90">
+                  Article6 matches nation states with the right technologies and delivery teams to run climate programs
+                  that are measurable, auditable, and built to last.
+                </p>
+                <div className="mt-6">
+                  <Link
+                    href="/contact"
+                    className="inline-flex items-center rounded-2xl bg-black text-white px-5 py-3 shadow hover:opacity-90"
+                  >
+                    Join the Waitlist
+                  </Link>
+                </div>
+              </GlassCard>
+            </div>
         </div>
       </section>
 
