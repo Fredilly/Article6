@@ -28,7 +28,7 @@ export default function AboutUs() {
         </div>
         <div className="relative mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-20 md:py-28">
           <div className="max-w-3xl">
-            <GlassCard className="p-6 md:p-8 bg-white/15">
+            <GlassCard className="p-6 md:p-8">
               <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-white">
                 From commitment to verified impact.
               </h1>
@@ -149,7 +149,7 @@ export default function AboutUs() {
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 pb-16">
-        <GlassCard className="p-8 text-center bg-white/20">
+        <GlassCard className="p-8 text-center">
           <h3 className="text-xl md:text-2xl font-semibold">Join the waitlist</h3>
           <p className="mt-2 text-sm text-gray-800">
             We’re onboarding a limited number of state programs. If you’re ready to turn plans into verifiable results, we’re ready to help.
