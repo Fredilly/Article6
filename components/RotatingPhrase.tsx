@@ -14,7 +14,7 @@ export default function RotatingPhrase({
   phrases,
   className = "",
   // >>> Snappier pacing <<<
-  typeSpeedMs = 200,          // ~7–8 chars/sec
+  typeSpeedMs = 250,          // ~7–8 chars/sec
   deleteSpeedMs = 90,         // clearly faster than typing
   holdMs = 3200,              // ≈3.2s on-screen
   preTypeDelayMs = 1200,      // 1.2s gap before next word
