@@ -1,57 +1,48 @@
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
+import RotatingPhrase from "@/components/RotatingPhrase";
 
 const HeroSection: React.FC = () => {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      {isClient ? (
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          src="https://ik.imagekit.io/tzublgy5d/Article6/hero480.mp4?updatedAt=1754588076486"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-        />
-      ) : (
-        <div className="absolute inset-0 w-full h-full bg-black" />
-      )}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent pointer-events-none" />
-        <div className="relative h-full w-full flex items-center justify-center px-4">
-          <div className="w-full max-w-3xl mx-auto">
-            <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8">
-              <h1 className="text-white text-4xl md:text-5xl font-semibold tracking-tight">
-                Operationalizing <span className="text-green-500">Article&nbsp;6</span> for Nigerian States
-              </h1>
+      {/* KEEP existing video element exactly (src/attrs unchanged) */}
+      <video
+        className="absolute inset-0 w-full h-full object-cover"
+        src="https://ik.imagekit.io/tzublgy5d/Article6/hero480.mp4?updatedAt=1754588076486"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+      />
+      {/* subtle gradient for contrast */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent pointer-events-none" />
 
-              <p className="mt-4 text-white/90 text-base md:text-lg leading-relaxed">
-                MRV-AI and turnkey execution—from LOS → MOU → <span className="font-semibold">FERA</span>—to unlock climate finance under Articles 6.2, 6.4, and 6.8.
-              </p>
+      {/* Fixed glass card container */}
+      <div className="relative h-full w-full flex items-center justify-center px-4">
+        <div className="w-full max-w-3xl mx-auto">
+          <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8">
+            <h1 className="text-white text-3xl md:text-5xl font-semibold tracking-tight">
+              <span className="opacity-90">The carbon stack for </span>
+              <RotatingPhrase
+                phrases={["governments", "treasuries", "climate teams"]}
+                className="text-green-400"
+                reducedMotionFallback="governments"
+              />
+            </h1>
 
-              <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <Link
-                  href="/contact#briefing"
-                  className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-black bg-white/90 hover:bg-white transition"
-                  aria-label="Book a 20-minute Government Briefing"
-                >
-                  Book a 20-min Government Briefing
-                </Link>
-                <Link
-                  href="/mrv-ai#waitlist"
-                  className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-white/90 border border-white/30 hover:bg-white/10 transition"
-                  aria-label="Join the MRV-AI Waitlist"
-                >
-                  Join the MRV-AI Waitlist
-                </Link>
-              </div>
+            <p className="mt-4 text-white/90 text-base md:text-lg leading-relaxed">
+              AI-powered MRV to measure, verify, and trade carbon under Article 6.2 / 6.4.
+            </p>
+
+            <div className="mt-6">
+              <Link
+                href="/contact#briefing"
+                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-black bg-white/90 hover:bg-white transition"
+                aria-label="Book a 20-minute Government Briefing"
+              >
+                Book a Government Briefing
+              </Link>
             </div>
           </div>
         </div>
@@ -59,5 +50,4 @@ const HeroSection: React.FC = () => {
     </div>
   );
 };
-
 export default HeroSection;
