@@ -1,43 +1,58 @@
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
+import RotatingPhrase from "@/components/RotatingPhrase";
 
-const HeroSection: React.FC = () => {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
+export default function HeroSection() {
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      {isClient ? (
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          src="https://ik.imagekit.io/tzublgy5d/Article6/hero480.mp4?updatedAt=1754588076486"
-          autoPlay
-          loop
-          muted
-          playsInline
-        />
-      ) : (
-        <div className="absolute inset-0 w-full h-full bg-black" />
-      )}
-      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center px-4">
-        <h1 className="text-white text-5xl md:text-6xl font-semibold tracking-tight drop-shadow-xl">
-          Pioneering <span className="text-green-500">Carbon Solutions</span>
-        </h1>
-        <p className="mt-6 text-white/90 text-lg md:text-xl font-medium tracking-wide">
-          Technology for a sustainable future
-        </p>
-        <Link
-          href="/contact"
-          className="mt-10 inline-block rounded-md bg-white px-6 py-3 text-base font-semibold text-green-500 shadow-lg transition hover:bg-green-50"
-        >
-          Contact Us
-        </Link>
+      {/* KEEP your existing video src/attrs */}
+      <video
+        className="absolute inset-0 w-full h-full object-cover"
+        src="https://ik.imagekit.io/tzublgy5d/Article6/hero480.mp4?updatedAt=1754588076486"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+      />
+      {/* subtle gradient for contrast */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent pointer-events-none" />
+
+      {/* fixed glass card */}
+      <div className="relative h-full w-full flex items-center justify-center px-4">
+        <div className="w-full max-w-3xl mx-auto">
+          <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8">
+            <h1 className="text-white text-3xl md:text-5xl font-semibold tracking-tight leading-tight inline-flex flex-nowrap items-baseline md:whitespace-nowrap">
+              <span className="opacity-90">The carbon stack for&nbsp;</span>
+              <RotatingPhrase
+                phrases={["governments", "treasuries", "climate teams"]}
+                className="text-green-400 align-baseline"
+                typeSpeedMs={200}
+                deleteSpeedMs={120}
+                holdMs={3000}
+                preTypeDelayMs={1500}
+                postDeleteDelayMs={700}
+                reducedMotionFallback="governments"
+              />
+            </h1>
+
+            <p className="mt-4 text-white/90 text-base md:text-lg leading-relaxed">
+              AI-powered MRV to measure, verify, and trade carbon under Article 6.2 / 6.4.
+            </p>
+
+            <div className="mt-6">
+              <Link
+                href="/contact#briefing"
+                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-black bg-white/90 hover:bg-white transition"
+                aria-label="Book a 20-minute Government Briefing"
+              >
+                Book a Government Briefing
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+}
 
-export default HeroSection;
