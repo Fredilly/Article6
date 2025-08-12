@@ -3,8 +3,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 type RotatingPhraseProps = {
   phrases: string[];              // e.g. ["governments","treasuries","climate teams"]
   className?: string;
-  typeSpeedMs?: number;           // default 150 (calm ~7 chars/sec)
-  deleteSpeedMs?: number;         // default 90  (delete ~11 chars/sec)
+  typeSpeedMs?: number;           // default 200 (calm ~5 chars/sec)
+  deleteSpeedMs?: number;         // default 120 (delete ~8 chars/sec)
   holdMs?: number;                // default 3000 (≈3s on full word)
   preTypeDelayMs?: number;        // default 1500 (pause before next word)
   postDeleteDelayMs?: number;     // default 700  (pause after clearing)
@@ -14,8 +14,8 @@ type RotatingPhraseProps = {
 export default function RotatingPhrase({
   phrases,
   className = "",
-  typeSpeedMs = 150,
-  deleteSpeedMs = 90,
+  typeSpeedMs = 200,
+  deleteSpeedMs = 120,
   holdMs = 3000,
   preTypeDelayMs = 1500,
   postDeleteDelayMs = 700,
