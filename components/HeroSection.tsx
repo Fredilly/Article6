@@ -18,8 +18,8 @@ export default function HeroSection() {
                 phrases={["governments", "treasuries", "climate teams"]}
                 className="text-green-400 align-baseline"
                 // explicit pacing values (can tweak later)
-                typeSpeedMs={180}
-                deleteSpeedMs={110}
+                typeSpeedMs={160}
+                deleteSpeedMs={90}
                 holdMs={3200}
                 preTypeDelayMs={1200}
                 postDeleteDelayMs={800}
