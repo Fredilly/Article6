@@ -22,11 +22,14 @@ const HeroSection: React.FC = () => {
       <div className="relative h-full w-full flex items-center justify-center px-4">
         <div className="w-full max-w-3xl mx-auto">
           <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8">
-            <h1 className="text-white text-3xl md:text-5xl font-semibold tracking-tight">
-              <span className="opacity-90">The carbon stack for </span>
+            <h1 className="text-white text-3xl md:text-5xl font-semibold tracking-tight leading-tight inline-flex flex-nowrap items-baseline md:whitespace-nowrap">
+              <span className="opacity-90">The carbon stack for&nbsp;</span>
               <RotatingPhrase
                 phrases={["governments", "treasuries", "climate teams"]}
-                className="text-green-400"
+                className="text-green-400 align-baseline"
+                typeSpeedMs={60}
+                deleteSpeedMs={40}
+                holdMs={2000}
                 reducedMotionFallback="governments"
               />
             </h1>

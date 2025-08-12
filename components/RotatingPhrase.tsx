@@ -12,9 +12,9 @@ type RotatingPhraseProps = {
 export default function RotatingPhrase({
   phrases,
   className = "",
-  typeSpeedMs = 40,
-  deleteSpeedMs = 30,
-  holdMs = 1400,
+  typeSpeedMs = 60,
+  deleteSpeedMs = 40,
+  holdMs = 2000,
   reducedMotionFallback = ""
 }: RotatingPhraseProps) {
   const [display, setDisplay] = useState("");
