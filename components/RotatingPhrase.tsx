@@ -13,9 +13,9 @@ type Props = {
 export default function RotatingPhrase({
   phrases,
   className = "",
-  // >>> Readable keynote pacing <<<
-  typeSpeedMs = 220,          // ~4–5 chars/sec
-  deleteSpeedMs = 140,        // a bit faster than typing
+  // >>> Human-readable pacing <<<
+  typeSpeedMs = 100,          // ~10 chars/sec
+  deleteSpeedMs = 60,         // quicker erase
   holdMs = 3200,              // ≈3.2s on-screen
   preTypeDelayMs = 1200,      // 1.2s gap before next word
   postDeleteDelayMs = 800,    // 0.8s gap after clearing

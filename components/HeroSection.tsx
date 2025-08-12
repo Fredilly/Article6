@@ -51,9 +51,9 @@ export default function HeroSection() {
               <RotatingPhrase
                 phrases={["governments", "treasuries", "climate teams"]}
                 className="text-green-400 align-baseline"
-                // explicit slow values (can tweak later)
-                typeSpeedMs={220}
-                deleteSpeedMs={140}
+                // tuned for human-readable speed
+                typeSpeedMs={100}
+                deleteSpeedMs={60}
                 holdMs={3200}
                 preTypeDelayMs={1200}
                 postDeleteDelayMs={800}
