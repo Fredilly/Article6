@@ -5,7 +5,7 @@ import '../styles/globals.css';
 const HomePage = () => {
   return (
     <div className="w-full">
-      <HeroSection />
+      <HeroSection borderless />
     </div>
   );
 };
