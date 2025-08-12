@@ -27,10 +27,10 @@ export default function HeroSection() {
               <RotatingPhrase
                 phrases={["governments", "treasuries", "climate teams"]}
                 className="text-green-400 align-baseline"
-                typeSpeedMs={100}
-                deleteSpeedMs={70}
+                typeSpeedMs={150}
+                deleteSpeedMs={90}
                 holdMs={3000}
-                preTypeDelayMs={500}
+                preTypeDelayMs={1500}
                 postDeleteDelayMs={700}
                 reducedMotionFallback="governments"
               />

@@ -3,10 +3,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 type RotatingPhraseProps = {
   phrases: string[];              // e.g. ["governments","treasuries","climate teams"]
   className?: string;
-  typeSpeedMs?: number;           // default 100 (readable)
-  deleteSpeedMs?: number;         // default 70  (readable)
+  typeSpeedMs?: number;           // default 150 (calm ~7 chars/sec)
+  deleteSpeedMs?: number;         // default 90  (delete ~11 chars/sec)
   holdMs?: number;                // default 3000 (≈3s on full word)
-  preTypeDelayMs?: number;        // default 500  (pause before next word)
+  preTypeDelayMs?: number;        // default 1500 (pause before next word)
   postDeleteDelayMs?: number;     // default 700  (pause after clearing)
   reducedMotionFallback?: string; // if user prefers reduced motion
 };
@@ -14,10 +14,10 @@ type RotatingPhraseProps = {
 export default function RotatingPhrase({
   phrases,
   className = "",
-  typeSpeedMs = 100,
-  deleteSpeedMs = 70,
+  typeSpeedMs = 150,
+  deleteSpeedMs = 90,
   holdMs = 3000,
-  preTypeDelayMs = 500,
+  preTypeDelayMs = 1500,
   postDeleteDelayMs = 700,
   reducedMotionFallback = ""
 }: RotatingPhraseProps) {
@@ -80,13 +80,13 @@ export default function RotatingPhrase({
             rafRef.current = requestAnimationFrame(step);
           }, deleteSpeedMs);
         } else {
-          // pause after deletion, then advance & pause before typing
+          // Finished deleting: short pause, then wait preTypeDelayMs before typing
           timeout = window.setTimeout(() => {
             setPhraseIdx((i) => (i + 1) % list.length);
             window.setTimeout(() => {
               setPhase("typing");
               rafRef.current = requestAnimationFrame(step);
-            }, preTypeDelayMs);
+            }, preTypeDelayMs); // << this is the gap before the new word
           }, postDeleteDelayMs);
         }
       }
