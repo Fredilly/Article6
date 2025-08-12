@@ -14,8 +14,8 @@ export default function RotatingPhrase({
   phrases,
   className = "",
   // >>> Readable keynote pacing <<<
-  typeSpeedMs = 220,          // ~4–5 chars/sec
-  deleteSpeedMs = 140,        // a bit faster than typing
+  typeSpeedMs = 180,          // ~5–6 chars/sec
+  deleteSpeedMs = 110,        // a bit faster than typing
   holdMs = 3200,              // ≈3.2s on-screen
   preTypeDelayMs = 1200,      // 1.2s gap before next word
   postDeleteDelayMs = 800,    // 0.8s gap after clearing
