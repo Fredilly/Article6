@@ -27,9 +27,11 @@ const HeroSection: React.FC = () => {
               <RotatingPhrase
                 phrases={["governments", "treasuries", "climate teams"]}
                 className="text-green-400 align-baseline"
-                typeSpeedMs={60}
-                deleteSpeedMs={40}
-                holdMs={2000}
+                typeSpeedMs={90}
+                deleteSpeedMs={60}
+                holdMs={2600}
+                preTypeDelayMs={400}
+                postDeleteDelayMs={650}
                 reducedMotionFallback="governments"
               />
             </h1>

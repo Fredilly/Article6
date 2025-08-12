@@ -6,15 +6,19 @@ type RotatingPhraseProps = {
   typeSpeedMs?: number;           // typing speed per char
   deleteSpeedMs?: number;         // delete speed per char
   holdMs?: number;                // hold time at full word
+  preTypeDelayMs?: number;        // pause before typing next word
+  postDeleteDelayMs?: number;     // pause after clearing word
   reducedMotionFallback?: string; // shown if prefers-reduced-motion: reduce
 };
 
 export default function RotatingPhrase({
   phrases,
   className = "",
-  typeSpeedMs = 60,
-  deleteSpeedMs = 40,
-  holdMs = 2000,
+  typeSpeedMs = 90,
+  deleteSpeedMs = 60,
+  holdMs = 2600,
+  preTypeDelayMs = 400,
+  postDeleteDelayMs = 650,
   reducedMotionFallback = ""
 }: RotatingPhraseProps) {
   const [display, setDisplay] = useState("");
@@ -49,6 +53,7 @@ export default function RotatingPhrase({
     if (prefersReduced) return; // handled by fallback render
     const current = list[phraseIdx % list.length] ?? "";
     let timeout: number | null = null;
+    let nextTimeout: number | null = null;
 
     const step = () => {
       if (phase === "typing") {
@@ -62,14 +67,18 @@ export default function RotatingPhrase({
       } else if (phase === "holding") {
         setPhase("deleting");
         timeout = window.setTimeout(() => rafRef.current = requestAnimationFrame(step), deleteSpeedMs);
-      } else {
+      } else if (phase === "deleting") {
         if (display.length > 0) {
           setDisplay(current.slice(0, display.length - 1));
           timeout = window.setTimeout(() => rafRef.current = requestAnimationFrame(step), deleteSpeedMs);
         } else {
-          setPhraseIdx((i) => (i + 1) % list.length);
-          setPhase("typing");
-          timeout = window.setTimeout(() => rafRef.current = requestAnimationFrame(step), typeSpeedMs);
+          timeout = window.setTimeout(() => {
+            setPhraseIdx((i) => (i + 1) % list.length);
+            nextTimeout = window.setTimeout(() => {
+              setPhase("typing");
+              rafRef.current = requestAnimationFrame(step);
+            }, preTypeDelayMs);
+          }, postDeleteDelayMs);
         }
       }
     };
@@ -78,8 +87,9 @@ export default function RotatingPhrase({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (timeout) clearTimeout(timeout);
+      if (nextTimeout) clearTimeout(nextTimeout);
     };
-  }, [display, phase, phraseIdx, list, typeSpeedMs, deleteSpeedMs, holdMs, prefersReduced]);
+  }, [display, phase, phraseIdx, list, typeSpeedMs, deleteSpeedMs, holdMs, preTypeDelayMs, postDeleteDelayMs, prefersReduced]);
 
   // Fixed-width inline block prevents re-centering
   const fixedStyle = maxWidth ? { width: `${maxWidth}px` } : undefined;
