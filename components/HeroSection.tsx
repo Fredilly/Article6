@@ -31,7 +31,7 @@ const HeroSection: React.FC = () => {
         </p>
         <Link
           href="/contact"
-          className="mt-10 inline-block rounded-md bg-white px-6 py-3 text-base font-semibold text-green-500 shadow-lg transition hover:bg-green-50"
+          className="mt-10 inline-block rounded-md bg-white/10 px-6 py-3 text-base font-semibold text-white backdrop-blur-sm border border-white/20 shadow-lg transition hover:bg-white/20"
         >
           Book an expert
         </Link>
