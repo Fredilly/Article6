@@ -7,9 +7,19 @@ const nextConfig = {
     ],
   },
   async redirects() {
-    return [
+    const redirects = [
       { source: '/about', destination: '/about-us', permanent: true },
     ];
+
+    if (!process.env.DIAG_TOKEN) {
+      redirects.push({
+        source: '/api/leaderboard/diag',
+        destination: '/404',
+        permanent: false,
+      });
+    }
+
+    return redirects;
   },
   // ... other configurations you might have
 };
