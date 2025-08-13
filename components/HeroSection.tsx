@@ -13,7 +13,7 @@ export default function HeroSection() {
         <div className="w-full max-w-3xl mx-auto">
           <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8">
             <h1 className="text-white text-5xl md:text-6xl font-semibold tracking-tight drop-shadow-xl
-                    flex flex-wrap items-baseline justify-center gap-x-2 text-balance">
+                    flex flex-wrap items-baseline justify-center gap-x-2 text-balance w-full">
               <span>The carbon stack for</span>
               {/* Rotator sits on new line on mobile, inline from sm+ */}
               <span className="basis-full sm:basis-auto sm:ml-1">
