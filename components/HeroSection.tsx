@@ -12,20 +12,19 @@ export default function HeroSection() {
       <div className="relative h-full w-full flex items-center justify-center px-4">
         <div className="w-full max-w-3xl mx-auto">
           <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8">
-            <h1 className="text-white text-3xl md:text-5xl font-semibold tracking-tight leading-tight inline-flex flex-nowrap items-baseline md:whitespace-nowrap">
-              <span className="opacity-90">The carbon stack for&nbsp;</span>
-              <RotatingPhrase
-                phrases={["governments", "treasuries", "climate teams"]}
-                className="text-green-400 align-baseline"
-                typeSpeedMs={240}
-                deleteSpeedMs={150}
-                holdMs={3400}
-                preTypeDelayMs={1200}
-                postDeleteDelayMs={800}
-                reducedMotionFallback="governments"
-              />
+            <h1 className="text-white text-5xl md:text-6xl font-semibold tracking-tight drop-shadow-xl
+                    flex flex-wrap items-baseline justify-center gap-x-2 text-balance">
+              <span>The carbon stack for</span>
+              {/* Rotator sits on new line on mobile, inline from sm+ */}
+              <span className="basis-full sm:basis-auto sm:ml-1">
+                <RotatingPhrase
+                  phrases={["climate teams", "state partners", "project developers"]}
+                  mobileBlock
+                  className="text-green-500"
+                />
+              </span>
             </h1>
-            <p className="mt-4 text-white/90 text-base md:text-lg leading-relaxed">
+            <p className="mt-4 text-white/90 text-base md:text-lg leading-relaxed text-center text-pretty">
               AI-powered MRV to measure, verify, and trade carbon under Article 6.2 / 6.4.
             </p>
             <div className="mt-6">
