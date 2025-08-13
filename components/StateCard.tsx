@@ -12,20 +12,13 @@ interface StateCardProps {
   ctaLabel?: string;
 }
 
-const StateCard: React.FC<StateCardProps> = ({
-  slug,
-  title,
-  epithet,
-  summary,
-  status,
-  tags,
-  updatedAt,
-  ctaLabel,
-}) => {
+const StateCard: React.FC<StateCardProps> = (props) => {
+  const { slug, title, epithet, summary, status, tags, updatedAt, ctaLabel } = props;
   const safeTags = Array.isArray(tags) ? tags.filter(Boolean) : [];
   return (
     <Link
       href={`/states/${slug}`}
+      data-state-slug={props.slug}
       className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded-2xl"
     >
       <article className="h-full rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
