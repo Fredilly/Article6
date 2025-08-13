@@ -19,7 +19,7 @@ const TechnologyPage = () => {
               MRV-AI — Real-time Environmental Intelligence for States
             </h1>
             <p className="text-gray-600 max-w-prose">
-              Transparent, audit-ready data for Forestry, Rice, and Enhanced Rock Weathering — built for Nigerian states and beyond.
+              Transparent, audit-ready data for Forestry, Rice, and Enhanced Rock Weathering.
             </p>
             <Link
               href="/contact"
@@ -56,7 +56,7 @@ const TechnologyPage = () => {
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h3 className="font-semibold">Seamless Handoff</h3>
             <p className="mt-2 text-sm text-gray-600">
-              HubSpot CRM integration for project and stakeholder management.
+              We build open source so the technology is always yours.
             </p>
           </div>
         </div>
