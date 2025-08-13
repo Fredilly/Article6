@@ -7,6 +7,7 @@ export interface Project {
   tags?: string[];
   updatedAt?: string;
   ctaLabel?: string;
+  progress: number; // 0–100 (percentage completion)
 }
 
 export const projects: Project[] = [
@@ -16,6 +17,7 @@ export const projects: Project[] = [
     epithet: "The Power State",
     summary: "Intro call with the Perm Sec's office; proposal shared.",
     status: "discussion",
+    progress: 68,
   },
   {
     slug: "kwara",
@@ -23,6 +25,7 @@ export const projects: Project[] = [
     epithet: "The State of Harmony",
     summary: "Introductions via Ministry of Agric; awaiting EXCO briefing.",
     status: "pending",
+    progress: 45,
   },
   {
     slug: "plateau",
@@ -30,5 +33,6 @@ export const projects: Project[] = [
     epithet: "Home of Peace and Tourism",
     summary: "Four-document pack under review by SA on Carbon Credit.",
     status: "pending",
+    progress: 30,
   },
 ];
