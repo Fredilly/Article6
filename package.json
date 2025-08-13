@@ -12,6 +12,7 @@
     "@heroicons/react": "^2.0.18",
     "@svg-maps/nigeria": "^1.0.0",
     "embla-carousel-react": "^8.6.0",
+    "googleapis": "^155.0.1",
     "next": "14.0.1",
     "react": "^18",
     "react-dom": "^18",
