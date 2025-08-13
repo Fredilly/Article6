@@ -1,6 +1,7 @@
 import React from "react";
 import StateCard from "@/components/StateCard";
 import { projects } from "@/data/projects";
+import Leaderboard from "@/components/Leaderboard";
 
 export default function ProjectsPage() {
   return (
@@ -9,6 +10,8 @@ export default function ProjectsPage() {
         <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
         <p className="text-muted-foreground">Active and upcoming state engagements.</p>
       </header>
+
+      <Leaderboard />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map((p) => (
