@@ -7,6 +7,9 @@ export interface Project {
   tags?: string[];
   updatedAt?: string;
   ctaLabel?: string;
+  progress: number;
+  activityScore?: number;
+  lastUpdateISO?: string;
 }
 
 export const projects: Project[] = [
@@ -16,6 +19,9 @@ export const projects: Project[] = [
     epithet: "The Power State",
     summary: "Intro call with the Perm Sec's office; proposal shared.",
     status: "discussion",
+    progress: 68,
+    activityScore: 82,
+    lastUpdateISO: "2024-08-10",
   },
   {
     slug: "kwara",
@@ -23,6 +29,9 @@ export const projects: Project[] = [
     epithet: "The State of Harmony",
     summary: "Introductions via Ministry of Agric; awaiting EXCO briefing.",
     status: "pending",
+    progress: 30,
+    activityScore: 25,
+    lastUpdateISO: "2024-07-05",
   },
   {
     slug: "plateau",
@@ -30,5 +39,8 @@ export const projects: Project[] = [
     epithet: "Home of Peace and Tourism",
     summary: "Four-document pack under review by SA on Carbon Credit.",
     status: "pending",
+    progress: 50,
+    activityScore: 45,
+    lastUpdateISO: "2024-06-20",
   },
 ];
