@@ -41,19 +41,19 @@ const TechnologyPage = () => {
           MRV-AI continuously measures, reports, and verifies environmental program impact — reducing reporting time from months to days. Designed for government programs where accuracy, credibility, and speed are critical.
         </p>
         <div className="mt-10 grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
             <h3 className="font-semibold">Faster Reporting</h3>
             <p className="mt-2 text-sm text-gray-600">
               Satellite, IoT, and AI reduce turnaround times by 80%.
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
             <h3 className="font-semibold">Credible Evidence</h3>
             <p className="mt-2 text-sm text-gray-600">
               Data ready for carbon credit issuance and development funding.
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
             <h3 className="font-semibold">Seamless Handoff</h3>
             <p className="mt-2 text-sm text-gray-600">
               We build open source so the technology is always yours.
@@ -65,7 +65,7 @@ const TechnologyPage = () => {
       {/* Technology pillars section */}
       <section className="mx-auto max-w-7xl px-6 py-12 md:py-16">
         <div className="grid gap-8 md:grid-cols-3">
-          <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
             <div className="relative h-48 md:h-60">
               <Image
                 src="https://ik.imagekit.io/tzublgy5d/Article6/Technology%20assets/forest.png?tr=w-1200"
@@ -81,7 +81,7 @@ const TechnologyPage = () => {
               </p>
             </div>
           </div>
-          <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
             <div className="relative h-48 md:h-60">
               <Image
                 src="https://ik.imagekit.io/tzublgy5d/Article6/Technology%20assets/rice.png?tr=w-1200"
@@ -97,7 +97,7 @@ const TechnologyPage = () => {
               </p>
             </div>
           </div>
-          <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
             <div className="relative h-48 md:h-60">
               <Image
                 src="https://ik.imagekit.io/tzublgy5d/Article6/Technology%20assets/erw.png?tr=w-1200"
@@ -119,7 +119,7 @@ const TechnologyPage = () => {
       {/* How It Works section */}
       <section className="mx-auto max-w-7xl px-6 py-12 md:py-16">
         <h2 className="text-2xl font-semibold">How MRV-AI Works</h2>
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-white/60 p-8 shadow-sm backdrop-blur">
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white/60 p-8 shadow-sm backdrop-blur transition-shadow hover:shadow-md">
           <ol className="space-y-6">
             <li className="flex items-start">
               <ArrowDownTrayIcon className="h-6 w-6 flex-shrink-0 text-green-600" />
@@ -155,7 +155,7 @@ const TechnologyPage = () => {
 
       {/* Waitlist CTA section */}
       <section className="px-6 py-12 md:py-16">
-        <div className="mx-auto max-w-4xl rounded-2xl bg-gradient-to-br from-green-50 to-green-100 p-10 text-center shadow-sm">
+        <div className="mx-auto max-w-4xl rounded-2xl bg-gradient-to-br from-green-50 to-green-100 p-10 text-center shadow-sm transition-shadow hover:shadow-md">
           <h2 className="text-2xl font-semibold">Reserve Your Place</h2>
           <p className="mx-auto mt-4 max-w-prose text-gray-600">
             We’re onboarding a limited number of state programs in 2025. Join the waitlist to secure your slot and start unlocking verified environmental revenue streams.
