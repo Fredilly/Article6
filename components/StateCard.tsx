@@ -28,7 +28,9 @@ const StateCard: React.FC<StateCardProps> = ({
       href={`/states/${slug}`}
       className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded-2xl"
     >
-      <article className="h-full rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+      <article
+        data-state-slug={slug}
+        className="h-full rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
         <div className="p-5 sm:p-6">
           <header className="flex items-center gap-2">
             <span
