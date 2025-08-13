@@ -12,9 +12,12 @@
     "@heroicons/react": "^2.0.18",
     "@svg-maps/nigeria": "^1.0.0",
     "embla-carousel-react": "^8.6.0",
+    "googleapis": "^156.0.0",
+    "lucide-react": "^0.539.0",
     "next": "14.0.1",
     "react": "^18",
     "react-dom": "^18",
+    "swr": "^2.3.6",
     "typewriter-effect": "^2.21.0"
   },
   "devDependencies": {
