@@ -8,9 +8,9 @@ export default async function handler(
 ) {
   res.setHeader('X-Robots-Tag', 'noindex');
 
-  const sheetId = process.env.SHEET_ID;
-  const apiKey = process.env.SHEETS_API_KEY;
-  const tabName = (req.query.tab as string) || process.env.TAB_NAME || '';
+  const sheetId = process.env.GOOGLE_SHEETS_SHEET_ID;
+  const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
+  const tabName = (req.query.tab as string) || process.env.GOOGLE_SHEETS_TAB_NAME || '';
   const range =
     (req.query.range as string) || `${tabName ? tabName + '!' : ''}A1:Z`;
 
@@ -39,7 +39,7 @@ export default async function handler(
   const values = await valuesResp.json();
 
   const rows = Array.isArray(values.values) ? values.values.length : 0;
-  const keyHasEscapes = (process.env.GOOGLE_PRIVATE_KEY || '').includes('\\n');
+  const keyHasEscapes = (process.env.GOOGLE_SHEETS_PRIVATE_KEY || '').includes('\\n');
 
   res.status(200).json({ ok: true, rows, keyHasEscapes, meta, values });
 }
