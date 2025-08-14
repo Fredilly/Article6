@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Trophy, Sparkles } from "lucide-react";
 import { computeScore } from "@/lib/score";
 
@@ -10,8 +10,26 @@ type Item = {
   lastUpdateISO?: string;
 };
 
-export default function Leaderboard({ items }: { items: Item[] }) {
+export default function Leaderboard({ items: initialItems, pollMs = 0 }: { items: Item[]; pollMs?: number }) {
+  const [items, setItems] = useState<Item[]>(initialItems);
   const [sortKey, setSortKey] = useState<"score"|"progress"|"activity">("score");
+
+  useEffect(() => { setItems(initialItems); }, [initialItems]);
+
+  useEffect(() => {
+    if (!pollMs) return;
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch("/api/leaderboard");
+        const json = await res.json();
+        if (Array.isArray(json.items)) setItems(json.items);
+      } catch (e) {
+        // ignore
+      }
+    }, pollMs);
+    return () => clearInterval(id);
+  }, [pollMs]);
+
   const ranked = useMemo(() => {
     const arr = items.map(i => ({...i, score: computeScore(i)}));
     arr.sort((a,b) => {
