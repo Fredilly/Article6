@@ -14,7 +14,7 @@ type Item = {
   stage_rank: 0 | 1 | 2 | 3;
 };
 type Props = { items: Item[]; pollMs?: number };
-type Tab = "total" | "signed" | "meetings";
+type Tab = "signed" | "meetings" | "total";
 
 const rel = (iso?: string) => {
   if (!iso) return "—";
@@ -39,7 +39,7 @@ function SegButton({ active, onClick, icon:Icon, children }:{active:boolean;onCl
 }
 
 export default function Leaderboard({ items, pollMs = 40000 }: Props) {
-  const [tab, setTab] = React.useState<Tab>("total");
+  const [tab, setTab] = React.useState<Tab>("signed");
   const [live, setLive] = React.useState<Item[]>(items || []);
 
   React.useEffect(() => {
@@ -75,9 +75,9 @@ export default function Leaderboard({ items, pollMs = 40000 }: Props) {
 
         {/* Segmented controls */}
         <div className="inline-flex items-center gap-2">
-          <SegButton active={tab==="total"}   onClick={()=>setTab("total")}   icon={Trophy}>Total</SegButton>
           <SegButton active={tab==="signed"}  onClick={()=>setTab("signed")}  icon={FileSignature}>Signed</SegButton>
-          <SegButton active={tab==="meetings"} onClick={()=>setTab("meetings")} icon={CalendarClock}>Meetings</SegButton>
+          <SegButton active={tab==="meetings"} onClick={()=>setTab("meetings")} icon={CalendarClock}>Meeting</SegButton>
+          <SegButton active={tab==="total"}   onClick={()=>setTab("total")}   icon={Trophy}>Total</SegButton>
         </div>
       </div>
 
@@ -134,7 +134,7 @@ export default function Leaderboard({ items, pollMs = 40000 }: Props) {
                         })() }}
                       />
                     </div>
-                    <div className="text-xs text-zinc-500 mt-1">{x.meetings_count ?? 0} total • {x.meetings_30d ?? 0} in 30d</div>
+                    <div className="text-xs text-zinc-500 mt-1">{x.meetings_count ?? 0} meetings held</div>
                   </div>
                   <div className="w-12 text-right text-lg font-bold">{x.meetings_count ?? 0}</div>
                 </div>
