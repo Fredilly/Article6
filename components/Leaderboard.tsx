@@ -42,6 +42,17 @@ export default function Leaderboard({ items, pollMs = 40000 }: Props) {
   const [tab, setTab] = React.useState<Tab>("total");
   const [live, setLive] = React.useState<Item[]>(items || []);
 
+  // Force Total tab on small screens
+  React.useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const handle = () => {
+      if (!mq.matches) setTab("total");
+    };
+    handle();
+    mq.addEventListener("change", handle);
+    return () => mq.removeEventListener("change", handle);
+  }, []);
+
   React.useEffect(() => {
     const id = setInterval(async () => {
       try {
@@ -73,8 +84,8 @@ export default function Leaderboard({ items, pollMs = 40000 }: Props) {
           <span className="text-xs text-emerald-700 font-medium">live</span>
         </div>
 
-        {/* Segmented controls */}
-        <div className="inline-flex items-center gap-2">
+        {/* Segmented controls (desktop only) */}
+        <div className="hidden md:inline-flex items-center gap-2">
           <SegButton active={tab==="signed"}  onClick={()=>setTab("signed")}  icon={FileSignature}>Signed</SegButton>
           <SegButton active={tab==="meetings"} onClick={()=>setTab("meetings")} icon={CalendarClock}>Meeting</SegButton>
           <SegButton active={tab==="total"}   onClick={()=>setTab("total")}   icon={Trophy}>Total</SegButton>
