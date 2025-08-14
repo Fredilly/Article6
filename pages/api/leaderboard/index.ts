@@ -1,22 +1,24 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { projects } from "@/data/projects";
 
 export const runtime = "nodejs";
 
 export default async function handler(
-  req: NextApiRequest,
+  _req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const items = projects.map((p) => ({
-    slug: p.slug,
-    title: p.title,
-    los_signed: false,
-    mou_signed: false,
-    fera_signed: false,
-    meetings_count: 0,
-    meetings_30d: 0,
-    last_update_iso: p.lastUpdateISO,
-  }));
+  const upstream =
+    process.env.LEADERBOARD_API_URL ||
+    "https://example.com/api/leaderboard"; // replace with real URL
 
-  res.status(200).json({ ok: true, items });
+  try {
+    const r = await fetch(upstream);
+    if (!r.ok) throw new Error(`upstream responded ${r.status}`);
+    const j = await r.json();
+    const items = Array.isArray(j.items) ? j.items : j;
+    res.status(200).json({ ok: true, items });
+  } catch (e) {
+    console.error("leaderboard fetch failed", e);
+    res.status(500).json({ ok: false, items: [] });
+  }
 }
+
