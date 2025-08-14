@@ -3,6 +3,7 @@ import type { GetServerSideProps } from "next";
 import StateCard from "@/components/StateCard";
 import Leaderboard from "@/components/Leaderboard";
 import { getLeaderboard, type LiveItem } from "@/lib/leaderboard";
+import { enrich, sortByTotal } from "@/lib/scoring";
 import { projects as localProjects } from "@/data/projects";
 
 type CardItem = LiveItem & {
@@ -21,7 +22,7 @@ type Props = { live: LiveItem[]; cards: CardItem[]; debug?: string };
 
 export const getServerSideProps: GetServerSideProps<Props> = async () => {
   try {
-    const live = await getLeaderboard(); // strict LIVE
+    const live = (await getLeaderboard()).map(enrich).sort(sortByTotal); // strict LIVE
     const extras = new Map(localProjects.map(p => [p.slug, p as any]));
     const merged = live.map(api => ({ ...(extras.get(api.slug) || {}), ...api, lastUpdateISO: api.last_update_iso || (extras.get(api.slug)?.lastUpdateISO) }));
     const missing = localProjects
@@ -48,7 +49,7 @@ export default function ProjectsPage({ live, cards, debug }: Props) {
         </div>
       )}
 
-      <Leaderboard items={live} pollMs={45000} />
+      <Leaderboard items={live as any} pollMs={45000} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {cards.map((p) => (
