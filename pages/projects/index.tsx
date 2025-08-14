@@ -2,8 +2,9 @@ import React from "react";
 import StateCard from "@/components/StateCard";
 import Leaderboard from "@/components/Leaderboard";
 import { projects } from "@/data/projects";
+import { getLeaderboard } from "@/lib/leaderboard";
 
-export default function ProjectsPage() {
+export default function ProjectsPage({ live }: { live: any[] }) {
   return (
     <main className="max-w-6xl mx-auto p-6 space-y-6">
       <header className="space-y-2">
@@ -11,7 +12,7 @@ export default function ProjectsPage() {
         <p className="text-muted-foreground">Active and upcoming state engagements.</p>
       </header>
 
-      <Leaderboard items={projects as any} />
+      <Leaderboard items={live} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map((p) => (
@@ -21,3 +22,13 @@ export default function ProjectsPage() {
     </main>
   );
 }
+
+export async function getServerSideProps() {
+  try {
+    const live = await getLeaderboard();
+    return { props: { live } };
+  } catch {
+    return { props: { live: [] } };
+  }
+}
+
