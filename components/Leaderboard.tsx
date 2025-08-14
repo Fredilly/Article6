@@ -39,7 +39,7 @@ function SegButton({ active, onClick, icon:Icon, children }:{active:boolean;onCl
 }
 
 export default function Leaderboard({ items, pollMs = 40000 }: Props) {
-  const [tab, setTab] = React.useState<Tab>("signed");
+  const [tab, setTab] = React.useState<Tab>("total");
   const [live, setLive] = React.useState<Item[]>(items || []);
 
   React.useEffect(() => {
