@@ -134,7 +134,12 @@ export default function Leaderboard({ items, pollMs = 40000 }: Props) {
                         })() }}
                       />
                     </div>
-                    <div className="text-xs text-zinc-500 mt-1">{x.meetings_count ?? 0} meetings held</div>
+                    <div className="text-xs text-zinc-500 mt-1">
+                      {(() => {
+                        const count = x.meetings_count ?? 0;
+                        return count + (count === 1 ? " meeting held" : " meetings held");
+                      })()}
+                    </div>
                   </div>
                   <div className="w-12 text-right text-lg font-bold">{x.meetings_count ?? 0}</div>
                 </div>
