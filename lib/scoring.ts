@@ -18,7 +18,7 @@ export function stageOf(x: LiveItem): { label: ScoredItem["stage_label"]; rank: 
 }
 export function computeScore(x: LiveItem): number {
   const docsPts = docsSignedCount(x) * 30;             // 0..90
-  const mtgPts  = x.meetings_count > 0 ? 10 : 0;       // 0 or 10
+  const mtgPts  = (x.meetings_count ?? 0) > 0 ? 10 : 0;       // 0 or 10
   return Math.min(100, docsPts + mtgPts);
 }
 export function enrich(x: LiveItem): ScoredItem {
