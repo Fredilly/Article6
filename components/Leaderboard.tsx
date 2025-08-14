@@ -104,7 +104,7 @@ export default function Leaderboard({ items, pollMs = 40000 }: Props) {
 
               {/* Right metric block switches with tab */}
               {tab === "total" && (
-                <div className="flex items-center gap-3 w-full max-w-[560px]">
+                <div className="flex items-center gap-3 flex-1 max-w-[560px]">
                   <div className="flex-1">
                     <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
                       <div className="h-2 rounded-full bg-emerald-600" style={{ width: Math.max(0, Math.min(100, x.score)) + "%" }} />
@@ -116,7 +116,7 @@ export default function Leaderboard({ items, pollMs = 40000 }: Props) {
               )}
 
               {tab === "signed" && (
-                <div className="flex items-center gap-3 w-full max-w-[560px]">
+                <div className="flex items-center gap-3 flex-1 max-w-[560px]">
                   <div className="flex-1">
                     <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
                       {/* 3 equal segments for LOS/MOU/FERA */}
@@ -133,7 +133,7 @@ export default function Leaderboard({ items, pollMs = 40000 }: Props) {
               )}
 
               {tab === "meetings" && (
-                <div className="flex items-center gap-3 w-full max-w-[560px]">
+                <div className="flex items-center gap-3 flex-1 max-w-[560px]">
                   <div className="flex-1">
                     <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
                       {/* normalize bar width to max meetings_count in this set */}
