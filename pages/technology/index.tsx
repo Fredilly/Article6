@@ -16,7 +16,7 @@ const TechnologyPage = () => {
         <div className="mx-auto max-w-7xl px-6 py-12 md:py-16 flex flex-col items-center gap-10 md:flex-row">
           <div className="md:w-1/2 space-y-6">
             <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
-              MRV-AI — Real-time Environmental Intelligence for States
+              Real-time Environmental Intelligence for States
             </h1>
             <p className="text-gray-600 max-w-prose">
               Transparent, audit-ready data for Forestry, Rice, and Enhanced Rock Weathering.
