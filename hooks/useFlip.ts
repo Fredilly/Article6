@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
-const useFlip = (initial = false) => {
-  const [isFlipped, setIsFlipped] = useState(initial);
+const useFlip = (initial: boolean = false) => {
+  const [isFlipped, setIsFlipped] = useState<boolean>(initial);
 
-  const toggle = () => setIsFlipped(!isFlipped);
+  const toggle = () => setIsFlipped((f) => !f);
 
-  return [isFlipped, toggle];
+  return [isFlipped, toggle] as const;
 };
 
 export default useFlip;
