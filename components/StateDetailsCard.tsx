@@ -97,16 +97,16 @@ export default function StateDetailsCard({ slug }: { slug: string }) {
       </div>
 
       <div className="px-6 pb-6 pt-3 border-t bg-gradient-to-b from-transparent to-muted/30">
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
+        <div className="flex flex-col items-center sm:flex-row gap-3 sm:justify-end">
           <Link
             href="/country"
-            className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-accent"
           >
             See National Map
           </Link>
           <Link
             href="/contact"
-            className="inline-flex items-center rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:opacity-90"
+            className="inline-flex items-center justify-center rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:opacity-90"
           >
             Book an expert
           </Link>
