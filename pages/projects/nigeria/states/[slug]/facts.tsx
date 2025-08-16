@@ -1,9 +1,12 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
+import CTA from "@/components/CTA";
+import { getStateFacts } from "@/data/stateFacts";
 
 export default function NigeriaStateFactsPage() {
   const { slug } = useRouter().query;
   const name = typeof slug === "string" ? slug : "";
+  const facts = getStateFacts(name);
 
   return (
     <>
@@ -16,26 +19,21 @@ export default function NigeriaStateFactsPage() {
         </Link>
       </header>
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 md:pt-20">
-        <div className="rounded-2xl border bg-white shadow-sm">
-          <div className="p-6 border-b">
-            <h1 className="text-3xl font-semibold tracking-tight capitalize">{name} Facts</h1>
-            <p className="text-muted-foreground mt-1">Coming soon.</p>
+        <div className="overflow-hidden rounded-3xl border bg-gradient-to-br from-white to-gray-50 shadow-md">
+          <div className="border-b bg-white/60 p-8 sm:p-10">
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight capitalize">{name} Facts</h1>
           </div>
-          <div className="px-6 pb-6 pt-3 border-t bg-gradient-to-b from-transparent to-muted/30">
-            <div className="flex flex-col items-center sm:flex-row gap-3 sm:justify-end">
-              <Link
-                href="/country"
-                className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-accent"
-              >
-                See National Map
-              </Link>
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:opacity-90"
-              >
-                Book an expert
-              </Link>
-            </div>
+          <div className="space-y-8 p-8 sm:p-10">
+            {facts.length > 0 ? (
+              <ul className="list-disc pl-5 space-y-4 text-base md:text-lg leading-relaxed">
+                {facts.map((fact) => (
+                  <li key={fact}>{fact}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-base md:text-lg text-muted-foreground">No facts available.</p>
+            )}
+            <CTA />
           </div>
         </div>
       </main>
