@@ -42,8 +42,8 @@ export const STATES = Object.fromEntries(
   SLUGS.map((s) => [s, { name: toTitle(s) }])
 ) as Record<string, { name: string }>;
 
-export const ACTIVE = ["niger", "kwara", "plateau"] as string[];
-export const PIPELINE = ["kebbi", "benue"] as string[];
+export const ACTIVE = [] as string[];
+export const PIPELINE = ["niger", "kwara", "plateau"] as string[];
 
 export const META: Record<string, { tag?: string }> = {
   niger: { tag: "Rice & Forestry MRV" },

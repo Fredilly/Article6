@@ -37,15 +37,12 @@ const StateCard: React.FC<StateCardProps> = ({
         <div className="p-5 sm:p-6">
           <header className="flex items-center gap-2">
             <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                status === "pending"
-                  ? "bg-amber-500"
-                  : status === "active"
-                  ? "bg-blue-500"
-                  : status === "discussion"
-                  ? "bg-emerald-500"
-                  : "bg-slate-400"
-              }`}
+              className={`h-2.5 w-2.5 rounded-full ${(() => {
+                const s = status?.toLowerCase();
+                if (s === "active") return "bg-green-500";
+                if (s) return "bg-amber-500";
+                return "bg-slate-400";
+              })()}`}
               aria-hidden
             />
             <h3 className="text-base sm:text-lg font-semibold tracking-tight group-hover:text-gray-900">

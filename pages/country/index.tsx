@@ -6,9 +6,9 @@ import { STATES, ACTIVE, PIPELINE, META, SLUGS } from "@/data/country";
 
 export default function CountryPage() {
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState<"all" | "active" | "pipeline">("all");
+  const [tab, setTab] = useState<"all" | "pipeline" | "active">("all");
 
-  const pool = tab === "active" ? ACTIVE : tab === "pipeline" ? PIPELINE : SLUGS;
+  const pool = tab === "pipeline" ? PIPELINE : tab === "active" ? ACTIVE : SLUGS;
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     if (!needle) return pool;
@@ -17,6 +17,7 @@ export default function CountryPage() {
 
   const links = Object.fromEntries(filtered.map((slug) => [slug, `/states/${slug}`]));
   const active = ACTIVE;
+  const pipeline = PIPELINE;
 
   return (
     <>
@@ -49,7 +50,7 @@ export default function CountryPage() {
         {/* Controls */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex gap-2 rounded-xl border bg-white p-1 w-full md:w-auto">
-            {(["all", "active", "pipeline"] as const).map((k) => (
+            {(["all", "pipeline", "active"] as const).map((k) => (
               <button
                 key={k}
                 onClick={() => setTab(k)}
@@ -79,10 +80,11 @@ export default function CountryPage() {
               {/* Legend */}
               <div className="flex items-center gap-3 text-xs">
                 <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#16A34A]" /> Active</span>
+                <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#FBBF24]" /> Pipeline</span>
                 <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#E5E7EB]" /> Other</span>
               </div>
             </div>
-            <NigeriaMap active={active} links={links} />
+            <NigeriaMap active={active} pipeline={pipeline} links={links} />
           </section>
 
           {/* Right: State list */}
@@ -103,28 +105,33 @@ export default function CountryPage() {
                   {active.includes(slug) && (
                     <span className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-800">Active</span>
                   )}
+                  {!active.includes(slug) && pipeline.includes(slug) && (
+                    <span className="text-xs px-2 py-1 rounded-lg bg-amber-100 text-amber-800">Pipeline</span>
+                  )}
                 </Link>
               ))}
               {filtered.length === 0 && (
-                <div className="text-sm text-muted-foreground">No states match “{q}”.</div>
+                <div className="text-sm text-muted-foreground">
+                  {q ? `No states match “${q}”.` : "No states available."}
+                </div>
               )}
             </div>
           </aside>
         </div>
 
         {/* CTA */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+        <div className="flex flex-col items-center sm:flex-row gap-3 sm:justify-end">
           <Link
             href="/projects"
-            className="inline-flex items-center rounded-xl border px-4 py-2 text-sm hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm hover:bg-accent"
           >
             View Projects
           </Link>
           <Link
             href="/contact"
-            className="inline-flex items-center rounded-xl bg-black text-white px-4 py-2 text-sm hover:opacity-90"
+            className="inline-flex items-center justify-center rounded-xl bg-black text-white px-4 py-2 text-sm hover:opacity-90"
           >
-            Request Brief
+            Book an expert
           </Link>
         </div>
       </main>
