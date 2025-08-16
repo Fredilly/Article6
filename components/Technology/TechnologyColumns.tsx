@@ -30,7 +30,14 @@ const TechnologyColumns: React.FC<TechnologyColumnsProps> = ({ columns }) => {
             {/* Front Side */}
             <div className="cardFront absolute inset-0">
               <div className="h-52 relative w-full overflow-hidden rounded-t-lg">
-                <Image src={column.imageUrl} alt={column.title} layout="fill" objectFit="cover" className="object-center" />
+                <Image
+                  src={column.imageUrl}
+                  alt={column.title}
+                  fill
+                  style={{ objectFit: 'cover' }}
+                  className="object-center"
+                  sizes="300px"
+                />
               </div>
               <div className="p-4">
                 <h2 className="text-xl font-semibold mb-2 text-green-600 hover:text-green-700">{column.title}</h2>
