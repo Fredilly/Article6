@@ -20,10 +20,17 @@ export const stateMeta: Record<string, { contact: string; role?: string; slug: s
     contact: "Mr. Yakubu Nuhu",
     role: "Special Adviser to the Governor on Carbon",
   },
+  oyo: {
+    slug: "oyo",
+    title: "Oyo State",
+    subtitle: "The Pace Setter State",
+    contact: "TBD",
+  },
 };
 
 export const stateTitles: Record<string, string> = {
   niger: "Niger — Rice & Forestry MRV",
   kwara: "Kwara — Renewable + Agro pilots",
   plateau: "Plateau — Highland Reforestation",
+  oyo: "Oyo — Coming Soon",
 };

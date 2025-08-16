@@ -6,7 +6,8 @@ export interface StateInfo {
   timeline: string[];
   docs: { label: string; href: string }[];
   nextSteps?: string[];
-  images?: { src: string; alt: string }[];
+  images?: string[];
+  facts?: string[];
 }
 
 export const states: StateInfo[] = [
@@ -31,14 +32,13 @@ export const states: StateInfo[] = [
       'Plan field pilot in rice paddies',
     ],
     images: [
-      {
-        src: 'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting%202.jpeg',
-        alt: 'Drinks with Niger State delegation, Abuja',
-      },
-      {
-        src: 'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting.jpeg',
-        alt: 'Field visit – rice paddies',
-      },
+      'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting%202.jpeg',
+      'https://ik.imagekit.io/tzublgy5d/Article6/Niger%20State/Niger%20meeting.jpeg',
+    ],
+    facts: [
+      'Home to Nigeria\'s largest hydroelectric power station at Kainji Dam',
+      'Covers the largest landmass of any Nigerian state',
+      'Named after the River Niger that flows through it',
     ],
   },
   {

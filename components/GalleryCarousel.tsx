@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/carousel";
 
 interface GalleryCarouselProps {
-  images: { src: string; alt: string }[];
+  images: string[];
 }
 
 export default function GalleryCarousel({ images }: GalleryCarouselProps) {
@@ -19,12 +19,12 @@ export default function GalleryCarousel({ images }: GalleryCarouselProps) {
     <div className="relative">
       <Carousel className="w-full">
         <CarouselContent>
-          {images.map((img, i) => (
+          {images.map((src, i) => (
             <CarouselItem key={i} className="basis-full">
               <div className="relative w-full h-64 md:h-80 lg:h-96">
                 <Image
-                  src={img.src}
-                  alt={img.alt}
+                  src={src}
+                  alt={`State image ${i + 1}`}
                   className="object-cover rounded-2xl border bg-muted"
                   fill
                 />
