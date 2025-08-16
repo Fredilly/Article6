@@ -2,7 +2,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import nigeria from "@svg-maps/nigeria";
-import { SLUGS } from "@/data/country";
+import { SLUGS, STATES } from "@/data/country";
 
 type NigeriaData = {
   viewBox: string;
@@ -101,7 +101,7 @@ export default function NigeriaMap({
         <g transform={`scale(${scaleX} ${scaleY})`}>
           {locations.map((loc) => {
             const slug = loc.properties.slug;
-            const name = loc.name;
+            const name = STATES[slug]?.name ?? loc.name;
             const isActive = activeSet.has(slug);
             const isPipeline = !isActive && pipelineSet.has(slug);
             const baseFill = isActive
