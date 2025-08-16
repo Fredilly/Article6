@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import {
   Carousel,
   CarouselContent,
@@ -20,11 +21,14 @@ export default function GalleryCarousel({ images }: GalleryCarouselProps) {
         <CarouselContent>
           {images.map((img, i) => (
             <CarouselItem key={i} className="basis-full">
-              <img
-                src={img.src}
-                alt={img.alt}
-                className="w-full h-64 md:h-80 lg:h-96 object-cover rounded-2xl border bg-muted"
-              />
+              <div className="relative w-full h-64 md:h-80 lg:h-96">
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  className="object-cover rounded-2xl border bg-muted"
+                  fill
+                />
+              </div>
             </CarouselItem>
           ))}
         </CarouselContent>
