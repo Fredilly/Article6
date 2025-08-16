@@ -125,8 +125,17 @@ export default function NigeriaMap({
                 strokeWidth: 1.5,
                 pointerEvents: entry ? undefined : "none",
               },
-              onMouseEnter: () => {
-                setTip({ x: 0, y: 0, text: name });
+              onMouseEnter: (e: React.MouseEvent<SVGPathElement>) => {
+                if (svgRef.current) {
+                  const r = svgRef.current.getBoundingClientRect();
+                  setTip({
+                    x: e.clientX - r.left + 12,
+                    y: e.clientY - r.top + 12,
+                    text: name,
+                  });
+                } else {
+                  setTip({ x: 0, y: 0, text: name });
+                }
                 onHover?.(slug);
               },
               onMouseLeave: () => {

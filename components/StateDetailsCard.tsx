@@ -2,6 +2,7 @@ import Link from "next/link";
 import GalleryCarousel from "@/components/GalleryCarousel";
 import { getStateBySlug } from "@/data/states";
 import { stateMeta } from "@/data/stateMeta";
+import { PIPELINE } from "@/data/country";
 
 const STATUS_STYLES: Record<string, string> = {
   "In Discussion": "bg-yellow-100 text-yellow-800",
@@ -15,7 +16,11 @@ export default function StateDetailsCard({ slug }: { slug: string }) {
 
   if (!state || !meta) return null;
 
-  const statusClass = STATUS_STYLES[state.status] || "bg-gray-100 text-gray-800";
+  const isPipeline = PIPELINE.includes(slug);
+  const displayStatus = isPipeline ? "Pipeline" : state.status;
+  const statusClass = isPipeline
+    ? "bg-amber-100 text-amber-800"
+    : STATUS_STYLES[state.status] || "bg-gray-100 text-gray-800";
   const images = state.images ?? [];
 
   return (
@@ -27,7 +32,7 @@ export default function StateDetailsCard({ slug }: { slug: string }) {
             <p className="text-muted-foreground mt-1">{meta.subtitle}</p>
           </div>
           <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${statusClass}`}>
-            {state.status}
+            {displayStatus}
           </span>
         </div>
       </div>
