@@ -1,6 +1,8 @@
 "use client";
 import React, { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/router";
 import nigeria from "@svg-maps/nigeria";
+import { nigeria as ng } from "@/data/countries/nigeria";
 
 type NigeriaData = {
   viewBox: string;
@@ -11,20 +13,30 @@ const ALIASES: Record<string, string> = {
   nassarawa: "nasarawa",
 };
 
+const BASE = "/projects/nigeria/states";
+
 function norm(slug: string) {
   const s = slug.toLowerCase();
   return ALIASES[s] ?? s;
 }
 
+function onClickFeature(slug: string, router: ReturnType<typeof useRouter>) {
+  const entry = ng.divisions.find((d) => d.slug === slug);
+  if (!entry) return;
+  const href = entry.inPipeline ? `${BASE}/${slug}` : `${BASE}/${slug}/facts`;
+  router.push(href);
+}
+
 export default function NigeriaMap({
   active = [] as string[],
-  links = {} as Record<string, string>,
+  links: _links = {} as Record<string, string>,
   onHover,
 }: {
   active?: string[];
   links?: Record<string, string>;
   onHover?: (slug: string | null) => void;
 }) {
+  const router = useRouter();
   const svgRef = useRef<SVGSVGElement>(null);
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
 
@@ -57,16 +69,17 @@ export default function NigeriaMap({
             const slug = ALIASES[raw] ?? raw;
             const name = loc.name;
             const isActive = activeSet.has(slug);
-            const link = links[slug];
+            const hasData = ng.divisions.some((d) => d.slug === slug);
             const pathProps = {
               "data-slug": slug,
               d: loc.path,
-              className: "transition-colors",
+              className: `transition-colors ${hasData ? "cursor-pointer" : "pointer-events-none opacity-60"}`,
               style: {
                 fill: isActive ? "#16A34A" : "#E5E7EB",
                 stroke: "#D1D5DB",
                 strokeWidth: 1.5,
               },
+              onClick: () => hasData && onClickFeature(slug, router),
               onMouseEnter: () => {
                 setTip({ x: 0, y: 0, text: name });
                 onHover?.(slug);
@@ -91,23 +104,10 @@ export default function NigeriaMap({
               },
             } as React.SVGProps<SVGPathElement>;
 
-            const pathEl = (
-              <path {...pathProps}>
+            return (
+              <path key={slug} {...pathProps}>
                 <title>{name}</title>
               </path>
-            );
-
-            return link ? (
-              <a
-                key={slug}
-                href={link}
-                aria-label={`Open ${name} page`}
-                className="focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-              >
-                {pathEl}
-              </a>
-            ) : (
-              React.cloneElement(pathEl, { key: slug })
             );
           })}
         </g>
