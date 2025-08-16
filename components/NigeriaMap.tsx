@@ -205,7 +205,7 @@ export default function NigeriaMap({
               } as React.SVGProps<SVGPathElement>;
 
               return (
-                <a key={slug ?? loc.id} xlinkHref={href ?? undefined}>
+                <a key={slug ?? loc.id} href={href ?? undefined}>
                   <path {...pathProps} />
                 </a>
               );
