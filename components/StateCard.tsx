@@ -10,6 +10,7 @@ interface StateCardProps {
   tags?: string[];
   updatedAt?: string;
   ctaLabel?: string;
+  href?: string;
 }
 
 const StateCard: React.FC<StateCardProps> = ({
@@ -21,11 +22,13 @@ const StateCard: React.FC<StateCardProps> = ({
   tags,
   updatedAt,
   ctaLabel,
+  href,
 }) => {
   const safeTags = Array.isArray(tags) ? tags.filter(Boolean) : [];
+  const link = href ?? `/states/${slug}`;
   return (
     <Link
-      href={`/states/${slug}`}
+      href={link}
       className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded-2xl"
     >
       <article
