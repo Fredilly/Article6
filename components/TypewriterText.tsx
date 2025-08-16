@@ -1,6 +1,5 @@
 import React from 'react';
 import Typewriter from 'typewriter-effect';
-import 'tailwindcss/tailwind.css';
 
 const TypewriterText = () => {
   return (
