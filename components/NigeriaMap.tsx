@@ -1,6 +1,8 @@
 "use client";
 import React, { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/router";
 import nigeria from "@svg-maps/nigeria";
+import { ACTIVE, PIPELINE, SLUGS } from "@/data/country";
 
 type NigeriaData = {
   viewBox: string;
@@ -18,17 +20,40 @@ function norm(slug: string) {
 
 export default function NigeriaMap({
   active = [] as string[],
-  links = {} as Record<string, string>,
+  links: _links = {} as Record<string, string>, // legacy no-op
   onHover,
 }: {
   active?: string[];
   links?: Record<string, string>;
   onHover?: (slug: string | null) => void;
 }) {
+  const router = useRouter();
   const svgRef = useRef<SVGSVGElement>(null);
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
 
+  const COUNTRY_BASE = "/projects/nigeria";
+  const divisions = useMemo(
+    () =>
+      SLUGS.map((slug) => ({
+        slug,
+        inPipeline: ACTIVE.includes(slug) || PIPELINE.includes(slug),
+      })),
+    []
+  );
+  const divisionMap = useMemo(
+    () => new Map(divisions.map((d) => [d.slug, d])),
+    [divisions]
+  );
+
   const data = nigeria as unknown as NigeriaData;
+  const locations = useMemo(
+    () =>
+      data.locations.map((loc) => ({
+        ...loc,
+        properties: { slug: norm(loc.id) },
+      })),
+    [data]
+  );
   const [, , vbW, vbH] = data.viewBox.split(" ").map(Number);
   const scaleX = 1000 / vbW;
   const scaleY = 1000 / vbH;
@@ -39,6 +64,17 @@ export default function NigeriaMap({
     if (!tip || !svgRef.current) return;
     const r = svgRef.current.getBoundingClientRect();
     setTip({ ...tip, x: e.clientX - r.left + 12, y: e.clientY - r.top + 12 });
+  };
+
+  const onClickFeature = (feature: { properties?: { slug?: string } }) => {
+    const slug = feature?.properties?.slug;
+    if (!slug) return console.warn("Missing slug for clicked feature", feature);
+    const entry = divisionMap.get(slug);
+    if (!entry) return console.warn("No data for slug:", slug);
+    const href = entry.inPipeline
+      ? `${COUNTRY_BASE}/states/${slug}`
+      : `${COUNTRY_BASE}/states/${slug}/facts`;
+    router.push(href);
   };
 
   return (
@@ -52,20 +88,20 @@ export default function NigeriaMap({
         aria-label="Map of Nigeria by state"
       >
         <g transform={`scale(${scaleX} ${scaleY})`}>
-          {data.locations.map((loc) => {
-            const raw = loc.id.toLowerCase();
-            const slug = ALIASES[raw] ?? raw;
+          {locations.map((loc) => {
+            const slug = loc.properties.slug;
             const name = loc.name;
             const isActive = activeSet.has(slug);
-            const link = links[slug];
+            const entry = divisionMap.get(slug);
             const pathProps = {
               "data-slug": slug,
               d: loc.path,
-              className: "transition-colors",
+              className: `transition-colors ${entry ? "cursor-pointer" : "pointer-events-none"}`,
               style: {
                 fill: isActive ? "#16A34A" : "#E5E7EB",
                 stroke: "#D1D5DB",
                 strokeWidth: 1.5,
+                pointerEvents: entry ? undefined : "none",
               },
               onMouseEnter: () => {
                 setTip({ x: 0, y: 0, text: name });
@@ -89,25 +125,13 @@ export default function NigeriaMap({
                 onHover?.(null);
                 (e.currentTarget as SVGPathElement).style.fill = isActive ? "#16A34A" : "#E5E7EB";
               },
+              onClick: entry ? () => onClickFeature(loc) : undefined,
             } as React.SVGProps<SVGPathElement>;
 
-            const pathEl = (
-              <path {...pathProps}>
+            return (
+              <path key={slug} {...pathProps}>
                 <title>{name}</title>
               </path>
-            );
-
-            return link ? (
-              <a
-                key={slug}
-                href={link}
-                aria-label={`Open ${name} page`}
-                className="focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-              >
-                {pathEl}
-              </a>
-            ) : (
-              React.cloneElement(pathEl, { key: slug })
             );
           })}
         </g>
