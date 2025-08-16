@@ -15,7 +15,9 @@ export default function CountryPage() {
     return pool.filter((slug) => STATES[slug].name.toLowerCase().includes(needle));
   }, [q, pool]);
 
-  const links = Object.fromEntries(filtered.map((slug) => [slug, `/states/${slug}`]));
+  const links = Object.fromEntries(
+    filtered.map((slug) => [slug, `/projects/nigeria/states/${slug}`])
+  );
   const active = ACTIVE;
 
   return (
@@ -26,6 +28,10 @@ export default function CountryPage() {
           name="description"
           content="States we're actively engaging in Nigeria."
         />
+        <link
+          rel="canonical"
+          href={`${process.env.NEXT_PUBLIC_SITE_URL || ""}/projects/nigeria`}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -34,7 +40,7 @@ export default function CountryPage() {
               "@type": "BreadcrumbList",
               itemListElement: [
                 { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-                { "@type": "ListItem", position: 2, name: "Nigeria Overview", item: "/country" },
+                { "@type": "ListItem", position: 2, name: "Nigeria Overview", item: "/projects/nigeria" },
               ],
             }),
           }}
@@ -91,7 +97,7 @@ export default function CountryPage() {
               {filtered.map((slug) => (
                 <Link
                   key={slug}
-                  href={`/states/${slug}`}
+                  href={`/projects/nigeria/states/${slug}`}
                   className="flex items-center justify-between rounded-xl border px-3 py-2 hover:bg-muted min-h-12"
                 >
                   <div className="text-sm">
