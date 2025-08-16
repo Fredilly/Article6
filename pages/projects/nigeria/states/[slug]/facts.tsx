@@ -1,9 +1,12 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
+import CTA from "@/components/CTA";
+import { getStateFacts } from "@/data/stateFacts";
 
 export default function NigeriaStateFactsPage() {
   const { slug } = useRouter().query;
   const name = typeof slug === "string" ? slug : "";
+  const facts = getStateFacts(name);
 
   return (
     <>
@@ -19,23 +22,18 @@ export default function NigeriaStateFactsPage() {
         <div className="rounded-2xl border bg-white shadow-sm">
           <div className="p-6 border-b">
             <h1 className="text-3xl font-semibold tracking-tight capitalize">{name} Facts</h1>
-            <p className="text-muted-foreground mt-1">Coming soon.</p>
           </div>
-          <div className="px-6 pb-6 pt-3 border-t bg-gradient-to-b from-transparent to-muted/30">
-            <div className="flex flex-col items-center sm:flex-row gap-3 sm:justify-end">
-              <Link
-                href="/country"
-                className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-accent"
-              >
-                See National Map
-              </Link>
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:opacity-90"
-              >
-                Book an expert
-              </Link>
-            </div>
+          <div className="p-6 space-y-6">
+            {facts.length > 0 ? (
+              <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed">
+                {facts.map((fact) => (
+                  <li key={fact}>{fact}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">No facts available.</p>
+            )}
+            <CTA />
           </div>
         </div>
       </main>
