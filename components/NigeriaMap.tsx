@@ -119,7 +119,7 @@ export default function NigeriaMap({
           <g transform={`scale(${scaleX} ${scaleY})`}>
             {locations.map((loc) => {
               const slug = loc.properties?.slug as Slug | undefined;
-              const title = slug && STATES[slug] ? `${STATES[slug].name} State` : null;
+              const title = slug && STATES[slug] ? STATES[slug].name : null;
               const valid = Boolean(title);
               const isActive = slug ? activeSet.has(slug) : false;
               const isPipeline = slug ? !isActive && pipelineSet.has(slug) : false;
@@ -221,7 +221,7 @@ export default function NigeriaMap({
           className="pointer-events-none absolute z-50 rounded-md bg-white/80 px-2 py-1 text-xs shadow backdrop-blur-sm"
           style={{ left: coords.x, top: coords.y }}
         >
-          {`${STATES[hoveredSlug].name} State`}
+          {STATES[hoveredSlug].name}
         </div>
       )}
     </div>
