@@ -99,7 +99,7 @@ export default function StateDetailsCard({ slug }: { slug: string }) {
       <div className="px-6 pb-6 pt-3 border-t bg-gradient-to-b from-transparent to-muted/30">
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
           <Link
-            href="/country"
+            href="/projects/nigeria"
             className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-accent"
           >
             See National Map

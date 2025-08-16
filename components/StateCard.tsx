@@ -25,7 +25,7 @@ const StateCard: React.FC<StateCardProps> = ({
   const safeTags = Array.isArray(tags) ? tags.filter(Boolean) : [];
   return (
     <Link
-      href={`/states/${slug}`}
+      href={`/projects/nigeria/states/${slug}`}
       className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded-2xl"
     >
       <article
