@@ -3,34 +3,61 @@ import type { GetServerSideProps } from "next";
 import StateCard from "@/components/StateCard";
 import Leaderboard from "@/components/Leaderboard";
 import { getLeaderboard, type LiveItem } from "@/lib/leaderboard";
-import { enrich, sortByTotal } from "@/lib/scoring";
+import { enrich, sortByTotal, type ScoredItem } from "@/lib/scoring";
 import { projects as localProjects } from "@/data/projects";
 
-type CardItem = LiveItem & {
+interface ProjectEntry {
+  slug: string;
+  title: string;
   epithet?: string;
   summary?: string;
-  status?: string;
+  status?: "pending" | "active" | "discussion" | string;
   tags?: string[];
   updatedAt?: string;
   ctaLabel?: string;
-  progress?: number;
+  progress: number;
   activityScore?: number;
   lastUpdateISO?: string;
-};
+}
 
-type Props = { live: LiveItem[]; cards: CardItem[]; debug?: string };
+type CardItem = LiveItem & Partial<ProjectEntry>;
+
+type Props = { live: ScoredItem[]; cards: CardItem[]; debug?: string };
 
 export const getServerSideProps: GetServerSideProps<Props> = async () => {
   try {
-    const live = (await getLeaderboard()).map(enrich).sort(sortByTotal); // strict LIVE
-    const extras = new Map(localProjects.map(p => [p.slug, p as any]));
-    const merged = live.map(api => ({ ...(extras.get(api.slug) || {}), ...api, lastUpdateISO: api.last_update_iso || (extras.get(api.slug)?.lastUpdateISO) }));
-    const missing = localProjects
+    const live: ScoredItem[] = (await getLeaderboard()).map(enrich).sort(sortByTotal); // strict LIVE
+    const extras = new Map<string, ProjectEntry>(localProjects.map(p => [p.slug, p]));
+    const merged: CardItem[] = live.map((api): CardItem => {
+      const extra = extras.get(api.slug);
+      return {
+        ...(extra ?? {}),
+        ...api,
+        lastUpdateISO: api.last_update_iso || extra?.lastUpdateISO,
+      };
+    });
+    const missing: CardItem[] = localProjects
       .filter(p => !live.some(a => a.slug === p.slug))
-      .map(p => ({ ...(p as any), los_signed:false, mou_signed:false, fera_signed:false, meetings_count:0, meetings_30d:0, last_update_iso:p.lastUpdateISO }));
+      .map((p): CardItem => ({
+        ...p,
+        los_signed: false,
+        mou_signed: false,
+        fera_signed: false,
+        meetings_count: 0,
+        meetings_30d: 0,
+        last_update_iso: p.lastUpdateISO,
+      }));
     return { props: { live, cards: [...merged, ...missing] } };
-  } catch (e:any) {
-    const fallback = localProjects.map(p => ({ ...(p as any), los_signed:false, mou_signed:false, fera_signed:false, meetings_count:0, meetings_30d:0, last_update_iso:p.lastUpdateISO }));
+  } catch (e: any) {
+    const fallback: CardItem[] = localProjects.map((p): CardItem => ({
+      ...p,
+      los_signed: false,
+      mou_signed: false,
+      fera_signed: false,
+      meetings_count: 0,
+      meetings_30d: 0,
+      last_update_iso: p.lastUpdateISO,
+    }));
     return { props: { live: [], cards: fallback, debug: e?.message || "unknown_error" } };
   }
 };
@@ -49,7 +76,7 @@ export default function ProjectsPage({ live, cards, debug }: Props) {
         </div>
       )}
 
-      <Leaderboard items={live as any} pollMs={45000} />
+      <Leaderboard items={live} pollMs={45000} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {cards.map((p) => (
