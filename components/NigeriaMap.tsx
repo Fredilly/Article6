@@ -9,6 +9,9 @@ type NigeriaData = {
   locations: { id: string; name: string; path: string }[];
 };
 
+type Slug = (typeof SLUGS)[number];
+type Division = { slug: Slug; inPipeline: boolean };
+
 const ALIASES: Record<string, string> = {
   nassarawa: "nasarawa",
 };
@@ -32,7 +35,7 @@ export default function NigeriaMap({
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
 
   const COUNTRY_BASE = "/projects/nigeria";
-  const divisions = useMemo(
+  const divisions = useMemo<Division[]>(
     () =>
       SLUGS.map((slug) => ({
         slug,
@@ -41,7 +44,7 @@ export default function NigeriaMap({
     []
   );
   const divisionMap = useMemo(
-    () => new Map(divisions.map((d) => [d.slug, d])),
+    () => new Map<Slug, Division>(divisions.map((d) => [d.slug, d])),
     [divisions]
   );
 
@@ -50,7 +53,7 @@ export default function NigeriaMap({
     () =>
       data.locations.map((loc) => ({
         ...loc,
-        properties: { slug: norm(loc.id) },
+        properties: { slug: norm(loc.id) as Slug },
       })),
     [data]
   );
@@ -58,7 +61,7 @@ export default function NigeriaMap({
   const scaleX = 1000 / vbW;
   const scaleY = 1000 / vbH;
 
-  const activeSet = useMemo(() => new Set(active.map((a) => norm(a))), [active]);
+  const activeSet = useMemo(() => new Set(active.map((a) => norm(a) as Slug)), [active]);
 
   const onMove = (e: React.MouseEvent) => {
     if (!tip || !svgRef.current) return;
@@ -66,7 +69,7 @@ export default function NigeriaMap({
     setTip({ ...tip, x: e.clientX - r.left + 12, y: e.clientY - r.top + 12 });
   };
 
-  const onClickFeature = (feature: { properties?: { slug?: string } }) => {
+  const onClickFeature = (feature: { properties?: { slug?: Slug } }) => {
     const slug = feature?.properties?.slug;
     if (!slug) return console.warn("Missing slug for clicked feature", feature);
     const entry = divisionMap.get(slug);
