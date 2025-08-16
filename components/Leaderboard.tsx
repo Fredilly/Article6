@@ -1,18 +1,9 @@
 import * as React from "react";
 import { Trophy, FileSignature, CalendarClock } from "lucide-react";
 import { sortByTotal, sortBySigned, sortByMeetings } from "@/lib/scoring";
+import type { ScoredItem } from "@/lib/scoring";
 
-type Item = {
-  slug: string;
-  title: string;
-  meetings_count: number;
-  meetings_30d: number;
-  last_update_iso: string;
-  score: number;                         // 0..100
-  docs_signed: number;                   // 0..3
-  stage_label: "Prospect" | "LOS" | "MOU" | "FERA";
-  stage_rank: 0 | 1 | 2 | 3;
-};
+type Item = ScoredItem;
 type Props = { items: Item[]; pollMs?: number };
 type Tab = "signed" | "meetings" | "total";
 
@@ -28,12 +19,29 @@ const rel = (iso?: string) => {
   return Math.floor(mo/12)+"y ago";
 };
 
-function SegButton({ active, onClick, icon:Icon, children }:{active:boolean;onClick:()=>void;icon:any;children:React.ReactNode}) {
+function SegButton({
+  active,
+  onClick,
+  icon: Icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}) {
   return (
-    <button onClick={onClick}
-      className={"inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm border transition " +
-        (active ? "bg-black text-white border-black" : "bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-800")}>
-      <Icon className="h-4 w-4" />{children}
+    <button
+      onClick={onClick}
+      className={
+        "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm border transition " +
+        (active
+          ? "bg-black text-white border-black"
+          : "bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-800")
+      }
+    >
+      <Icon className="h-4 w-4" />
+      {children}
     </button>
   );
 }
@@ -67,9 +75,9 @@ export default function Leaderboard({ items, pollMs = 40000 }: Props) {
 
   const sorted = React.useMemo(() => {
     const copy = [...live];
-    if (tab === "total")   return copy.sort(sortByTotal as any);
-    if (tab === "signed")  return copy.sort(sortBySigned as any);
-    return copy.sort(sortByMeetings as any);
+    if (tab === "total") return copy.sort(sortByTotal);
+    if (tab === "signed") return copy.sort(sortBySigned);
+    return copy.sort(sortByMeetings);
   }, [live, tab]);
 
   return (
