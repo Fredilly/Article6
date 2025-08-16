@@ -45,7 +45,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
         fera_signed: false,
         meetings_count: 0,
         meetings_30d: 0,
-        last_update_iso: p.lastUpdateISO,
+        last_update_iso: p.lastUpdateISO || "",
+        evidence_urls: "",
       }));
     return { props: { live, cards: [...merged, ...missing] } };
   } catch (e: any) {
@@ -56,7 +57,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
       fera_signed: false,
       meetings_count: 0,
       meetings_30d: 0,
-      last_update_iso: p.lastUpdateISO,
+      last_update_iso: p.lastUpdateISO || "",
+      evidence_urls: "",
     }));
     return { props: { live: [], cards: fallback, debug: e?.message || "unknown_error" } };
   }
