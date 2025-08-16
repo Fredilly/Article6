@@ -9,7 +9,15 @@ const STATUS_STYLES: Record<string, string> = {
   "Early Engagement": "bg-slate-100 text-slate-800",
 };
 
-export default function StateDetailsCard({ slug }: { slug: string }) {
+export default function StateDetailsCard({
+  slug,
+  showHeader = true,
+  showFooter = true,
+}: {
+  slug: string;
+  showHeader?: boolean;
+  showFooter?: boolean;
+}) {
   const state = getStateBySlug(slug);
   const meta = stateMeta[slug];
 
@@ -20,17 +28,19 @@ export default function StateDetailsCard({ slug }: { slug: string }) {
 
   return (
     <div className="rounded-2xl border bg-white shadow-sm">
-      <div className="p-6 border-b">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">{meta.title}</h1>
-            <p className="text-muted-foreground mt-1">{meta.subtitle}</p>
+      {showHeader && (
+        <div className="p-6 border-b">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight">{meta.title}</h1>
+              <p className="text-muted-foreground mt-1">{meta.subtitle}</p>
+            </div>
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${statusClass}`}>
+              {state.status}
+            </span>
           </div>
-          <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${statusClass}`}>
-            {state.status}
-          </span>
         </div>
-      </div>
+      )}
 
       <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2 space-y-6">
@@ -96,22 +106,24 @@ export default function StateDetailsCard({ slug }: { slug: string }) {
         </aside>
       </div>
 
-      <div className="px-6 pb-6 pt-3 border-t bg-gradient-to-b from-transparent to-muted/30">
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
-          <Link
-            href="/country"
-            className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-accent"
-          >
-            See National Map
-          </Link>
-          <Link
-            href="/contact"
-            className="inline-flex items-center rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:opacity-90"
-          >
-            Request Brief
-          </Link>
+      {showFooter && (
+        <div className="px-6 pb-6 pt-3 border-t bg-gradient-to-b from-transparent to-muted/30">
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
+            <Link
+              href="/country"
+              className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-accent"
+            >
+              See National Map
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex items-center rounded-xl bg-black text-white px-4 py-2 text-sm font-medium hover:opacity-90"
+            >
+              Request Brief
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
