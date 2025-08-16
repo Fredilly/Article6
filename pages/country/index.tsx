@@ -17,6 +17,7 @@ export default function CountryPage() {
 
   const links = Object.fromEntries(filtered.map((slug) => [slug, `/states/${slug}`]));
   const active = ACTIVE;
+  const pipeline = PIPELINE;
 
   return (
     <>
@@ -79,10 +80,11 @@ export default function CountryPage() {
               {/* Legend */}
               <div className="flex items-center gap-3 text-xs">
                 <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#16A34A]" /> Active</span>
+                <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#FBBF24]" /> Pipeline</span>
                 <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#E5E7EB]" /> Other</span>
               </div>
             </div>
-            <NigeriaMap active={active} links={links} />
+            <NigeriaMap active={active} pipeline={pipeline} links={links} />
           </section>
 
           {/* Right: State list */}
@@ -102,6 +104,9 @@ export default function CountryPage() {
                   </div>
                   {active.includes(slug) && (
                     <span className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-800">Active</span>
+                  )}
+                  {!active.includes(slug) && pipeline.includes(slug) && (
+                    <span className="text-xs px-2 py-1 rounded-lg bg-amber-100 text-amber-800">Pipeline</span>
                   )}
                 </Link>
               ))}

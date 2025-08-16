@@ -2,7 +2,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import nigeria from "@svg-maps/nigeria";
-import { ACTIVE, PIPELINE, SLUGS } from "@/data/country";
+import { SLUGS } from "@/data/country";
 
 type NigeriaData = {
   viewBox: string;
@@ -23,10 +23,12 @@ function norm(slug: string) {
 
 export default function NigeriaMap({
   active = [] as string[],
+  pipeline = [] as string[],
   links: _links = {} as Record<string, string>, // legacy no-op
   onHover,
 }: {
   active?: string[];
+  pipeline?: string[];
   links?: Record<string, string>;
   onHover?: (slug: string | null) => void;
 }) {
@@ -35,13 +37,21 @@ export default function NigeriaMap({
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
 
   const COUNTRY_BASE = "/projects/nigeria";
+  const activeSet = useMemo(
+    () => new Set(active.map((a) => norm(a) as Slug)),
+    [active]
+  );
+  const pipelineSet = useMemo(
+    () => new Set(pipeline.map((p) => norm(p) as Slug)),
+    [pipeline]
+  );
   const divisions = useMemo<Division[]>(
     () =>
       SLUGS.map((slug) => ({
         slug,
-        inPipeline: ACTIVE.includes(slug) || PIPELINE.includes(slug),
+        inPipeline: activeSet.has(slug) || pipelineSet.has(slug),
       })),
-    []
+    [activeSet, pipelineSet]
   );
   const divisionMap = useMemo(
     () => new Map<Slug, Division>(divisions.map((d) => [d.slug, d])),
@@ -60,8 +70,6 @@ export default function NigeriaMap({
   const [, , vbW, vbH] = data.viewBox.split(" ").map(Number);
   const scaleX = 1000 / vbW;
   const scaleY = 1000 / vbH;
-
-  const activeSet = useMemo(() => new Set(active.map((a) => norm(a) as Slug)), [active]);
 
   const onMove = (e: React.MouseEvent) => {
     if (!tip || !svgRef.current) return;
@@ -95,13 +103,24 @@ export default function NigeriaMap({
             const slug = loc.properties.slug;
             const name = loc.name;
             const isActive = activeSet.has(slug);
+            const isPipeline = !isActive && pipelineSet.has(slug);
+            const baseFill = isActive
+              ? "#16A34A"
+              : isPipeline
+              ? "#FBBF24"
+              : "#E5E7EB";
+            const hoverFill = isActive
+              ? "#22C55E"
+              : isPipeline
+              ? "#FCD34D"
+              : "#22C55E";
             const entry = divisionMap.get(slug);
             const pathProps = {
               "data-slug": slug,
               d: loc.path,
               className: `transition-colors ${entry ? "cursor-pointer" : "pointer-events-none"}`,
               style: {
-                fill: isActive ? "#16A34A" : "#E5E7EB",
+                fill: baseFill,
                 stroke: "#D1D5DB",
                 strokeWidth: 1.5,
                 pointerEvents: entry ? undefined : "none",
@@ -115,27 +134,24 @@ export default function NigeriaMap({
                 onHover?.(null);
               },
               onMouseOver: (e: React.MouseEvent<SVGPathElement>) => {
-                (e.currentTarget as SVGPathElement).style.fill = "#22C55E";
+                (e.currentTarget as SVGPathElement).style.fill = hoverFill;
               },
               onMouseOut: (e: React.MouseEvent<SVGPathElement>) => {
-                (e.currentTarget as SVGPathElement).style.fill = isActive ? "#16A34A" : "#E5E7EB";
+                (e.currentTarget as SVGPathElement).style.fill = baseFill;
               },
               onFocus: (e: React.FocusEvent<SVGPathElement>) => {
                 onHover?.(slug);
-                (e.currentTarget as SVGPathElement).style.fill = "#22C55E";
+                (e.currentTarget as SVGPathElement).style.fill = hoverFill;
               },
               onBlur: (e: React.FocusEvent<SVGPathElement>) => {
                 onHover?.(null);
-                (e.currentTarget as SVGPathElement).style.fill = isActive ? "#16A34A" : "#E5E7EB";
+                (e.currentTarget as SVGPathElement).style.fill = baseFill;
               },
               onClick: entry ? () => onClickFeature(loc) : undefined,
+              "aria-label": name,
             } as React.SVGProps<SVGPathElement>;
 
-            return (
-              <path key={slug} {...pathProps}>
-                <title>{name}</title>
-              </path>
-            );
+            return <path key={slug} {...pathProps} />;
           })}
         </g>
       </svg>
