@@ -34,7 +34,12 @@ export default function NigeriaMap({
 }) {
   const router = useRouter();
   const svgRef = useRef<SVGSVGElement>(null);
-  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>();
+  const delayRef = useRef<number>();
+  const [coords, setCoords] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [hoveredSlug, setHoveredSlug] = useState<Slug | null>(null);
+  const [visible, setVisible] = useState(false);
 
   const COUNTRY_BASE = "/projects/nigeria";
   const activeSet = useMemo(
@@ -61,9 +66,12 @@ export default function NigeriaMap({
   const data = nigeria as unknown as NigeriaData;
   const locations = useMemo(
     () =>
-      data.locations.map((loc) => ({
+      data.locations.map((loc: any) => ({
         ...loc,
-        properties: { slug: norm(loc.id) as Slug },
+        properties: {
+          ...loc.properties,
+          slug: norm(loc.properties?.slug ?? loc.id) as Slug,
+        },
       })),
     [data]
   );
@@ -71,10 +79,20 @@ export default function NigeriaMap({
   const scaleX = 1000 / vbW;
   const scaleY = 1000 / vbH;
 
-  const onMove = (e: React.MouseEvent) => {
-    if (!tip || !svgRef.current) return;
+  const OFFSET = 12;
+
+  const updatePosition = (clientX: number, clientY: number) => {
+    if (!svgRef.current) return;
     const r = svgRef.current.getBoundingClientRect();
-    setTip({ ...tip, x: e.clientX - r.left + 12, y: e.clientY - r.top + 12 });
+    const tipEl = tipRef.current;
+    let x = clientX - r.left + OFFSET;
+    let y = clientY - r.top + OFFSET;
+    if (tipEl) {
+      const { offsetWidth, offsetHeight } = tipEl;
+      x = Math.min(x, r.width - offsetWidth - OFFSET);
+      y = Math.min(y, r.height - offsetHeight - OFFSET);
+    }
+    setCoords({ x, y });
   };
 
   const onClickFeature = (feature: { properties?: { slug?: Slug } }) => {
@@ -88,88 +106,122 @@ export default function NigeriaMap({
     router.push(href);
   };
 
-  return (
-    <div className="relative w-full">
-      <svg
-        ref={svgRef}
-        viewBox="0 0 1000 1000"
-        className="w-full h-auto"
-        onMouseMove={onMove}
-        role="img"
-        aria-label="Map of Nigeria by state"
-      >
-        <g transform={`scale(${scaleX} ${scaleY})`}>
-          {locations.map((loc) => {
-            const slug = loc.properties.slug;
-            const name = STATES[slug]?.name ?? loc.name;
-            const isActive = activeSet.has(slug);
-            const isPipeline = !isActive && pipelineSet.has(slug);
-            const baseFill = isActive
-              ? "#16A34A"
-              : isPipeline
-              ? "#FBBF24"
-              : "#E5E7EB";
-            const hoverFill = isActive
-              ? "#22C55E"
-              : isPipeline
-              ? "#FCD34D"
-              : "#22C55E";
-            const entry = divisionMap.get(slug);
-            const pathProps = {
-              "data-slug": slug,
-              d: loc.path,
-              className: `transition-colors ${entry ? "cursor-pointer" : "pointer-events-none"}`,
-              style: {
-                fill: baseFill,
-                stroke: "#D1D5DB",
-                strokeWidth: 1.5,
-                pointerEvents: entry ? undefined : "none",
-              },
-              onMouseEnter: (e: React.MouseEvent<SVGPathElement>) => {
-                if (svgRef.current) {
-                  const r = svgRef.current.getBoundingClientRect();
-                  setTip({
-                    x: e.clientX - r.left + 12,
-                    y: e.clientY - r.top + 12,
-                    text: name,
-                  });
-                } else {
-                  setTip({ x: 0, y: 0, text: name });
-                }
-                onHover?.(slug);
-              },
-              onMouseLeave: () => {
-                setTip(null);
-                onHover?.(null);
-              },
-              onMouseOver: (e: React.MouseEvent<SVGPathElement>) => {
-                (e.currentTarget as SVGPathElement).style.fill = hoverFill;
-              },
-              onMouseOut: (e: React.MouseEvent<SVGPathElement>) => {
-                (e.currentTarget as SVGPathElement).style.fill = baseFill;
-              },
-              onFocus: (e: React.FocusEvent<SVGPathElement>) => {
-                onHover?.(slug);
-                (e.currentTarget as SVGPathElement).style.fill = hoverFill;
-              },
-              onBlur: (e: React.FocusEvent<SVGPathElement>) => {
-                onHover?.(null);
-                (e.currentTarget as SVGPathElement).style.fill = baseFill;
-              },
-              onClick: entry ? () => onClickFeature(loc) : undefined,
-              "aria-label": name,
-            } as React.SVGProps<SVGPathElement>;
-
-            return <path key={slug} {...pathProps} />;
-          })}
-        </g>
-      </svg>
-      {tip && (
-        <div
-          className="pointer-events-none absolute rounded-md border border-gray-200 bg-white px-2 py-1 text-xs shadow"
-          style={{ left: tip.x, top: tip.y }}
+    return (
+      <div className="relative w-full">
+        <svg
+          ref={svgRef}
+          viewBox="0 0 1000 1000"
+          className="w-full h-auto"
+          onClick={() => setVisible(false)}
+          role="img"
+          aria-label="Map of Nigeria by state"
         >
-          {tip.text}
+          <g transform={`scale(${scaleX} ${scaleY})`}>
+            {locations.map((loc) => {
+              const slug = loc.properties?.slug as Slug | undefined;
+              const title = slug && STATES[slug] ? `${STATES[slug].name} State` : null;
+              const valid = Boolean(title);
+              const isActive = slug ? activeSet.has(slug) : false;
+              const isPipeline = slug ? !isActive && pipelineSet.has(slug) : false;
+              const baseFill = isActive
+                ? "#16A34A"
+                : isPipeline
+                ? "#FBBF24"
+                : "#E5E7EB";
+              const hoverFill = isActive
+                ? "#22C55E"
+                : isPipeline
+                ? "#FCD34D"
+                : "#22C55E";
+              const entry = slug ? divisionMap.get(slug) : undefined;
+
+              const handleEnter = valid
+                ? (e: React.MouseEvent<SVGPathElement>) => {
+                    const { clientX, clientY } = e;
+                    const s = slug as Slug;
+                    if (delayRef.current) window.clearTimeout(delayRef.current);
+                    setHoveredSlug(s);
+                    rafRef.current && cancelAnimationFrame(rafRef.current);
+                    rafRef.current = requestAnimationFrame(() => updatePosition(clientX, clientY));
+                    delayRef.current = window.setTimeout(() => setVisible(true), 120);
+                    onHover?.(s);
+                  }
+                : undefined;
+
+              const handleMove = valid
+                ? (e: React.MouseEvent<SVGPathElement>) => {
+                    const { clientX, clientY } = e;
+                    rafRef.current && cancelAnimationFrame(rafRef.current);
+                    rafRef.current = requestAnimationFrame(() => updatePosition(clientX, clientY));
+                  }
+                : undefined;
+
+              const handleLeave = valid
+                ? () => {
+                    if (delayRef.current) window.clearTimeout(delayRef.current);
+                    setVisible(false);
+                    setHoveredSlug(null);
+                    onHover?.(null);
+                  }
+                : undefined;
+
+              const handleClick = entry
+                ? (e: React.MouseEvent<SVGPathElement>) => {
+                    e.stopPropagation();
+                    onClickFeature(loc);
+                  }
+                : valid
+                ? (e: React.MouseEvent<SVGPathElement>) => {
+                    e.stopPropagation();
+                    const { clientX, clientY } = e;
+                    const s = slug as Slug;
+                    if (hoveredSlug === s && visible) {
+                      setVisible(false);
+                      setHoveredSlug(null);
+                    } else {
+                      setHoveredSlug(s);
+                      updatePosition(clientX, clientY);
+                      setVisible(true);
+                    }
+                  }
+                : undefined;
+
+              const pathProps = {
+                "data-slug": slug,
+                d: loc.path,
+                className: `transition-colors ${entry ? "cursor-pointer" : "pointer-events-none"}`,
+                style: {
+                  fill: baseFill,
+                  stroke: "#D1D5DB",
+                  strokeWidth: 1.5,
+                  pointerEvents: entry ? undefined : "none",
+                },
+                onMouseEnter: handleEnter,
+                onMouseMove: handleMove,
+                onMouseLeave: handleLeave,
+                onMouseOver: (e: React.MouseEvent<SVGPathElement>) => {
+                  (e.currentTarget as SVGPathElement).style.fill = hoverFill;
+                },
+                onMouseOut: (e: React.MouseEvent<SVGPathElement>) => {
+                  (e.currentTarget as SVGPathElement).style.fill = baseFill;
+                },
+                onClick: handleClick,
+                "aria-label": title ?? undefined,
+              } as React.SVGProps<SVGPathElement>;
+
+              return <path key={slug ?? loc.id} {...pathProps} />;
+            })}
+          </g>
+      </svg>
+      {visible && hoveredSlug && (
+        <div
+          ref={tipRef}
+          role="tooltip"
+          aria-live="polite"
+          className="pointer-events-none absolute z-50 rounded-md bg-white/80 px-2 py-1 text-xs shadow backdrop-blur-sm"
+          style={{ left: coords.x, top: coords.y }}
+        >
+          {`${STATES[hoveredSlug].name} State`}
         </div>
       )}
     </div>
