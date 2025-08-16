@@ -95,17 +95,6 @@ export default function NigeriaMap({
     setCoords({ x, y });
   };
 
-  const onClickFeature = (feature: { properties?: { slug?: Slug } }) => {
-    const slug = feature?.properties?.slug;
-    if (!slug) return console.warn("Missing slug for clicked feature", feature);
-    const entry = divisionMap.get(slug);
-    if (!entry) return console.warn("No data for slug:", slug);
-    const href = entry.inPipeline
-      ? `${COUNTRY_BASE}/states/${slug}`
-      : `${COUNTRY_BASE}/states/${slug}/facts`;
-    router.push(href);
-  };
-
     return (
       <div className="relative w-full">
         <svg
@@ -119,7 +108,7 @@ export default function NigeriaMap({
           <g transform={`scale(${scaleX} ${scaleY})`}>
             {locations.map((loc) => {
               const slug = loc.properties?.slug as Slug | undefined;
-              const title = slug && STATES[slug] ? `${STATES[slug].name} State` : null;
+              const title = slug && STATES[slug] ? STATES[slug].name : null;
               const valid = Boolean(title);
               const isActive = slug ? activeSet.has(slug) : false;
               const isPipeline = slug ? !isActive && pipelineSet.has(slug) : false;
@@ -134,6 +123,11 @@ export default function NigeriaMap({
                 ? "#FCD34D"
                 : "#22C55E";
               const entry = slug ? divisionMap.get(slug) : undefined;
+              const href = entry
+                ? entry.inPipeline
+                  ? `${COUNTRY_BASE}/states/${slug}`
+                  : `${COUNTRY_BASE}/states/${slug}/facts`
+                : undefined;
 
               const handleEnter = valid
                 ? (e: React.MouseEvent<SVGPathElement>) => {
@@ -168,7 +162,8 @@ export default function NigeriaMap({
               const handleClick = entry
                 ? (e: React.MouseEvent<SVGPathElement>) => {
                     e.stopPropagation();
-                    onClickFeature(loc);
+                    e.preventDefault();
+                    if (href) router.push(href);
                   }
                 : valid
                 ? (e: React.MouseEvent<SVGPathElement>) => {
@@ -209,7 +204,11 @@ export default function NigeriaMap({
                 "aria-label": title ?? undefined,
               } as React.SVGProps<SVGPathElement>;
 
-              return <path key={slug ?? loc.id} {...pathProps} />;
+              return (
+                <a key={slug ?? loc.id} href={href ?? undefined}>
+                  <path {...pathProps} />
+                </a>
+              );
             })}
           </g>
       </svg>
@@ -221,7 +220,7 @@ export default function NigeriaMap({
           className="pointer-events-none absolute z-50 rounded-md bg-white/80 px-2 py-1 text-xs shadow backdrop-blur-sm"
           style={{ left: coords.x, top: coords.y }}
         >
-          {`${STATES[hoveredSlug].name} State`}
+          {STATES[hoveredSlug].name}
         </div>
       )}
     </div>

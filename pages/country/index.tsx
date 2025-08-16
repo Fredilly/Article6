@@ -15,9 +15,13 @@ export default function CountryPage() {
     return pool.filter((slug) => STATES[slug].name.toLowerCase().includes(needle));
   }, [q, pool]);
 
-  const links = Object.fromEntries(filtered.map((slug) => [slug, `/states/${slug}`]));
   const active = ACTIVE;
   const pipeline = PIPELINE;
+
+  const getHref = (slug: string) =>
+    active.includes(slug) || pipeline.includes(slug)
+      ? `/projects/nigeria/states/${slug}`
+      : `/projects/nigeria/states/${slug}/facts`;
 
   return (
     <>
@@ -84,7 +88,7 @@ export default function CountryPage() {
                 <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#E5E7EB]" /> Other</span>
               </div>
             </div>
-            <NigeriaMap active={active} pipeline={pipeline} links={links} />
+            <NigeriaMap active={active} pipeline={pipeline} />
           </section>
 
           {/* Right: State list */}
@@ -93,7 +97,7 @@ export default function CountryPage() {
               {filtered.map((slug) => (
                 <Link
                   key={slug}
-                  href={`/states/${slug}`}
+                  href={getHref(slug)}
                   className="flex items-center justify-between rounded-xl border px-3 py-2 hover:bg-muted min-h-12"
                 >
                   <div className="text-sm">
