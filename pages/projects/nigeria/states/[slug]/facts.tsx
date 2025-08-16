@@ -19,19 +19,19 @@ export default function NigeriaStateFactsPage() {
         </Link>
       </header>
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 md:pt-20">
-        <div className="rounded-2xl border bg-white shadow-sm">
-          <div className="p-6 border-b">
-            <h1 className="text-3xl font-semibold tracking-tight capitalize">{name} Facts</h1>
+        <div className="overflow-hidden rounded-3xl border bg-gradient-to-br from-white to-gray-50 shadow-md">
+          <div className="border-b bg-white/60 p-8 sm:p-10">
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight capitalize">{name} Facts</h1>
           </div>
-          <div className="p-6 space-y-6">
+          <div className="space-y-8 p-8 sm:p-10">
             {facts.length > 0 ? (
-              <ul className="list-disc pl-5 space-y-2 text-sm leading-relaxed">
+              <ul className="list-disc pl-5 space-y-4 text-base md:text-lg leading-relaxed">
                 {facts.map((fact) => (
                   <li key={fact}>{fact}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">No facts available.</p>
+              <p className="text-base md:text-lg text-muted-foreground">No facts available.</p>
             )}
             <CTA />
           </div>
