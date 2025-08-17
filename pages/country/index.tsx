@@ -39,7 +39,7 @@ export default function CountryPage() {
               "@type": "BreadcrumbList",
               itemListElement: [
                 { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-                { "@type": "ListItem", position: 2, name: "Nigeria Overview", item: "/country" },
+                { "@type": "ListItem", position: 2, name: "Nigeria", item: "/country" },
               ],
             }),
           }}
