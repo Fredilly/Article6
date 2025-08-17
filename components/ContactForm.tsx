@@ -105,6 +105,7 @@ export default function ContactForm({ className = '', ...props }: ContactFormPro
           <option value="finance">Finance</option>
           <option value="agriculture">Agriculture</option>
           <option value="energy">Energy</option>
+          <option value="government">Government</option>
         </select>
       </div>
 
@@ -123,6 +124,7 @@ export default function ContactForm({ className = '', ...props }: ContactFormPro
             Choose country
           </option>
           <option value="nigeria">Nigeria</option>
+          <option value="ghana">Ghana</option>
           <option value="united-states">United States</option>
           <option value="united-kingdom">United Kingdom</option>
           <option value="canada">Canada</option>
