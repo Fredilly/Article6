@@ -1,101 +1,46 @@
 // pages/contact/index.tsx
 import React from 'react';
+import { EnvelopeIcon } from '@heroicons/react/24/outline';
+import ContactForm from '../../components/ContactForm';
 
 const ContactPage = () => {
   return (
-    <div className="container mx-auto py-16 px-6 max-w-4xl"> {/* Adjust max-width as needed */}
-      {/* Header Section */}
-      <div className="text-center mb-16">
-        <h1 className="text-6xl font-extrabold mb-6 text-green-700">
-          Contact Us
-        </h1>
-        <p className="text-lg text-gray-700">
-          We’d love to hear from you! Reach out to us with any questions, comments, or inquiries about our projects and initiatives.
-        </p>
-        <p className="text-lg text-gray-700">
-          Email us at: <a href="mailto:contact@article6.org" className="text-green-700 underline" rel="nofollow">contact@article6.org</a>
-        </p>
-        <div className="mt-4">
-          <a
-            href="https://wa.me/2349066876272"
-            aria-label="Chat on WhatsApp"
-            rel="nofollow"
-            className="inline-block bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded"
-          >
-            Chat on WhatsApp
-          </a>
+    <main className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-12 md:py-16">
+      {/* Intro */}
+      <section className="mb-16">
+        <div className="max-w-xl mx-auto p-8 text-center space-y-4 rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+          <h1 className="text-3xl md:text-5xl font-bold">Contact Us</h1>
+          <p className="text-gray-600">
+            We work with governments, corporates, and partners worldwide. Connect with us to discuss projects, partnerships, or opportunities.
+          </p>
+          <p>
+            <a
+              href="mailto:contact@article6.org"
+              className="inline-flex items-center text-blue-600 font-semibold hover:underline"
+              rel="nofollow"
+            >
+              <EnvelopeIcon className="h-5 w-5 mr-1" aria-hidden="true" />
+              contact@article6.org
+            </a>
+          </p>
+          <div>
+            <a
+              href="https://wa.me/2349066876272"
+              aria-label="Chat on WhatsApp"
+              rel="nofollow"
+              className="inline-flex items-center rounded-full bg-green-600 text-white px-5 py-3 hover:bg-green-700"
+            >
+              Chat on WhatsApp
+            </a>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Contact Form */}
-      <div className="mb-16">
-        <h2 className="text-4xl font-semibold mb-4 text-green-700 text-center">Get in Touch</h2>
-        <form className="bg-white p-8 shadow-sm rounded-lg mx-auto max-w-2xl">
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-              Name
-            </label>
-            <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="name"
-              type="text"
-              placeholder="Your name"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-              Email
-            </label>
-            <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="email"
-              type="email"
-              placeholder="Your email"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="message">
-              Message
-            </label>
-            <textarea
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="message"
-              placeholder="Your message"
-              rows={5}
-            ></textarea>
-          </div>
-          <div className="text-center">
-            <button
-              className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              type="button"
-            >
-              Send Message
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Address Section with Map */}
-      <div className="mb-16">
-        <h2 className="text-4xl font-semibold mb-4 text-green-700 text-center">Our Office</h2>
-        <p className="text-lg text-gray-700 mb-4 text-center">
-          Visit us at our office for more information or to discuss potential collaborations.
-        </p>
-        <div className="flex justify-center mb-4">
-          <iframe
-            src="https://maps.google.com/maps?q=Abuja,%20Nigeria&output=embed"
-            width="600"
-            height="450"
-            allowFullScreen
-            loading="lazy"
-            className="rounded-lg shadow-sm"
-          ></iframe>
-        </div>
-        <p className="text-lg text-gray-700 text-center">
-          Remote – Abuja • Lagos, Nigeria
-        </p>
-      </div>
-    </div>
+      <section className="mb-16">
+        <ContactForm className="bg-white p-8 shadow-sm rounded-lg mx-auto max-w-2xl" />
+      </section>
+    </main>
   );
 };
 
