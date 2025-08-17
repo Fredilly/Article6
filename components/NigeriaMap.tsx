@@ -187,7 +187,7 @@ export default function NigeriaMap({
                 className: `transition-colors ${entry ? "cursor-pointer" : "pointer-events-none"}`,
                 style: {
                   fill: baseFill,
-                  stroke: "#4B5563",
+                  stroke: "#6B7280",
                   strokeWidth: 1.5,
                   pointerEvents: entry ? undefined : "none",
                 },
