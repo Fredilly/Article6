@@ -1,6 +1,7 @@
 // pages/countries/index.tsx
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const CountriesPage = () => {
   return (
@@ -52,7 +53,11 @@ const CountriesPage = () => {
 
         {/* Current Projects Section */}
         <div className="bg-white p-8 shadow-sm rounded-lg transition-shadow hover:shadow-md">
-          <h2 className="text-4xl font-semibold mb-4 text-green-700">Current Projects</h2>
+          <h2 className="text-4xl font-semibold mb-4 text-green-700">
+            <Link href="/projects/nigeria" aria-label="View Nigeria projects">
+              Current Projects
+            </Link>
+          </h2>
           <p className="text-lg text-gray-700">
             Details about ongoing projects led by Article<span className="text-green-600">6</span> in Nigeria. Information on how these projects contribute to sustainability and economic growth.
           </p>
