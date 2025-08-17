@@ -2,6 +2,7 @@ import React from "react";
 import type { GetServerSideProps } from "next";
 import StateCard from "@/components/StateCard";
 import Leaderboard from "@/components/Leaderboard";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { getLeaderboard, type LiveItem } from "@/lib/leaderboard";
 import { enrich, sortByTotal, type ScoredItem } from "@/lib/scoring";
 import { projects as localProjects } from "@/data/projects";
@@ -67,6 +68,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
 export default function ProjectsPage({ live, cards, debug }: Props) {
   return (
     <main className="max-w-6xl mx-auto p-6 space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Countries", href: "/country" },
+          { label: "Nigeria", href: "/country" },
+          { label: "Projects" },
+        ]}
+      />
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
         <p className="text-muted-foreground">Active and upcoming state engagements.</p>
