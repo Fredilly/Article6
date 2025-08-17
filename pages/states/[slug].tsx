@@ -1,31 +1,43 @@
 import { useRouter } from "next/router";
-import Link from "next/link";
-import StateDetailsCarousel from "@/components/StateDetailsCarousel";
+import StateLayout from "@/components/state/StateLayout";
+import StateCarousel from "@/components/state/StateCarousel";
+import StateSidebar from "@/components/state/StateSidebar";
+import StateBodyProject from "@/components/state/StateBodyProject";
+import { getDivision } from "@/data/countries/nigeria";
 
-const ORDER = ["niger", "kwara", "plateau"];
-
-export default function StatePage() {
+export default function StateProjectPage() {
   const router = useRouter();
   const { slug } = router.query;
-  const startIndex = typeof slug === "string" ? ORDER.indexOf(slug) : 0;
+
+  if (typeof slug !== "string") return null;
+  const division = getDivision(slug);
+  if (!division) return null;
+
+  const {
+    title,
+    subtitle,
+    stagePill,
+    images,
+    contacts,
+    focus,
+    docs,
+    doneSoFar = [],
+    nextSteps = [],
+    facts,
+  } = division;
 
   return (
-    <>
-      <header className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 md:pt-6">
-        <Link
-          href="/projects"
-          className="inline-flex items-center rounded-xl border px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
-        >
-          <span className="mr-2">←</span> Back to Projects
-        </Link>
-      </header>
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 md:pt-20">
-        <StateDetailsCarousel
-          states={ORDER}
-          startIndex={startIndex >= 0 ? startIndex : 0}
-        />
-      </main>
-    </>
+    <StateLayout
+      title={title}
+      subtitle={subtitle}
+      stagePill={stagePill}
+      backHref="/projects/nigeria"
+      tertiaryCtaHref={facts && facts.length > 0 ? `/states/${slug}/facts` : undefined}
+    >
+      {images && images.length > 0 && <StateCarousel images={images} />}
+      <StateBodyProject doneSoFar={doneSoFar} nextSteps={nextSteps} docs={docs} />
+      <StateSidebar contacts={contacts} focusAreas={focus} />
+    </StateLayout>
   );
 }
 
