@@ -93,7 +93,7 @@ export default function CountryPage() {
               {/* Legend */}
               <div className="flex items-center gap-3 text-xs">
                 <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#16A34A]" /> Active</span>
-                <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#FBBF24]" /> Pipeline</span>
+                  <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#FCD34D]" /> Pipeline</span>
                 <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-[#E5E7EB]" /> Other</span>
               </div>
             </div>

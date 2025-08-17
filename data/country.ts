@@ -53,5 +53,7 @@ export const META: Record<string, { tag?: string }> = {
 };
 
 export function toTitle(slug: string) {
-  return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const normal = slug.replace(/-/g, " ");
+  if (normal === "fct") return "FCT";
+  return normal.replace(/\b\w/g, (c) => c.toUpperCase());
 }
