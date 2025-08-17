@@ -31,7 +31,7 @@ const NavBar: React.FC = () => {
             <li key={href}>
               <Link
                 href={href}
-                className={`hover:text-green-600 transition-colors duration-300 ${router.pathname === href ? 'text-green-600' : ''}`}
+                className={`hover:text-green-600 transition-colors duration-300 ${router.asPath.startsWith(href) ? 'text-green-600' : ''}`}
               >
                 {label}
               </Link>
@@ -56,7 +56,7 @@ const NavBar: React.FC = () => {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`block py-2 px-4 hover:text-green-600 transition-colors ${router.pathname === href ? 'text-green-600' : ''}`}
+                  className={`block py-2 px-4 hover:text-green-600 transition-colors ${router.asPath.startsWith(href) ? 'text-green-600' : ''}`}
                   onClick={() => setOpen(false)}
                 >
                   {label}
