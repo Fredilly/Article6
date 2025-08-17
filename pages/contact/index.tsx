@@ -38,7 +38,6 @@ const ContactPage = () => {
 
       {/* Contact Form */}
       <section className="mb-16">
-        <h2 className="text-2xl md:text-3xl font-semibold text-center mb-4">Get in Touch</h2>
         <ContactForm className="bg-white p-8 shadow-sm rounded-lg mx-auto max-w-2xl" />
       </section>
     </main>
