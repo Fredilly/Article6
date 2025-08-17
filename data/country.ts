@@ -39,7 +39,7 @@ export const SLUGS = [
 ] as const;
 
 export const STATES = Object.fromEntries(
-  SLUGS.map((s) => [s, { name: toTitle(s) }])
+  SLUGS.map((s) => [s, { name: s === "fct" ? "FCT" : toTitle(s) }])
 ) as Record<string, { name: string }>;
 
 export const ACTIVE = [] as string[];
