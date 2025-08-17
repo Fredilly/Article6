@@ -30,14 +30,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     await transporter.sendMail({
-      from: `"${firstName} ${lastName}" <${email}>`,
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      replyTo: email,
       to: 'contact@article6.org',
       subject: 'New Contact Form Submission',
       text: `First Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${email}\nPhone: ${phone}\nCompany: ${company}\nJob Title: ${jobTitle}\nIndustry: ${industry}\nCountry: ${country}\nMessage: ${message}`,
     });
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ success: true, message: 'Message sent successfully' });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ success: false, error: 'Failed to send message' });
+    return res
+      .status(500)
+      .json({ success: false, message: 'Failed to send message' });
   }
 }

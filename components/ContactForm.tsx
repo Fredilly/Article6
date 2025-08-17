@@ -16,11 +16,12 @@ export default function ContactForm({ className = '', ...props }: ContactFormPro
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (res.ok) {
-        alert('Message sent successfully');
+      const result = await res.json();
+      if (res.ok && result.success) {
+        alert(result.message || 'Message sent successfully');
         e.currentTarget.reset();
       } else {
-        alert('Failed to send message');
+        alert(result.message || 'Failed to send message');
       }
     } catch (err) {
       alert('Failed to send message');
