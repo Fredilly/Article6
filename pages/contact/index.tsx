@@ -4,57 +4,34 @@ import ContactForm from '../../components/ContactForm';
 
 const ContactPage = () => {
   return (
-    <div className="container mx-auto py-16 px-6 max-w-4xl"> {/* Adjust max-width as needed */}
-      {/* Header Section */}
-      <div className="text-center mb-16">
-        <h1 className="text-6xl font-extrabold mb-6 text-green-700">
-          Contact Us
-        </h1>
-        <p className="text-lg text-gray-700">
+    <main className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-12 md:py-16">
+      {/* Intro */}
+      <section className="text-center max-w-2xl mx-auto mb-16">
+        <h1 className="text-3xl md:text-5xl font-semibold tracking-tight">Contact Us</h1>
+        <p className="mt-4 text-gray-700">
           We’d love to hear from you! Reach out to us with any questions, comments, or inquiries about our projects and initiatives.
         </p>
-        <p className="text-lg text-gray-700">
-          Email us at: <a href="mailto:contact@article6.org" className="text-green-700 underline" rel="nofollow">contact@article6.org</a>
+        <p className="mt-2 text-gray-700">
+          Email us at: <a href="mailto:contact@article6.org" className="underline" rel="nofollow">contact@article6.org</a>
         </p>
-        <div className="mt-4">
+        <div className="mt-6">
           <a
             href="https://wa.me/2349066876272"
             aria-label="Chat on WhatsApp"
             rel="nofollow"
-            className="inline-block bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded"
+            className="inline-flex items-center rounded-2xl bg-green-700 text-white px-5 py-3 hover:bg-green-800"
           >
             Chat on WhatsApp
           </a>
         </div>
-      </div>
+      </section>
 
       {/* Contact Form */}
-      <div className="mb-16">
-        <h2 className="text-4xl font-semibold mb-4 text-green-700 text-center">Get in Touch</h2>
+      <section className="mb-16">
+        <h2 className="text-2xl md:text-3xl font-semibold text-center mb-4">Get in Touch</h2>
         <ContactForm className="bg-white p-8 shadow-sm rounded-lg mx-auto max-w-2xl" />
-      </div>
-
-      {/* Address Section with Map */}
-      <div className="mb-16">
-        <h2 className="text-4xl font-semibold mb-4 text-green-700 text-center">Our Office</h2>
-        <p className="text-lg text-gray-700 mb-4 text-center">
-          Visit us at our office for more information or to discuss potential collaborations.
-        </p>
-        <div className="flex justify-center mb-4">
-          <iframe
-            src="https://maps.google.com/maps?q=Abuja,%20Nigeria&output=embed"
-            width="600"
-            height="450"
-            allowFullScreen
-            loading="lazy"
-            className="rounded-lg shadow-sm"
-          ></iframe>
-        </div>
-        <p className="text-lg text-gray-700 text-center">
-          Remote – Abuja • Lagos, Nigeria
-        </p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 
