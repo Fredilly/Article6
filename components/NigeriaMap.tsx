@@ -116,12 +116,12 @@ export default function NigeriaMap({
                 ? "#16A34A"
                 : isPipeline
                 ? "#FBBF24"
-                : "#E5E7EB";
+                : "#F3F4F6";
               const hoverFill = isActive
                 ? "#22C55E"
                 : isPipeline
                 ? "#FCD34D"
-                : "#22C55E";
+                : "#E5E7EB";
               const entry = slug ? divisionMap.get(slug) : undefined;
               const href = entry
                 ? entry.inPipeline
