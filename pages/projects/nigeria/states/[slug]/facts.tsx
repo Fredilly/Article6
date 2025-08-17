@@ -6,8 +6,9 @@ import { STATES } from "@/data/country";
 
 export default function NigeriaStateFactsPage() {
   const { slug } = useRouter().query;
-  const name = typeof slug === "string" ? STATES[slug]?.name || slug : "";
-  const facts = getStateFacts(name);
+  const key = typeof slug === "string" ? slug : "";
+  const name = key ? STATES[key]?.name || key : "";
+  const facts = getStateFacts(key);
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 md:pt-20 space-y-6">
