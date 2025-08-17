@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import NigeriaMap from "@/components/NigeriaMap";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { STATES, ACTIVE, PIPELINE, META, SLUGS } from "@/data/country";
 
 export default function CountryPage() {
@@ -39,13 +40,21 @@ export default function CountryPage() {
               "@type": "BreadcrumbList",
               itemListElement: [
                 { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-                { "@type": "ListItem", position: 2, name: "Nigeria Overview", item: "/country" },
+                { "@type": "ListItem", position: 2, name: "Countries", item: "/country" },
+                { "@type": "ListItem", position: 3, name: "Nigeria", item: "/country" },
               ],
             }),
           }}
         />
       </Head>
       <main className="max-w-7xl mx-auto p-6 space-y-6">
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Countries", href: "/country" },
+            { label: "Nigeria" },
+          ]}
+        />
         <header className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">Nigeria Overview</h1>
           <p className="text-muted-foreground">States we’re actively engaging.</p>

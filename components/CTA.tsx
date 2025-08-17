@@ -4,7 +4,7 @@ export default function CTA() {
   return (
     <div className="text-center space-y-6">
       <p className="mx-auto max-w-2xl text-lg md:text-xl font-medium">
-        Policy maker? We want to hear from you. Register your interest.
+        Are you a policymaker on carbon projects?
       </p>
       <Link
         href="/contact"
