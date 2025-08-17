@@ -6,23 +6,31 @@ const ContactPage = () => {
   return (
     <main className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-12 md:py-16">
       {/* Intro */}
-      <section className="text-center max-w-2xl mx-auto mb-16">
-        <h1 className="text-3xl md:text-5xl font-semibold tracking-tight">Contact Us</h1>
-        <p className="mt-4 text-gray-700">
-          We’d love to hear from you! Reach out to us with any questions, comments, or inquiries about our projects and initiatives.
-        </p>
-        <p className="mt-2 text-gray-700">
-          Email us at: <a href="mailto:contact@article6.org" className="underline" rel="nofollow">contact@article6.org</a>
-        </p>
-        <div className="mt-6">
-          <a
-            href="https://wa.me/2349066876272"
-            aria-label="Chat on WhatsApp"
-            rel="nofollow"
-            className="inline-flex items-center rounded-2xl bg-green-700 text-white px-5 py-3 hover:bg-green-800"
-          >
-            Chat on WhatsApp
-          </a>
+      <section className="mb-16">
+        <div className="max-w-xl mx-auto p-8 text-center space-y-4 rounded-lg shadow-md bg-white/60 backdrop-blur">
+          <h1 className="text-3xl md:text-5xl font-bold">Contact Us</h1>
+          <p className="text-gray-600">
+            We work with governments, corporates, and partners worldwide. Connect with us to discuss projects, partnerships, or opportunities.
+          </p>
+          <p>
+            <a
+              href="mailto:contact@article6.org"
+              className="text-blue-600 font-semibold hover:underline"
+              rel="nofollow"
+            >
+              📩 contact@article6.org
+            </a>
+          </p>
+          <div>
+            <a
+              href="https://wa.me/2349066876272"
+              aria-label="Chat on WhatsApp"
+              rel="nofollow"
+              className="inline-flex items-center rounded-full bg-green-600 text-white px-5 py-3 hover:bg-green-700"
+            >
+              Chat on WhatsApp
+            </a>
+          </div>
         </div>
       </section>
 
