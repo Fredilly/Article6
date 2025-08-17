@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import NigeriaMap from "@/components/NigeriaMap";
+import Breadcrumb from "@/components/Breadcrumb";
 import { STATES, ACTIVE, PIPELINE, META, SLUGS } from "@/data/country";
 
 export default function CountryPage() {
@@ -46,6 +47,13 @@ export default function CountryPage() {
         />
       </Head>
       <main className="max-w-7xl mx-auto p-6 space-y-6">
+        <Breadcrumb
+          segments={[
+            { href: "/", label: "Home" },
+            { href: "/countries", label: "Countries" },
+            { href: "/country", label: "Nigeria" },
+          ]}
+        />
         <header className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">Nigeria Overview</h1>
           <p className="text-muted-foreground">States we’re actively engaging.</p>

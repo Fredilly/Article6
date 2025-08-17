@@ -1,31 +1,31 @@
 import { useRouter } from "next/router";
-import Link from "next/link";
 import StateDetailsCarousel from "@/components/StateDetailsCarousel";
+import Breadcrumb from "@/components/Breadcrumb";
+import { toTitle } from "@/data/country";
 
 const ORDER = ["niger", "kwara", "plateau"];
 
 export default function StatePage() {
-  const router = useRouter();
-  const { slug } = router.query;
-  const startIndex = typeof slug === "string" ? ORDER.indexOf(slug) : 0;
+  const { slug } = useRouter().query;
+  const slugStr = typeof slug === "string" ? slug : "";
+  const startIndex = slugStr ? ORDER.indexOf(slugStr) : 0;
+  const name = slugStr ? toTitle(slugStr) : "";
 
   return (
-    <>
-      <header className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 md:pt-6">
-        <Link
-          href="/projects"
-          className="inline-flex items-center rounded-xl border px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
-        >
-          <span className="mr-2">←</span> Back to Projects
-        </Link>
-      </header>
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 md:pt-20">
-        <StateDetailsCarousel
-          states={ORDER}
-          startIndex={startIndex >= 0 ? startIndex : 0}
-        />
-      </main>
-    </>
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 md:pt-20 space-y-6">
+      <Breadcrumb
+        segments={[
+          { href: "/", label: "Home" },
+          { href: "/countries", label: "Countries" },
+          { href: "/country", label: "Nigeria" },
+          { href: "/projects", label: "Projects" },
+          { href: `/states/${slugStr}`, label: name },
+        ]}
+      />
+      <StateDetailsCarousel
+        states={ORDER}
+        startIndex={startIndex >= 0 ? startIndex : 0}
+      />
+    </main>
   );
 }
-
