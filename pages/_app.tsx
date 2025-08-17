@@ -15,11 +15,13 @@ function MyApp({ Component, pageProps }: AppProps) {
     };
 
     router.events.on('routeChangeComplete', handleRouteChange);
+    // Ensure the first render also starts at the top on all devices
+    handleRouteChange();
 
     return () => {
       router.events.off('routeChangeComplete', handleRouteChange);
     };
-  }, [router.events]);
+  }, [router]);
 
   return (
     <>
