@@ -116,12 +116,12 @@ export default function NigeriaMap({
                 ? "#16A34A"
                 : isPipeline
                 ? "#FBBF24"
-                : "#E5E7EB";
+                : "#FFFFFF";
               const hoverFill = isActive
                 ? "#22C55E"
                 : isPipeline
                 ? "#FCD34D"
-                : "#22C55E";
+                : "#E5E7EB";
               const entry = slug ? divisionMap.get(slug) : undefined;
               const href = entry
                 ? entry.inPipeline
@@ -187,7 +187,7 @@ export default function NigeriaMap({
                 className: `transition-colors ${entry ? "cursor-pointer" : "pointer-events-none"}`,
                 style: {
                   fill: baseFill,
-                  stroke: "#D1D5DB",
+                  stroke: "#4B5563",
                   strokeWidth: 1.5,
                   pointerEvents: entry ? undefined : "none",
                 },
