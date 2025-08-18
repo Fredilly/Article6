@@ -1,11 +1,13 @@
 import React from "react";
-import type { GetServerSideProps } from "next";
+import type { GetStaticProps } from "next";
 import StateCard from "@/components/StateCard";
 import Leaderboard from "@/components/Leaderboard";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { getLeaderboard, type LiveItem } from "@/lib/leaderboard";
 import { enrich, sortByTotal, type ScoredItem } from "@/lib/scoring";
 import { projects as localProjects } from "@/data/projects";
+
+const REVALIDATE_SECONDS = parseInt(process.env.LEADERBOARD_CACHE_TTL || "300", 10);
 
 interface ProjectEntry {
   slug: string;
@@ -25,7 +27,7 @@ type CardItem = LiveItem & Partial<ProjectEntry>;
 
 type Props = { live: ScoredItem[]; cards: CardItem[]; debug?: string };
 
-export const getServerSideProps: GetServerSideProps<Props> = async () => {
+export const getStaticProps: GetStaticProps<Props> = async () => {
   try {
     const live: ScoredItem[] = (await getLeaderboard()).map(enrich).sort(sortByTotal); // strict LIVE
     const extras = new Map<string, ProjectEntry>(localProjects.map(p => [p.slug, p]));
@@ -49,7 +51,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
         last_update_iso: p.lastUpdateISO || "",
         evidence_urls: "",
       }));
-    return { props: { live, cards: [...merged, ...missing] } };
+    return { props: { live, cards: [...merged, ...missing] }, revalidate: REVALIDATE_SECONDS };
   } catch (e: any) {
     const fallback: CardItem[] = localProjects.map((p): CardItem => ({
       ...p,
@@ -61,7 +63,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
       last_update_iso: p.lastUpdateISO || "",
       evidence_urls: "",
     }));
-    return { props: { live: [], cards: fallback, debug: e?.message || "unknown_error" } };
+    return { props: { live: [], cards: fallback, debug: e?.message || "unknown_error" }, revalidate: REVALIDATE_SECONDS };
   }
 };
 

@@ -14,6 +14,10 @@ export type LiveItem = {
   evidence_urls: string;     // comma-separated or ""
 };
 
+// Cache the last fetched leaderboard along with an expiry timestamp.
+let cache: { expires: number; data: LiveItem[] } | null = null;
+const ttlMs = parseInt(process.env.LEADERBOARD_CACHE_TTL || "300", 10) * 1000; // default 5m
+
 const trimEndNewlines = (s: string) => s.replace(/\s+$/g, "").trim();
 const t = (v: any) => trimEndNewlines(String(v ?? ""));
 const toBool = (v: any) => {
@@ -34,6 +38,11 @@ function resolveKey(keyRaw: string): string {
 }
 
 export async function getLeaderboard(): Promise<LiveItem[]> {
+  // Return cached data if fresh
+  if (cache && cache.expires > Date.now()) {
+    return cache.data;
+  }
+
   const email = process.env.GOOGLE_SHEETS_CLIENT_EMAIL || "";
   const key = resolveKey(process.env.GOOGLE_SHEETS_PRIVATE_KEY || "");
   const sheetId = process.env.GOOGLE_SHEETS_SHEET_ID || "";
@@ -92,6 +101,9 @@ export async function getLeaderboard(): Promise<LiveItem[]> {
   // Dedupe by slug (last write wins)
   const map = new Map<string, LiveItem>();
   for (const it of out) map.set(it.slug, it);
-  return Array.from(map.values());
+  const arr = Array.from(map.values());
+  // Update cache before returning
+  cache = { data: arr, expires: Date.now() + ttlMs };
+  return arr;
 }
 
