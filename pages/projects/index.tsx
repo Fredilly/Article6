@@ -93,7 +93,7 @@ export default function ProjectsPage({ live, cards, debug }: Props) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {cards.map((p) => (
-          <StateCard key={p.slug} {...p} href={`/projects/nigeria/states/${p.slug}`} />
+          <StateCard key={p.slug} {...p} />
         ))}
       </div>
     </main>

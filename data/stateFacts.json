@@ -1,0 +1,409 @@
+{
+  "abia": {
+    "facts": [
+      "Did you know that Abia's oil and gas reserves contribute significantly to Nigeria's carbon emissions, but its limestone deposits could support carbon capture technologies?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "adamawa": {
+    "facts": [
+      "Did you know that Adamawa's vast savannas act as natural carbon sinks, absorbing CO2 through grasslands that support over 1.5 million people in agriculture?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "akwa-ibom": {
+    "facts": [
+      "Did you know that Akwa Ibom's coastal mangroves store massive amounts of blue carbon, helping mitigate climate change while protecting against sea-level rise?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "anambra": {
+    "facts": [
+      "Did you know that Anambra's dense population of over 6 million faces increasing flood risks due to climate change, exacerbated by its riverine landscapes?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "bauchi": {
+    "facts": [
+      "Did you know that Bauchi's semi-arid climate makes it vulnerable to desertification, threatening the livelihoods of its 7 million residents reliant on farming?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "bayelsa": {
+    "facts": [
+      "Did you know that Bayelsa's oil fields are a hotspot for methane leaks, but its wetlands could be restored for carbon credits to combat environmental degradation?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "benue": {
+    "facts": [
+      "Did you know that Benue, known as Nigeria's 'Food Basket,' has rich farmlands that sequester carbon, feeding over 5 million people amid rising drought threats?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "borno": {
+    "facts": [
+      "Did you know that Borno's shrinking Lake Chad due to climate change has displaced millions, highlighting the human cost of desertification in the Sahel region?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "cross-river": {
+    "facts": [
+      "Did you know that Cross River hosts one of Nigeria's largest rainforests, a biodiversity hotspot that stores gigatons of carbon but faces deforestation pressures?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "delta": {
+    "facts": [
+      "Did you know that Delta's Niger Delta mangroves absorb CO2 equivalent to thousands of cars annually, yet oil spills have polluted ecosystems affecting 8 million locals?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "ebonyi": {
+    "facts": [
+      "Did you know that Ebonyi's lead mining contributes to environmental pollution, but its salt lakes could inspire sustainable practices in a warming climate?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "edo": {
+    "facts": [
+      "Did you know that Edo's tropical rainforests serve as vital carbon sinks, supporting biodiversity and the cultural heritage of its diverse ethnic groups?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "ekiti": {
+    "facts": [
+      "Did you know that Ekiti's hilly terrain and granite resources make it prone to erosion from heavy rains, impacting the farming communities of its 3 million people?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "enugu": {
+    "facts": [
+      "Did you know that Enugu's coal deposits have historically driven carbon emissions, but shifting to renewables could reduce its climate footprint significantly?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "gombe": {
+    "facts": [
+      "Did you know that Gombe's gemstone mining areas face land degradation, yet its savanna ecosystems help sequester carbon for its growing population?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "imo": {
+    "facts": [
+      "Did you know that Imo's oil and gas production adds to national emissions, but its palm oil plantations could be optimized for sustainable carbon-neutral biofuels?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "jigawa": {
+    "facts": [
+      "Did you know that Jigawa's arid climate leads to frequent droughts, affecting over 6 million people who depend on groundwater for survival?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "kaduna": {
+    "facts": [
+      "Did you know that Kaduna's diverse minerals like gold support livelihoods, but mining runoff worsens water scarcity in this climate-vulnerable northern state?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "kano": {
+    "facts": [
+      "Did you know that Kano, Nigeria's second-most populous state with over 15 million residents, faces urban heat islands amplified by climate change?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "katsina": {
+    "facts": [
+      "Did you know that Katsina's salt resources are threatened by desert encroachment, impacting traditional farming practices of its 8 million inhabitants?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "kebbi": {
+    "facts": [
+      "Did you know that Kebbi's gold mining boom could fund reforestation efforts to combat the state's high vulnerability to Sahelian droughts?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "kogi": {
+    "facts": [
+      "Did you know that Kogi's iron ore and coal resources contribute to industrial emissions, but its confluence of rivers makes it a key site for flood-related climate risks?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "kwara": {
+    "facts": [
+      "Did you know that Kwara's marble and gold deposits drive economic growth, yet increasing temperatures threaten the agricultural base for its 3 million people?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "lagos": {
+    "facts": [
+      "Did you know that Lagos, Africa's most populous city with over 20 million people, emits high urban carbon but leads in renewable energy initiatives like solar?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "nasarawa": {
+    "facts": [
+      "Did you know that Nasarawa's gemstones and barite are mined amid savanna landscapes that act as carbon buffers against central Nigeria's erratic rainfall?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "niger": {
+    "facts": [
+      "Did you know that Niger State, the largest by land area, has vast gold reserves but battles desertification that displaces nomadic herding communities?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "ogun": {
+    "facts": [
+      "Did you know that Ogun's phosphate and limestone support cement production with high CO2 output, yet its proximity to Lagos amplifies urban climate pressures?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "ondo": {
+    "facts": [
+      "Did you know that Ondo's bitumen reserves could be tapped for low-carbon roads, while its cocoa farms sequester CO2 for millions in the agricultural sector?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "osun": {
+    "facts": [
+      "Did you know that Osun's gold mining sites face environmental degradation from climate-driven erosion, affecting sacred forests tied to Yoruba culture?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "oyo": {
+    "facts": [
+      "Did you know that Oyo's kaolin and marble resources fuel industry, but its savanna climate exposes over 9 million people to heatwaves and water shortages?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "plateau": {
+    "facts": [
+      "Did you know that Plateau's highland climate provides a cool refuge in warming Nigeria, with tin mining lands potentially rehabilitated for carbon storage?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "rivers": {
+    "facts": [
+      "Did you know that Rivers State's oil industry is a major global carbon source, but its mangroves could offset emissions through blue carbon projects?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "sokoto": {
+    "facts": [
+      "Did you know that Sokoto's phosphate and gold support farming, yet extreme heat from climate change challenges the resilience of its 5 million residents?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "taraba": {
+    "facts": [
+      "Did you know that Taraba's gemstones are found in biodiverse mountains that serve as carbon sinks, protecting against floods for its ethnic diverse population?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "yobe": {
+    "facts": [
+      "Did you know that Yobe's gypsum resources are in a Sahel zone hit hard by drought, leading to food insecurity for over 3 million amid climate migration?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "zamfara": {
+    "facts": [
+      "Did you know that Zamfara's gold rush has caused lead poisoning crises, but community-led reforestation could build carbon resilience in this arid state?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  },
+  "fct-abuja": {
+    "facts": [
+      "Did you know that Abuja's marble and gold resources surround a planned city of 3 million, where urban greening efforts aim to reduce its carbon footprint?"
+    ],
+    "cta": {
+      "primaryLabel": "Book an expert",
+      "primaryHref": "/contact",
+      "secondaryLabel": "Register your interest",
+      "secondaryHref": "/contact?intent=policy-maker"
+    }
+  }
+}
