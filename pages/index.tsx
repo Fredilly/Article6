@@ -1,6 +1,5 @@
 import React from 'react';
 import HeroSection from '../components/HeroSection';
-import '../styles/globals.css';
 
 const HomePage = () => {
   return (
