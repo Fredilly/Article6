@@ -43,6 +43,8 @@ const NavBar: React.FC = () => {
           className="md:hidden"
           onClick={() => setOpen(o => !o)}
           aria-label="Toggle navigation menu"
+          aria-expanded={open}
+          aria-controls="mobile-menu"
         >
           <Bars3Icon className={`${open ? 'hidden' : 'block'} h-6 w-6`} />
           <XMarkIcon className={`${open ? 'block' : 'hidden'} h-6 w-6`} />
@@ -50,7 +52,7 @@ const NavBar: React.FC = () => {
       </nav>
 
       {open && (
-        <div className="md:hidden bg-white border-t shadow-md">
+        <div id="mobile-menu" className="md:hidden bg-white border-t shadow-md">
           <ul className="flex flex-col p-4 gap-4">
             {navigationLinks.map(({ href, label }) => (
               <li key={href}>
