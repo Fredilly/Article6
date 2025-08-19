@@ -5,8 +5,31 @@ interface ContactFormProps extends React.FormHTMLAttributes<HTMLFormElement> {}
 const inputClasses = "w-full rounded-md border border-gray-300 bg-gray-100 p-3 focus:outline-none focus:ring-2 focus:ring-black";
 
 export default function ContactForm({ className = '', ...props }: ContactFormProps) {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries()) as Record<string, string>;
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        alert(result.message || 'Message sent successfully');
+        e.currentTarget.reset();
+      } else {
+        alert(result.message || 'Failed to send message');
+      }
+    } catch (err) {
+      alert('Failed to send message');
+    }
+  };
+
   return (
-    <form className={`space-y-6 ${className}`} {...props}>
+    <form className={`space-y-6 ${className}`} onSubmit={handleSubmit} {...props}>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <label htmlFor="firstName" className="mb-1 block text-sm font-medium text-gray-700">
