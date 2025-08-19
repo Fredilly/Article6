@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import nigeria from "@svg-maps/nigeria";
 import { SLUGS, STATES } from "@/data/country";
@@ -40,6 +40,13 @@ export default function NigeriaMap({
   const [coords, setCoords] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [hoveredSlug, setHoveredSlug] = useState<Slug | null>(null);
   const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (delayRef.current) window.clearTimeout(delayRef.current);
+    };
+  }, []);
 
   const COUNTRY_BASE = "/projects/nigeria";
   const activeSet = useMemo(
