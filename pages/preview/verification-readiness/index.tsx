@@ -25,45 +25,84 @@ export default function PreviewHomePage() {
         primaryCta={{ label: 'Upload your PDD', href: '#upload-pdd' }}
         secondaryCta={{ label: 'View Sample Assessment', href: `${BASE}/sample-assessment` }}
       >
-        {/* Product visual — mock assessment panel */}
-        <div className="w-full max-w-[280px] lg:max-w-full">
-          <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="bg-forest-900 px-5 py-5 text-white">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-forest-200">
-                VM0007 v1.8 Evidence Assessment
-              </p>
-              <p className="text-lg font-bold mt-1">58 Requirements Reviewed</p>
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-green-400 font-bold">&#x2713;</span>
-                  <span className="text-forest-100">Supported Evidence</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-amber-400 font-bold">&#x26A0;</span>
-                  <span className="text-forest-100">Clarification Needed</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-red-400 font-bold">&#x2717;</span>
-                  <span className="text-forest-100">Action Required</span>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-forest-700">
-                <p className="text-[10px] uppercase tracking-wider text-forest-200 mb-2">
-                  Priority Findings
+        {/* Premium report preview */}
+        <div className="w-full max-w-[320px] lg:max-w-full">
+          <div className="rounded-md border border-gray-200 bg-white shadow-md overflow-hidden">
+            {/* Cover header */}
+            <div className="bg-forest-900 px-6 py-7">
+              <div className="border border-forest-600/40 px-4 py-5 text-center">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-forest-300">Article6</p>
+                <p className="text-xl font-bold text-white mt-3 leading-tight">
+                  VM0007 v1.8
                 </p>
-                <ul className="space-y-1 text-[11px] text-forest-100">
-                  <li>Evidence traceability</li>
-                  <li>Additional documentation</li>
-                  <li>Methodology clarification</li>
-                </ul>
+                <p className="text-xs text-forest-200 mt-1">
+                  REDD+ Methodology Framework
+                </p>
+                <div className="mt-4 w-12 h-px bg-forest-600 mx-auto" />
+                <p className="text-xs text-forest-200 mt-3">
+                  Pre-Validation
+                </p>
+                <p className="text-xs text-forest-200">
+                  Evidence Assessment
+                </p>
+                <p className="text-[10px] text-forest-400 mt-3">
+                  Illustrative Client Deliverable
+                </p>
               </div>
             </div>
-            <div className="px-5 py-3">
-              <p className="text-xs text-gray-500">
-                Requirement-by-requirement review with source references.
+
+            {/* Dashboard summary */}
+            <div className="px-5 py-4 border-b border-gray-100">
+              <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-3">
+                Readiness Dashboard
               </p>
-              <p className="mt-1 text-[10px] text-gray-400">
-                Sample for illustration. Not a real project assessment.
+              <p className="text-xs text-gray-500 mb-3">
+                58 methodology requirements reviewed
+              </p>
+              <div className="space-y-2">
+                {[
+                  { label: 'FOUND', count: 6, w: 'w-[10%]', bg: 'bg-green-500', text: 'text-green-700' },
+                  { label: 'UNCLEAR', count: 21, w: 'w-[36%]', bg: 'bg-amber-400', text: 'text-amber-700' },
+                  { label: 'MISSING', count: 9, w: 'w-[16%]', bg: 'bg-red-400', text: 'text-red-700' },
+                  { label: 'NOT APPLICABLE', count: 22, w: 'w-[38%]', bg: 'bg-gray-300', text: 'text-gray-500' },
+                ].map(({ label, count, w, bg, text }) => (
+                  <div key={label} className="flex items-center gap-2.5">
+                    <span className="text-[11px] text-gray-600 w-[72px] shrink-0">{label}</span>
+                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${bg} ${w}`} />
+                    </div>
+                    <span className={`text-[11px] font-semibold ${text} w-5 text-right`}>{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Outcomes */}
+            <div className="px-5 py-3 border-b border-gray-100">
+              <div className="flex gap-5 text-center text-[11px]">
+                <div>
+                  <span className="font-bold text-green-700">6</span>
+                  <p className="text-gray-400 text-[10px] mt-0.5">CONFORMS</p>
+                </div>
+                <div>
+                  <span className="font-bold text-red-600">30</span>
+                  <p className="text-gray-400 text-[10px] mt-0.5">ACTION REQ.</p>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-400">22</span>
+                  <p className="text-gray-400 text-[10px] mt-0.5">NOT APPLIC.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer disclaimer */}
+            <div className="px-5 py-3 bg-gray-50">
+              <p className="text-[10px] text-gray-400 leading-relaxed">
+                Pre-validation readiness assessment. Not validation approval,
+                verification, or certification.
+              </p>
+              <p className="text-[10px] text-gray-300 mt-1">
+                Sample for illustration.
               </p>
             </div>
           </div>
