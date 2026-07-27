@@ -61,16 +61,20 @@ export default function SampleAssessmentPage() {
         </div>
       </section>
 
-      {/* Sample download placeholder */}
+      {/* Sample download */}
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-24 text-center">
         <h2 className="text-xl font-bold text-forest-900">Download Sample Assessment</h2>
         <p className="mt-3 mx-auto max-w-md text-sm text-gray-500">
-          The sample assessment PDF is not yet available. A placeholder has been prepared for the
-          approved asset.
+          Download the full VM0007 v1.8 pre-validation evidence readiness assessment sample.
         </p>
-        <div className="mt-6 inline-flex items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 px-8 py-5 text-sm text-gray-400">
-          Sample PDF placeholder — asset pending
-        </div>
+        <a
+          href="https://ik.imagekit.io/tzublgy5d/Article6/Sample%20Documents/VM0007_v1.8_SAMPLE.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 inline-flex items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
+        >
+          Download Sample Report (PDF)
+        </a>
       </section>
 
       {/* Disclaimer */}
