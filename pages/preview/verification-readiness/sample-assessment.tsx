@@ -68,9 +68,10 @@ export default function SampleAssessmentPage() {
           Download the full VM0007 v1.8 pre-validation evidence readiness assessment sample.
         </p>
         <a
-          href="https://ik.imagekit.io/tzublgy5d/Article6/Sample%20Documents/VM0007_v1.8_SAMPLE.pdf"
+          href="https://ik.imagekit.io/tzublgy5d/Article6/Sample%20Documents/VM0007_v1.8_SAMPLE.pdf?ik-attachment=true"
           target="_blank"
           rel="noopener noreferrer"
+          download
           className="mt-6 inline-flex items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
         >
           Download Sample Report (PDF)
