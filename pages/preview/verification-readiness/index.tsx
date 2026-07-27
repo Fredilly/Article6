@@ -242,16 +242,11 @@ export default function PreviewHomePage() {
               <PddUploadForm />
             </div>
 
-            <div className="mt-6 space-y-3 text-xs text-gray-500 leading-relaxed">
+            <div className="mt-6 text-xs text-gray-500 leading-relaxed">
               <p>
                 Your document will be used only to evaluate and perform the requested assessment.
+                All uploads are transmitted securely and stored privately.
               </p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span className="text-gray-400">Privacy</span>
-                <span className="text-gray-400">Document handling</span>
-                <span className="text-gray-400">Retention policy</span>
-                <span className="text-gray-300 text-[10px]">— policy pages required before production launch</span>
-              </div>
             </div>
           </div>
         </div>
