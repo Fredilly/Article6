@@ -1,20 +1,29 @@
-// pages/_app.tsx
-import Head from 'next/head'; // Import Head
-import '../styles/globals.css'; // Import global styles
+import Head from 'next/head';
+import '../styles/globals.css';
 import type { AppProps } from 'next/app';
-import Layout from '../components/Layout'; // Import your Layout component
+import Layout from '../components/Layout';
+import PreviewLayout from '../components/preview/PreviewLayout';
 
-function MyApp({ Component, pageProps }: AppProps) {
+function MyApp({ Component, pageProps, router }: AppProps) {
+  const isPreview = router.pathname.startsWith('/preview/verification-readiness');
+
   return (
     <>
       <Head>
-        {/* Add the viewport meta tag here */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* You can add more meta tags here as needed */}
+        {isPreview && <meta name="robots" content="noindex,nofollow" />}
       </Head>
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+      {isPreview ? (
+        <div style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+          <PreviewLayout>
+            <Component {...pageProps} />
+          </PreviewLayout>
+        </div>
+      ) : (
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      )}
     </>
   );
 }
