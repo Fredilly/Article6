@@ -1,8 +1,6 @@
 import Head from 'next/head';
 import PreviewHero from '../../../components/preview/PreviewHero';
-import SectionHeading from '../../../components/preview/SectionHeading';
-import FeatureCard from '../../../components/preview/FeatureCard';
-import ProcessStep from '../../../components/preview/ProcessStep';
+import PddUploadForm from '../../../components/preview/PddUploadForm';
 import Link from 'next/link';
 
 const BASE = '/preview/verification-readiness';
@@ -14,184 +12,219 @@ export default function PreviewHomePage() {
         <title>Article6 Verification Readiness Preview</title>
         <meta
           name="description"
-          content="Article6 evidence readiness assessments for carbon projects preparing for validation."
+          content="Find evidence gaps before your validator does. Article6 reviews your VM0007 v1.8 project documentation against methodology requirements."
         />
       </Head>
 
-      {/* Hero */}
+      {/* 1. Hero */}
       <PreviewHero
         eyebrow="VM0007 v1.8 EVIDENCE READINESS"
-        headline="Prepare your carbon project for validation."
-        body="Article6 reviews project documentation against methodology requirements and identifies evidence gaps before validation."
-        supportingText="Currently supporting Verra VM0007 v1.8 REDD+ projects."
-        primaryCta={{ label: 'Request an Assessment', href: `${BASE}/request-assessment` }}
+        headline="Find the evidence gaps before your validator does."
+        body="Article6 reviews your VM0007 v1.8 project documentation against methodology requirements to identify missing, unclear, and unsupported evidence before validation begins."
+        trustLine="Independent pre-validation review. No commitment required for initial scope review."
+        primaryCta={{ label: 'Upload your PDD', href: '#upload-pdd' }}
         secondaryCta={{ label: 'View Sample Assessment', href: `${BASE}/sample-assessment` }}
-      />
-
-      {/* Problem section */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-        <SectionHeading
-          heading="Validation problems start before the audit."
-        />
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <FeatureCard title="Evidence is scattered">
-            Critical evidence can be distributed across the PDD, annexes, calculations, maps, and
-            supporting documents.
-          </FeatureCard>
-          <FeatureCard title="Requirements are complex">
-            Methodology requirements must be interpreted consistently and connected to traceable
-            project evidence.
-          </FeatureCard>
-          <FeatureCard title="Late findings are expensive">
-            Issues discovered during validation can create avoidable clarification cycles, rework,
-            and delays.
-          </FeatureCard>
-        </div>
-      </section>
-
-      {/* Solution section */}
-      <section className="bg-forest-50/50 border-y border-gray-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-          <SectionHeading
-            heading="The Article6 Evidence Readiness Assessment"
-            body="We map project documentation against methodology requirements and produce a clear, actionable readiness assessment before external validation."
-          />
-          <div className="mt-12 max-w-2xl mx-auto">
-            <ul className="space-y-4 text-sm md:text-base text-gray-700">
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 text-forest-600 font-bold">&#x2022;</span>
-                Requirement-by-requirement review
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 text-forest-600 font-bold">&#x2022;</span>
-                Evidence coverage assessment
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 text-forest-600 font-bold">&#x2022;</span>
-                Priority gaps and risks
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 text-forest-600 font-bold">&#x2022;</span>
-                Recommended preparation actions
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 text-forest-600 font-bold">&#x2022;</span>
-                Reviewed readiness report
-              </li>
-            </ul>
+      >
+        {/* Product visual — mock assessment panel */}
+        <div className="w-full max-w-[280px] lg:max-w-full">
+          <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="bg-forest-900 px-5 py-5 text-white">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-forest-200">
+                VM0007 v1.8 Evidence Assessment
+              </p>
+              <p className="text-lg font-bold mt-1">58 Requirements Reviewed</p>
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-green-400 font-bold">&#x2713;</span>
+                  <span className="text-forest-100">Supported Evidence</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-amber-400 font-bold">&#x26A0;</span>
+                  <span className="text-forest-100">Clarification Needed</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-red-400 font-bold">&#x2717;</span>
+                  <span className="text-forest-100">Action Required</span>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-forest-700">
+                <p className="text-[10px] uppercase tracking-wider text-forest-200 mb-2">
+                  Priority Findings
+                </p>
+                <ul className="space-y-1 text-[11px] text-forest-100">
+                  <li>Evidence traceability</li>
+                  <li>Additional documentation</li>
+                  <li>Methodology clarification</li>
+                </ul>
+              </div>
+            </div>
+            <div className="px-5 py-3">
+              <p className="text-xs text-gray-500">
+                Requirement-by-requirement review with source references.
+              </p>
+              <p className="mt-1 text-[10px] text-gray-400">
+                Sample for illustration. Not a real project assessment.
+              </p>
+            </div>
           </div>
         </div>
-      </section>
+      </PreviewHero>
 
-      {/* Process section */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-        <SectionHeading
-          heading="From project documents to a readiness report"
-        />
-        <div className="mt-12 max-w-2xl mx-auto space-y-8">
-          <ProcessStep step={1} title="Share your PDD">
-            Upload the current PDD and relevant supporting documents.
-          </ProcessStep>
-          <ProcessStep step={2} title="We analyze the requirements">
-            We map methodology requirements to the documents provided.
-          </ProcessStep>
-          <ProcessStep step={3} title="Evidence is reviewed">
-            Evidence availability, clarity, traceability, and support are assessed.
-          </ProcessStep>
-          <ProcessStep step={4} title="Findings are prioritized">
-            Potential gaps, unclear areas, and preparation needs are identified.
-          </ProcessStep>
-          <ProcessStep step={5} title="You receive the report">
-            The final assessment provides structured findings and recommended actions.
-          </ProcessStep>
+      {/* 2. Why this matters */}
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+        <div className="max-w-2xl">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+            A complete PDD does not always mean a validation-ready project.
+          </h2>
+          <p className="mt-3 text-sm md:text-base text-gray-600 leading-relaxed">
+            Carbon projects often contain extensive documentation, but evidence can still be
+            incomplete, unclear, or difficult for reviewers to trace.
+          </p>
+        </div>
+        <div className="mt-8 space-y-3 max-w-2xl">
+          {[
+            'Evidence is distributed across PDDs, annexes, calculations, maps, and supporting files.',
+            'Requirements may be addressed without sufficient supporting evidence.',
+            'Evidence may exist but be difficult to verify or trace.',
+            'Documentation gaps are often discovered after validation has already started.',
+          ].map((item) => (
+            <div key={item} className="flex items-start gap-2.5 text-sm text-gray-700 leading-relaxed">
+              <span className="mt-0.5 flex-shrink-0 text-forest-600 font-bold">&#x2713;</span>
+              <span>{item}</span>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Audience section */}
-      <section className="bg-gray-50 border-y border-gray-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-          <SectionHeading
-            heading="Built for teams preparing carbon projects for validation"
-          />
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FeatureCard title="Project developers">
-              Identify evidence gaps before they become validation findings.
-            </FeatureCard>
-            <FeatureCard title="Carbon consultants">
-              Add structured methodology evidence review to project preparation work.
-            </FeatureCard>
-            <FeatureCard title="In-house technical teams">
-              Improve documentation readiness before external review.
-            </FeatureCard>
+      {/* 3. Cost of doing nothing */}
+      <section className="border-y border-gray-200 bg-gray-50">
+        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+            Finding gaps during validation costs more.
+          </h2>
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Clarification cycles</h3>
+              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+                Your team spends time responding to questions and locating additional evidence.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Rework</h3>
+              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+                Documentation must be revised under external review pressure.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Delays</h3>
+              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+                Unresolved evidence questions can slow validation progress.
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* Methodology section */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-        <SectionHeading heading="Current methodology coverage" />
-        <div className="mt-12 max-w-md mx-auto">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
-            <h3 className="text-lg font-semibold text-forest-900">VM0007 v1.8</h3>
-            <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-              Evidence readiness assessment for REDD+ project documentation using Verra VM0007 v1.8.
-            </p>
-            <Link
-              href={`${BASE}/vm0007`}
-              className="mt-4 inline-flex text-sm font-medium text-forest-700 hover:text-forest-800 transition-colors"
-            >
-              View the VM0007 assessment &rarr;
-            </Link>
-          </div>
-          <p className="mt-6 text-xs text-gray-400 text-center leading-relaxed">
-            Additional methodologies will be introduced only after they are fully reviewed and supported.
+          <p className="mt-8 text-sm text-gray-500 max-w-2xl">
+            Article6 moves that review forward, while your team still has time to prepare.
           </p>
         </div>
       </section>
 
-      {/* Trust section */}
-      <section className="bg-forest-900 text-white">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-          <div className="text-center">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
-              Evidence before claims
+      {/* 4. What you receive */}
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+              A clear preparation plan before validation.
             </h2>
+            <ul className="mt-6 space-y-3 text-sm text-gray-700">
+              {[
+                'Requirement-by-requirement evidence assessment',
+                'Supported, unclear, and action-required findings',
+                'Evidence references and traceability notes',
+                'Priority preparation actions',
+                'Reviewed readiness report',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 text-forest-600 font-bold">&#x2713;</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href={`${BASE}/sample-assessment`}
+              className="mt-6 inline-flex items-center text-sm font-medium text-forest-700 hover:text-forest-800 transition-colors"
+            >
+              View Sample Assessment &rarr;
+            </Link>
           </div>
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
-            <div className="rounded-lg border border-forest-700 bg-forest-800/50 p-5">
-              <p className="text-sm leading-relaxed text-forest-100">Human-reviewed conclusions</p>
-            </div>
-            <div className="rounded-lg border border-forest-700 bg-forest-800/50 p-5">
-              <p className="text-sm leading-relaxed text-forest-100">Traceable source references</p>
-            </div>
-            <div className="rounded-lg border border-forest-700 bg-forest-800/50 p-5">
-              <p className="text-sm leading-relaxed text-forest-100">Methodology-specific analysis</p>
-            </div>
-            <div className="rounded-lg border border-forest-700 bg-forest-800/50 p-5">
-              <p className="text-sm leading-relaxed text-forest-100">Clear separation from VVB decisions</p>
-            </div>
-            <div className="rounded-lg border border-forest-700 bg-forest-800/50 p-5">
-              <p className="text-sm leading-relaxed text-forest-100">No guarantee of validation or registry acceptance</p>
+          <div className="flex justify-center lg:justify-end">
+            <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden max-w-xs">
+              <div className="bg-gradient-to-br from-forest-700 to-forest-900 px-5 py-6 text-white text-center">
+                <p className="text-xs uppercase tracking-[0.15em] text-forest-200">
+                  Evidence Readiness Assessment
+                </p>
+                <p className="text-lg font-bold mt-1.5">VM0007 v1.8</p>
+                <p className="text-forest-200 text-xs mt-1">Sample Report</p>
+                <div className="mt-4 border-t border-forest-600 pt-3 text-[10px] text-forest-200">
+                  Prepared by Article6
+                </div>
+              </div>
+              <div className="px-5 py-4 space-y-1.5">
+                {[
+                  'Executive readiness summary',
+                  'Priority findings',
+                  'Requirement-by-requirement assessment',
+                  'Evidence references',
+                  'Recommended actions',
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-2 text-xs text-gray-600">
+                    <span className="text-forest-600">&#x2713;</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-forest-900">
-          Send us your PDD.
-        </h2>
-        <p className="mt-4 mx-auto max-w-xl text-base md:text-lg text-gray-600 leading-relaxed">
-          We will review the project scope, confirm whether it fits the current assessment, and
-          explain the next steps.
-        </p>
-        <Link
-          href={`${BASE}/request-assessment`}
-          className="mt-8 inline-flex items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
-        >
-          Request an Assessment
-        </Link>
+      {/* 5. PDD upload form */}
+      <section id="upload-pdd" className="border-y border-gray-200 bg-gray-50 scroll-mt-16">
+        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+          <div className="max-w-lg mx-auto">
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+              Send us your PDD.
+            </h2>
+            <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+              Upload your project documentation and we will review the scope, confirm methodology
+              fit, and explain the next steps.
+            </p>
+
+            <div className="mt-8 rounded-lg border border-gray-200 bg-white p-5 md:p-7 shadow-sm">
+              <PddUploadForm />
+            </div>
+
+            <div className="mt-6 space-y-3 text-xs text-gray-500 leading-relaxed">
+              <p>
+                Your document will be used only to evaluate and perform the requested assessment.
+              </p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <span className="text-gray-400">Privacy</span>
+                <span className="text-gray-400">Document handling</span>
+                <span className="text-gray-400">Retention policy</span>
+                <span className="text-gray-300 text-[10px]">— policy pages required before production launch</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Disclaimer */}
+      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <div className="max-w-2xl mx-auto rounded-lg border border-gray-200 bg-gray-50 p-5 md:p-6 text-sm text-gray-500 leading-relaxed">
+          Article6 provides independent pre-validation evidence readiness assessments. The service is
+          not validation, verification, legal advice, a registry determination, or a guarantee of
+          acceptance by Verra or any validation and verification body.
+        </div>
       </section>
     </>
   );

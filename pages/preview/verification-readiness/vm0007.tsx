@@ -3,7 +3,6 @@ import PreviewHero from '../../../components/preview/PreviewHero';
 import SectionHeading from '../../../components/preview/SectionHeading';
 import AssessmentStatusCard from '../../../components/preview/AssessmentStatusCard';
 import DisclaimerPanel from '../../../components/preview/DisclaimerPanel';
-import Link from 'next/link';
 
 const BASE = '/preview/verification-readiness';
 
@@ -22,8 +21,8 @@ export default function VM0007Page() {
         eyebrow="METHODOLOGY-SPECIFIC ASSESSMENT"
         headline="VM0007 v1.8 Evidence Readiness Assessment"
         body="For REDD+ project teams preparing documentation under Verra VM0007 v1.8."
-        supportingText="We help identify where evidence appears well supported, where it remains unclear, and what may require additional preparation before validation."
-        primaryCta={{ label: 'Request an Assessment', href: `${BASE}/request-assessment` }}
+        trustLine="We help identify where evidence appears well supported, where it remains unclear, and what may require additional preparation before validation."
+        primaryCta={{ label: 'Upload your PDD', href: `${BASE}#upload-pdd` }}
       />
 
       {/* What we review */}

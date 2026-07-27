@@ -28,7 +28,7 @@ export default function SampleAssessmentPage() {
       <PreviewHero
         headline="Sample VM0007 v1.8 Evidence Readiness Assessment"
         body="This redacted sample demonstrates the structure, level of detail, and practical outputs of an Article6 assessment."
-        supportingText="The sample is based on publicly available project documentation. It does not represent a commissioned engagement, customer relationship, endorsement, or validation decision."
+        trustLine="The sample is based on publicly available project documentation. It does not represent a commissioned engagement, customer relationship, endorsement, or validation decision."
       />
 
       {/* Sample contents */}

@@ -9,6 +9,7 @@ const BASE = '/preview/verification-readiness';
 const PreviewHeader: React.FC = () => {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const isHomePage = router.pathname === '/preview/verification-readiness';
 
   useEffect(() => {
     const handleResize = () => {
@@ -20,17 +21,47 @@ const PreviewHeader: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const CtaButton = ({ className = '' }: { className?: string }) => {
+    if (isHomePage) {
+      return (
+        <a
+          href="#upload-pdd"
+          className={`inline-flex items-center rounded-md bg-forest-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 ${className}`}
+          onClick={(e) => {
+            setOpen(false);
+            e.preventDefault();
+            const el = document.getElementById('upload-pdd');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+        >
+          {previewCtaLink.label}
+        </a>
+      );
+    }
+    return (
+      <Link
+        href={previewCtaLink.href}
+        className={`inline-flex items-center rounded-md bg-forest-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 ${className}`}
+        onClick={() => setOpen(false)}
+      >
+        {previewCtaLink.label}
+      </Link>
+    );
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
-      <nav className="mx-auto max-w-6xl flex items-center justify-between px-4 py-3 md:py-4">
+      <nav className="mx-auto max-w-6xl flex items-center justify-between px-4 py-2.5 md:py-3.5">
         <Link
           href={BASE}
-          className="text-lg font-bold tracking-wide text-forest-900"
+          className="text-base font-bold tracking-wide text-forest-900 shrink-0"
         >
           ARTICLE6
         </Link>
 
-        <ul className="hidden md:flex items-center gap-8">
+        <ul className="hidden md:flex items-center gap-6">
           {previewNavigationLinks.map(({ href, label }) => {
             const isActive = router.asPath === href || router.asPath.startsWith(href + '/');
             return (
@@ -48,34 +79,36 @@ const PreviewHeader: React.FC = () => {
               </li>
             );
           })}
-          <li>
-            <Link
-              href={previewCtaLink.href}
-              className="inline-flex items-center rounded-md bg-forest-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
-            >
-              {previewCtaLink.label}
-            </Link>
-          </li>
         </ul>
 
-        <button
-          className="md:hidden p-1 text-gray-700"
-          onClick={() => setOpen((o) => !o)}
-          aria-label="Toggle navigation menu"
-          aria-expanded={open}
-          aria-controls="preview-mobile-menu"
-        >
-          {open ? (
-            <XMarkIcon className="h-6 w-6" />
-          ) : (
-            <Bars3Icon className="h-6 w-6" />
-          )}
-        </button>
+        <div className="flex items-center gap-3">
+          <CtaButton className="hidden md:inline-flex" />
+          <button
+            className="md:hidden p-1 text-gray-700"
+            onClick={() => setOpen((o) => !o)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={open}
+            aria-controls="preview-mobile-menu"
+          >
+            {open ? (
+              <XMarkIcon className="h-5 w-5" />
+            ) : (
+              <Bars3Icon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </nav>
+
+      {/* Mobile: always-visible Upload PDD button when not on homepage */}
+      {!isHomePage && (
+        <div className="md:hidden border-t border-gray-200 bg-white px-4 py-2">
+          <CtaButton className="w-full justify-center" />
+        </div>
+      )}
 
       {open && (
         <div id="preview-mobile-menu" className="md:hidden border-t border-gray-200 bg-white">
-          <ul className="flex flex-col px-4 py-3 gap-2">
+          <ul className="flex flex-col px-4 py-3 gap-1.5">
             {previewNavigationLinks.map(({ href, label }) => {
               const isActive = router.asPath === href || router.asPath.startsWith(href + '/');
               return (
@@ -94,15 +127,11 @@ const PreviewHeader: React.FC = () => {
                 </li>
               );
             })}
-            <li>
-              <Link
-                href={previewCtaLink.href}
-                className="block py-2.5 px-3 rounded-md text-sm font-semibold text-white bg-forest-700 text-center hover:bg-forest-800 transition"
-                onClick={() => setOpen(false)}
-              >
-                {previewCtaLink.label}
-              </Link>
-            </li>
+            {isHomePage && (
+              <li>
+                <CtaButton className="w-full justify-center mt-1" />
+              </li>
+            )}
           </ul>
         </div>
       )}

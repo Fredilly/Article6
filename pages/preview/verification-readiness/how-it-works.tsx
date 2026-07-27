@@ -80,10 +80,10 @@ export default function HowItWorksPage() {
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 pb-16 md:pb-24 text-center">
         <Link
-          href={`${BASE}/request-assessment`}
+          href={`${BASE}#upload-pdd`}
           className="inline-flex items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
         >
-          Request an Assessment
+          Upload your PDD
         </Link>
       </section>
     </>
