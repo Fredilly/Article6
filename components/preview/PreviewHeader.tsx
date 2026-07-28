@@ -9,7 +9,8 @@ const BASE = '/preview/verification-readiness';
 const PreviewHeader: React.FC = () => {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const isHomePage = router.pathname === '/preview/verification-readiness';
+  const isHomePage = router.pathname === '/' || router.pathname === '/preview/verification-readiness';
+  const brandHref = router.pathname === '/' ? '/' : BASE;
 
   useEffect(() => {
     const handleResize = () => {
@@ -55,7 +56,7 @@ const PreviewHeader: React.FC = () => {
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
       <nav className="mx-auto max-w-6xl flex items-center justify-between px-4 py-2.5 md:py-3.5">
         <Link
-          href={BASE}
+          href={brandHref}
           className="text-base font-bold tracking-wide text-forest-900 shrink-0"
         >
           ARTICLE6
