@@ -8,7 +8,6 @@ class MyDocument extends Document {
         {/* Set the document language; default to English but allow dynamic locale if provided */}
         <Head>
           <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-          <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="16x16" />
         </Head>
         <body>
           <Main />
