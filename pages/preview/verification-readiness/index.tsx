@@ -1,6 +1,13 @@
-// This route is permanently redirected to / via next.config.js.
-// The landing page content lives in components/VerificationReadinessHome.tsx
-// and is rendered by pages/index.tsx.
+// Permanent redirect to / — the landing page is now at the root.
+export async function getServerSideProps() {
+  return {
+    redirect: {
+      destination: '/',
+      permanent: true,
+    },
+  };
+}
+
 export default function PreviewHomeRedirect() {
   return null;
 }

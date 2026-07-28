@@ -10,7 +10,6 @@ const nextConfig = {
     return [
       { source: '/about', destination: '/about-us', permanent: true },
       { source: '/countries/:path*', destination: '/country', permanent: true },
-      { source: '/preview/verification-readiness', destination: '/', permanent: true },
     ];
   },
   // ... other configurations you might have
