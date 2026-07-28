@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { configureBucketCors, generatePresignedUploadUrl } from "../../../lib/r2";
+import { configureBucketCors, generatePresignedUploadUrl, getBucketName } from "../../../lib/r2";
 
 const ALLOWED_CONTENT_TYPE = "application/pdf";
 const MAX_FILE_SIZE_MB = 50;
@@ -90,9 +90,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       urlHost: new URL(uploadUrl).hostname,
       urlPath: new URL(uploadUrl).pathname.slice(0, 60) + "...",
       urlProtocol: new URL(uploadUrl).protocol,
-      hasBucketInPath: new URL(uploadUrl).pathname.includes(process.env.R2_BUCKET_NAME || ""),
+      hasBucketInPath: new URL(uploadUrl).pathname.includes(getBucketName()),
       signedHeadersParam: new URLSearchParams(new URL(uploadUrl).search).get("X-Amz-SignedHeaders") || "none",
     });
+
+    const bucketName = getBucketName();
+    const accountId = process.env.R2_ACCOUNT_ID!;
+
+    try {
+      const corsTestUrl = `https://${bucketName}.${accountId}.r2.cloudflarestorage.com/submissions/cors-test.txt`;
+      const optRes = await fetch(corsTestUrl, {
+        method: "OPTIONS",
+        headers: {
+          Origin: "https://article6.org",
+          "Access-Control-Request-Method": "PUT",
+        },
+      });
+      const corsHeaders: Record<string, string> = {};
+      optRes.headers.forEach((v, k) => {
+        if (k.toLowerCase().startsWith("access-control")) {
+          corsHeaders[k] = v;
+        }
+      });
+      console.info("[presign] R2 CORS diagnostic", {
+        testUrl: corsTestUrl.slice(0, 100),
+        optStatus: optRes.status,
+        corsHeaders,
+      });
+    } catch (corsDiagErr) {
+      console.error("[presign] R2 CORS diagnostic failed:", {
+        error: corsDiagErr instanceof Error ? corsDiagErr.message : String(corsDiagErr),
+      });
+    }
 
     return res.status(200).json({
       uploadUrl,
