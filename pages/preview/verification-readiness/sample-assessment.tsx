@@ -1,5 +1,4 @@
 import Head from 'next/head';
-import PreviewHero from '../../../components/preview/PreviewHero';
 import SectionHeading from '../../../components/preview/SectionHeading';
 import ReportPreview from '../../../components/preview/ReportPreview';
 import AssessmentStatusCard from '../../../components/preview/AssessmentStatusCard';
@@ -25,11 +24,19 @@ export default function SampleAssessmentPage() {
         />
       </Head>
 
-      <PreviewHero
-        headline="Sample VM0007 v1.8 Evidence Readiness Assessment"
-        body="This redacted sample demonstrates the structure, level of detail, and practical outputs of an Article6 assessment."
-        trustLine="The sample is based on publicly available project documentation. It does not represent a commissioned engagement, customer relationship, endorsement, or validation decision."
-      />
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24 text-center">
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900 leading-tight max-w-3xl mx-auto">
+          Sample VM0007 v1.8 Evidence Readiness Assessment
+        </h1>
+        <p className="mt-5 max-w-2xl mx-auto text-base md:text-lg text-gray-600 leading-relaxed">
+          This redacted sample demonstrates the structure, level of detail, and practical outputs
+          of an Article6 assessment.
+        </p>
+        <p className="mt-3 max-w-xl mx-auto text-sm text-gray-400 leading-relaxed">
+          The sample is based on publicly available project documentation. It does not represent
+          a commissioned engagement, customer relationship, endorsement, or validation decision.
+        </p>
+      </section>
 
       {/* Sample contents */}
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-24">
