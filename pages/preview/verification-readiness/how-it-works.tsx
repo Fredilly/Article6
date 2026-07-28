@@ -1,5 +1,4 @@
 import Head from 'next/head';
-import PreviewHero from '../../../components/preview/PreviewHero';
 import SectionHeading from '../../../components/preview/SectionHeading';
 import ProcessStep from '../../../components/preview/ProcessStep';
 import Link from 'next/link';
@@ -17,13 +16,8 @@ export default function HowItWorksPage() {
         />
       </Head>
 
-      <PreviewHero
-        headline="How the assessment works"
-        body="A clear process from project documents to a reviewed readiness report."
-      />
-
       {/* Process */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24">
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="max-w-2xl mx-auto space-y-8">
           <ProcessStep step={1} title="Share your documents">
             Provide the current PDD and relevant supporting materials through an agreed secure
