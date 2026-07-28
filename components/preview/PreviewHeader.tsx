@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { previewNavigationLinks, previewCtaLink } from './navigation';
+import Logo from '../Logo';
 
 const BASE = '/preview/verification-readiness';
 
@@ -55,12 +56,7 @@ const PreviewHeader: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
       <nav className="mx-auto max-w-6xl flex items-center justify-between px-4 py-2.5 md:py-3.5">
-        <Link
-          href={brandHref}
-          className="text-base font-bold tracking-wide text-forest-900 shrink-0"
-        >
-          ARTICLE6
-        </Link>
+        <Logo href={brandHref} />
 
         <ul className="hidden md:flex items-center gap-6">
           {previewNavigationLinks.map(({ href, label }) => {

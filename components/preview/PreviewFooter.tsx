@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { previewNavigationLinks } from './navigation';
+import Logo from '../Logo';
 
 const BASE = '/preview/verification-readiness';
 
@@ -8,9 +9,7 @@ const PreviewFooter: React.FC = () => {
   return (
     <footer className="border-t border-gray-200 bg-white">
       <div className="mx-auto max-w-6xl px-4 py-10 md:py-12">
-        <Link href={BASE} className="text-base font-bold tracking-wide text-forest-900">
-          ARTICLE6
-        </Link>
+        <Logo href={BASE} />
         <p className="mt-2 text-sm text-gray-500">
           Evidence readiness assessments for carbon projects.
         </p>

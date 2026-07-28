@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { navigationLinks } from '../utils/navigation';
+import Logo from './Logo';
 
 const NavBar: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -22,9 +23,7 @@ const NavBar: React.FC = () => {
   return (
     <header className="bg-white shadow-md fixed w-full z-50">
       <nav className="container mx-auto flex items-center justify-between p-4">
-        <Link href="/" className="flex items-center text-lg font-bold">
-          Article<span className="text-green-600">6</span>
-        </Link>
+        <Logo href="/" />
 
         <ul className="hidden md:flex gap-12">
           {navigationLinks.map(({ href, label }) => (

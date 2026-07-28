@@ -7,7 +7,7 @@ class MyDocument extends Document {
       <Html lang={this.props.__NEXT_DATA__.locale ?? 'en'}>
         {/* Set the document language; default to English but allow dynamic locale if provided */}
         <Head>
-          {/* Other tags like your stylesheet links can also go here */}
+          <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         </Head>
         <body>
           <Main />
