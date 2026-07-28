@@ -27,7 +27,6 @@ function getS3Client(): S3Client {
       accessKeyId,
       secretAccessKey,
     },
-    forcePathStyle: true,
   });
 }
 
