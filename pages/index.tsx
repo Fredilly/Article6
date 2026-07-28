@@ -1,12 +1,17 @@
-import React from 'react';
-import HeroSection from '../components/HeroSection';
+import Head from 'next/head';
+import VerificationReadinessHome from '../components/VerificationReadinessHome';
 
-const HomePage = () => {
+export default function HomePage() {
   return (
-    <div className="w-full">
-      <HeroSection />
-    </div>
+    <>
+      <Head>
+        <title>Article6 — Pre-Validation Evidence Readiness</title>
+        <meta
+          name="description"
+          content="Find evidence gaps before your validator does. Article6 reviews your VM0007 v1.8 project documentation against methodology requirements."
+        />
+      </Head>
+      <VerificationReadinessHome />
+    </>
   );
-};
-
-export default HomePage;
+}

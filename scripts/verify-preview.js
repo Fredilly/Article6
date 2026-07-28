@@ -5,7 +5,6 @@ const BASE_URL = 'http://localhost:3000';
 const PREVIEW_BASE = `${BASE_URL}/preview/verification-readiness`;
 
 const PREVIEW_PAGES = [
-  { name: 'Homepage', path: '/' },
   { name: 'VM0007', path: '/vm0007' },
   { name: 'Sample Assessment', path: '/sample-assessment' },
   { name: 'How It Works', path: '/how-it-works' },
@@ -107,7 +106,7 @@ async function run() {
     console.log('\n=== Test: Preview navigation URLs stay within preview ===');
     const navPage = await context.newPage();
     try {
-      await navPage.goto(PREVIEW_BASE, { waitUntil: 'networkidle', timeout: 30000 });
+      await navPage.goto(`${PREVIEW_BASE}/sample-assessment`, { waitUntil: 'networkidle', timeout: 30000 });
       const links = await navPage.$$eval('header a[href], nav a[href]', (els) =>
         els.map((el) => el.getAttribute('href'))
       );
@@ -130,7 +129,7 @@ async function run() {
     console.log('\n=== Test: Preview footer disclaimer ===');
     const footerPage = await context.newPage();
     try {
-      await footerPage.goto(PREVIEW_BASE, { waitUntil: 'networkidle', timeout: 30000 });
+      await footerPage.goto(`${PREVIEW_BASE}/about`, { waitUntil: 'networkidle', timeout: 30000 });
       const bodyText = await footerPage.$eval('body', (el) => el.textContent || '');
       const disclaimer = 'Independent pre-validation review. Article6 is not affiliated with Verra';
       if (bodyText.includes(disclaimer)) {
@@ -165,19 +164,19 @@ async function run() {
       await formPage.close();
     }
 
-    // Test 7: Existing homepage still renders correctly
-    console.log('\n=== Test: Existing homepage unchanged ===');
+    // Test 7: Homepage now renders verification-readiness landing page
+    console.log('\n=== Test: Homepage renders verification-readiness landing ===');
     const homePage = await context.newPage();
     try {
       await homePage.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 });
-      const heroText = await homePage.$eval('h1', (el) => el.textContent || '');
-      if (heroText.includes('carbon stack for countries')) {
-        console.log('  PASS: Existing homepage hero unchanged');
+      const bodyText = await homePage.$eval('body', (el) => el.textContent || '');
+      if (bodyText.includes('Find the evidence gaps') && bodyText.includes('Send us your PDD')) {
+        console.log('  PASS: Verification readiness landing page on /');
         passed++;
       } else {
-        console.log(`  FAIL: Homepage hero changed: "${heroText}"`);
+        console.log('  FAIL: Verification readiness content missing on /');
         failed++;
-        failures.push('Existing homepage hero changed');
+        failures.push('Homepage does not render verification readiness landing');
       }
     } finally {
       await homePage.close();
@@ -205,22 +204,70 @@ async function run() {
       await aboutPage.close();
     }
 
-    // Test 9: No government positioning in preview
-    console.log('\n=== Test: No government positioning in preview ===');
+    // Test 9: No government positioning on the new homepage
+    console.log('\n=== Test: No government positioning on homepage ===');
     const previewHome = await context.newPage();
     try {
-      await previewHome.goto(PREVIEW_BASE, { waitUntil: 'networkidle', timeout: 30000 });
+      await previewHome.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 });
       const previewText = await previewHome.$eval('body', (el) => el.textContent || '');
       const govtTerms = ['government program','nation-state','state engagement','country carbon stack','GEP','public-sector'];
       const foundTerms = govtTerms.filter((t) => previewText.toLowerCase().includes(t.toLowerCase()));
       if (foundTerms.length === 0) {
-        console.log('  PASS: No government positioning in preview');
+        console.log('  PASS: No government positioning on homepage');
         passed++;
       } else {
         console.log(`  FAIL: Government terms found: ${foundTerms.join(', ')}`);
         failed++;
-        failures.push(`Government terms in preview: ${foundTerms.join(', ')}`);
+        failures.push(`Government terms on homepage: ${foundTerms.join(', ')}`);
       }
+    } finally {
+      await previewHome.close();
+    }
+
+    // Test 10: Preview base route redirects to /
+    console.log('\n=== Test: /preview/verification-readiness redirects to / ===');
+    const redirectPage = await context.newPage();
+    try {
+      const res = await redirectPage.goto(PREVIEW_BASE, { waitUntil: 'networkidle', timeout: 30000 });
+      const finalUrl = redirectPage.url();
+      if (finalUrl === `${BASE_URL}/` || finalUrl.endsWith('/')) {
+        console.log(`  PASS: Redirected to / (${finalUrl})`);
+        passed++;
+      } else {
+        console.log(`  FAIL: Expected redirect to /, got ${finalUrl}`);
+        failed++;
+        failures.push(`Preview redirect failed: got ${finalUrl}`);
+      }
+    } catch (err) {
+      console.log(`  FAIL: ${err.message}`);
+      failed++;
+      failures.push(`Redirect test: ${err.message}`);
+    } finally {
+      await redirectPage.close();
+    }
+
+    // Test 11: Upload form is present on /
+    console.log('\n=== Test: Upload form present on / ===');
+    const uploadPage = await context.newPage();
+    try {
+      await uploadPage.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 });
+      const hasUploadForm = await uploadPage.$('#pdd-fullName');
+      const hasSubmitBtn = await uploadPage.$('button[type="submit"]');
+      if (hasUploadForm && hasSubmitBtn) {
+        console.log('  PASS: PDD upload form present on homepage');
+        passed++;
+      } else {
+        console.log('  FAIL: Upload form fields not found on homepage');
+        failed++;
+        failures.push('Upload form missing on homepage');
+      }
+    } catch (err) {
+      console.log(`  FAIL: ${err.message}`);
+      failed++;
+      failures.push(`Upload form test: ${err.message}`);
+    } finally {
+      await uploadPage.close();
+    }
     } finally {
       await previewHome.close();
     }
