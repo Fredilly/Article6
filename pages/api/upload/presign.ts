@@ -67,7 +67,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    await configureBucketCors();
+    try {
+      await configureBucketCors();
+    } catch (corsErr) {
+      console.warn("[presign] CORS configuration skipped (token may lack PutBucketCors permission):", {
+        error: corsErr instanceof Error ? corsErr.message : String(corsErr),
+        bucket: process.env.R2_BUCKET_NAME,
+      });
+    }
 
     console.info("[presign] Generating presigned URL", {
       fileName: body.fileName,
