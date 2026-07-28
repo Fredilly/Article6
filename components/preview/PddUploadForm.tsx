@@ -112,7 +112,14 @@ const PddUploadForm: React.FC = () => {
 
       const { uploadUrl, key } = presignBody as { uploadUrl: string; key: string };
 
-      console.info('[PddUploadForm] Step 2: Uploading file to R2', { key: key.slice(0, 30) + '...', urlHost: new URL(uploadUrl).hostname });
+      console.info('[PddUploadForm] Step 2: Uploading file to R2', {
+        key: key.slice(0, 30) + '...',
+        urlHost: new URL(uploadUrl).hostname,
+        urlPath: new URL(uploadUrl).pathname.slice(0, 50) + '...',
+        urlParams: new URL(uploadUrl).search.slice(0, 100) + '...',
+        fileSize: file!.size,
+        fileType: file!.type,
+      });
 
       let uploadRes: Response;
       try {
@@ -126,16 +133,23 @@ const PddUploadForm: React.FC = () => {
         const isCORS = r2Err instanceof TypeError && (
           r2Err.message.includes('Failed to fetch') ||
           r2Err.message.includes('NetworkError') ||
-          r2Err.message.includes('Load failed')
+          r2Err.message.includes('Load failed') ||
+          r2Err.message.includes('not allowed by Access-Control')
         );
-        console.error('[PddUploadForm] R2 PUT fetch threw', {
-          errorType: r2Err instanceof Error ? r2Err.constructor.name : typeof r2Err,
+        console.error('[PddUploadForm] R2 PUT fetch() threw', {
+          errorConstructor: r2Err instanceof Error ? r2Err.constructor.name : typeof r2Err,
           message: r2Err instanceof Error ? r2Err.message : String(r2Err),
+          name: r2Err instanceof Error ? r2Err.name : 'N/A',
+          stack: r2Err instanceof Error ? (r2Err.stack || '').split('\n').slice(0, 5).join('\n') : 'N/A',
           likelyCORS: isCORS,
           urlHost: new URL(uploadUrl).hostname,
+          urlScheme: new URL(uploadUrl).protocol,
+          fileSize: file!.size,
         });
         throw new Error(
-          'File upload was blocked. The storage bucket may need CORS configuration. Please try again in a moment.'
+          isCORS
+            ? 'Upload was blocked by the browser. The storage bucket may need CORS configured to allow requests from this page.'
+            : 'File upload failed due to a network error. Please check your connection and try again.'
         );
       }
 

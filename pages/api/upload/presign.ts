@@ -80,7 +80,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.info("[presign] Successfully generated presigned URL", {
       key: key.slice(0, 40) + "...",
-      urlPrefix: uploadUrl.slice(0, 80) + "...",
+      urlHost: new URL(uploadUrl).hostname,
+      urlPath: new URL(uploadUrl).pathname.slice(0, 60) + "...",
+      urlProtocol: new URL(uploadUrl).protocol,
+      hasBucketInPath: new URL(uploadUrl).pathname.includes(process.env.R2_BUCKET_NAME || ""),
+      signedHeadersParam: new URLSearchParams(new URL(uploadUrl).search).get("X-Amz-SignedHeaders") || "none",
     });
 
     return res.status(200).json({
