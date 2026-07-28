@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, HeadObjectCommand, PutBucketCorsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 function getR2Credentials() {
@@ -39,6 +39,32 @@ function generateKey(fileName: string): string {
   const uuid = randomUUID();
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
   return `submissions/${yyyy}/${mm}/${dd}/${uuid}-${safeName}`;
+}
+
+export async function configureBucketCors(): Promise<void> {
+  const s3 = getS3Client();
+  const { bucketName } = getR2Credentials();
+
+  console.info("[r2] Configuring CORS for bucket", { bucket: bucketName });
+
+  const command = new PutBucketCorsCommand({
+    Bucket: bucketName,
+    CORSConfiguration: {
+      CORSRules: [
+        {
+          AllowedOrigins: ["*"],
+          AllowedMethods: ["PUT"],
+          AllowedHeaders: ["Content-Type"],
+          ExposeHeaders: ["ETag"],
+          MaxAgeSeconds: 3600,
+        },
+      ],
+    },
+  });
+
+  await s3.send(command);
+
+  console.info("[r2] CORS configuration applied", { bucket: bucketName });
 }
 
 export async function generatePresignedUploadUrl(fileName: string): Promise<{ uploadUrl: string; key: string }> {

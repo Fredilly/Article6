@@ -112,13 +112,32 @@ const PddUploadForm: React.FC = () => {
 
       const { uploadUrl, key } = presignBody as { uploadUrl: string; key: string };
 
-      console.info('[PddUploadForm] Step 2: Uploading file to R2', { key: key.slice(0, 30) + '...' });
+      console.info('[PddUploadForm] Step 2: Uploading file to R2', { key: key.slice(0, 30) + '...', urlHost: new URL(uploadUrl).hostname });
 
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/pdf' },
-        body: file,
-      });
+      let uploadRes: Response;
+      try {
+        uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/pdf' },
+          body: file,
+          mode: 'cors',
+        });
+      } catch (r2Err) {
+        const isCORS = r2Err instanceof TypeError && (
+          r2Err.message.includes('Failed to fetch') ||
+          r2Err.message.includes('NetworkError') ||
+          r2Err.message.includes('Load failed')
+        );
+        console.error('[PddUploadForm] R2 PUT fetch threw', {
+          errorType: r2Err instanceof Error ? r2Err.constructor.name : typeof r2Err,
+          message: r2Err instanceof Error ? r2Err.message : String(r2Err),
+          likelyCORS: isCORS,
+          urlHost: new URL(uploadUrl).hostname,
+        });
+        throw new Error(
+          'File upload was blocked. The storage bucket may need CORS configuration. Please try again in a moment.'
+        );
+      }
 
       console.info('[PddUploadForm] Step 2 R2 PUT response', {
         status: uploadRes.status,

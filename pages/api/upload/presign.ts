@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { generatePresignedUploadUrl } from "../../../lib/r2";
+import { configureBucketCors, generatePresignedUploadUrl } from "../../../lib/r2";
 
 const ALLOWED_CONTENT_TYPE = "application/pdf";
 const MAX_FILE_SIZE_MB = 50;
@@ -67,6 +67,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    await configureBucketCors();
+
     console.info("[presign] Generating presigned URL", {
       fileName: body.fileName,
       fileSize: body.fileSize,
