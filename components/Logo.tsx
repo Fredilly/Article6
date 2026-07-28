@@ -16,7 +16,7 @@ export default function Logo({
   const content = (
     <>
       <span
-        className={`flex h-8 w-8 items-center justify-center rounded-lg bg-forest-700 text-[11px] font-extrabold tracking-tight text-white shrink-0 ${markClassName}`}
+        className={`flex h-8 w-8 items-center justify-center rounded-lg bg-forest-800 text-[11px] font-extrabold tracking-tight text-white shrink-0 ${markClassName}`}
       >
         A6
       </span>
