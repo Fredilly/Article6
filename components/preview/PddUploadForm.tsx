@@ -125,9 +125,7 @@ const PddUploadForm: React.FC = () => {
       try {
         uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/pdf' },
           body: file,
-          mode: 'cors',
         });
       } catch (r2Err) {
         const isCORS = r2Err instanceof TypeError && (

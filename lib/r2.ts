@@ -77,12 +77,10 @@ export async function generatePresignedUploadUrl(fileName: string): Promise<{ up
   const command = new PutObjectCommand({
     Bucket: bucketName,
     Key: key,
-    ContentType: "application/pdf",
   });
 
   const uploadUrl = await getSignedUrl(s3, command, {
     expiresIn: 600,
-    signableHeaders: new Set(["content-type"]),
   });
 
   console.info("[r2] Presigned URL generated", { key, expiresIn: 600 });
