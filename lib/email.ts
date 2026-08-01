@@ -1,6 +1,6 @@
 interface SubmissionEmailParams {
-  fullName: string;
-  workEmail: string;
+  contactName: string;
+  workEmail?: string;
   organization: string;
   projectName: string;
   methodology: string;
@@ -8,23 +8,28 @@ interface SubmissionEmailParams {
   fileName: string;
   submissionId: string;
   timestamp: string;
+  submissionSource: string;
+  externalContact?: string;
 }
 
-function buildEmailText(params: SubmissionEmailParams): string {
+export function buildEmailText(params: SubmissionEmailParams): string {
   const lines = [
     "New evidence readiness assessment request.",
     "",
     "Contact:",
     "",
-    `Name:          ${params.fullName}`,
-    `Email:         ${params.workEmail}`,
+    `Name:          ${params.contactName}`,
+    `Email:         ${params.workEmail || "Not provided"}`,
     `Organization:  ${params.organization}`,
     `Project:       ${params.projectName}`,
     `Methodology:   ${params.methodology}`,
+    `Source:        ${params.submissionSource}`,
     `Reference ID:  ${params.submissionId}`,
     `File:          ${params.fileName}`,
     `Submitted:     ${params.timestamp}`,
   ];
+
+  if (params.externalContact) lines.push(`External contact: ${params.externalContact}`);
 
   if (params.note) {
     lines.push("", `Additional note: ${params.note}`);

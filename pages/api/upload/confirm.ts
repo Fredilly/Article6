@@ -2,44 +2,28 @@ import { randomUUID } from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getBucketName, verifyObjectExists } from "../../../lib/r2";
 import { sendSubmissionNotification } from "../../../lib/email";
+import { hasInternalUploadSession } from "../../../lib/internal-auth";
+import { isApprovedSubmissionKey, validateStoredObject, validateSubmissionMetadata, type SubmissionSource } from "../../../lib/submissions";
 
 interface ConfirmRequestBody {
   key: string;
   fileName: string;
-  fullName: string;
-  workEmail: string;
+  fileSize: number;
+  contactName: string;
+  workEmail?: string;
   organization: string;
   projectName: string;
   methodology: string;
+  submissionSource: SubmissionSource;
+  externalContact?: string;
   note?: string;
 }
 
-function validate(body: ConfirmRequestBody): string | null {
-  if (!body.key || typeof body.key !== "string" || body.key.length > 1000) {
-    return "Invalid upload key.";
-  }
-  if (!body.key.startsWith("submissions/")) {
+export function validateConfirmRequest(body: Partial<ConfirmRequestBody>): string | null {
+  if (!isApprovedSubmissionKey(body.key)) {
     return "Invalid upload key prefix.";
   }
-  if (!body.fileName || typeof body.fileName !== "string" || body.fileName.length > 500) {
-    return "File name is required.";
-  }
-  if (!body.fullName || typeof body.fullName !== "string" || body.fullName.length > 200) {
-    return "Full name is required.";
-  }
-  if (!body.workEmail || typeof body.workEmail !== "string" || body.workEmail.length > 320) {
-    return "Work email is required.";
-  }
-  if (!body.organization || typeof body.organization !== "string" || body.organization.length > 200) {
-    return "Organization is required.";
-  }
-  if (!body.projectName || typeof body.projectName !== "string" || body.projectName.length > 300) {
-    return "Project name is required.";
-  }
-  if (!body.methodology || typeof body.methodology !== "string" || body.methodology.length > 200) {
-    return "Methodology is required.";
-  }
-  return null;
+  return validateSubmissionMetadata(body);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -48,96 +32,60 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const body = req.body as ConfirmRequestBody;
+  const body = req.body as Partial<ConfirmRequestBody>;
+  const validationError = validateConfirmRequest(body);
+  if (validationError) return res.status(400).json({ error: validationError });
 
-  const validationError = validate(body);
-  if (validationError) {
-    return res.status(400).json({ error: validationError });
+  if (body.submissionSource !== "website" && !(await hasInternalUploadSession(req))) {
+    return res.status(401).json({ error: "Internal upload authentication required." });
   }
 
   try {
-    const bucketName = getBucketName();
-    console.info("[confirm] Verifying uploaded object", { key: body.key.slice(0, 40) + "...", bucket: bucketName });
-
-    const verification = await verifyObjectExists(body.key);
-
-    console.info("[confirm] Object verification result", {
-      exists: verification.exists,
-      size: verification.size,
-      contentType: verification.contentType,
-      lastModified: verification.lastModified,
-    });
-
-    if (!verification.exists) {
-      return res.status(400).json({
-        error: "Uploaded file not found. The file may have expired or was not uploaded successfully.",
-      });
-    }
-
-    if (verification.size === 0) {
-      return res.status(400).json({
-        error: "Uploaded file is empty. Please upload a valid PDF file.",
-      });
-    }
-
-    if (verification.contentType && verification.contentType !== "application/pdf") {
-      return res.status(400).json({
-        error: "Uploaded file is not a valid PDF.",
-      });
-    }
+    const verification = await verifyObjectExists(body.key as string);
+    const storedObjectError = validateStoredObject(verification, body.fileSize!);
+    if (storedObjectError) return res.status(400).json({ error: storedObjectError });
 
     const submissionId = randomUUID();
     const timestamp = new Date().toISOString();
-
     const submission = {
       id: submissionId,
       timestamp,
       key: body.key,
-      bucket: bucketName,
-      fileName: body.fileName.trim(),
+      bucket: getBucketName(),
+      fileName: body.fileName!.trim(),
       fileSize: verification.size,
-      fullName: body.fullName.trim(),
-      workEmail: body.workEmail.trim().toLowerCase(),
-      organization: body.organization.trim(),
-      projectName: body.projectName.trim(),
-      methodology: body.methodology.trim(),
-      note: body.note ? body.note.trim() : "",
+      contactName: body.contactName!.trim(),
+      workEmail: body.workEmail?.trim().toLowerCase() || undefined,
+      organization: body.organization!.trim(),
+      projectName: body.projectName!.trim(),
+      methodology: body.methodology!.trim(),
+      submissionSource: body.submissionSource,
+      externalContact: body.externalContact?.trim() || undefined,
+      note: body.note?.trim() || "",
     };
 
     console.log("[Submission Confirmed]", JSON.stringify(submission, null, 2));
-
-    console.info("[confirm] Sending Resend notification", {
-      to: process.env.ADMIN_NOTIFICATION_EMAIL || "contact@article6.org",
-      resendKey: process.env.RESEND_API_KEY ? "set" : "MISSING",
-    });
-
-    const emailSent = await sendSubmissionNotification({
-      fullName: submission.fullName,
+    await sendSubmissionNotification({
+      contactName: submission.contactName,
       workEmail: submission.workEmail,
       organization: submission.organization,
       projectName: submission.projectName,
       methodology: submission.methodology,
+      submissionSource: submission.submissionSource!,
+      externalContact: submission.externalContact,
       note: submission.note,
       fileName: submission.fileName,
       submissionId: submission.id,
       timestamp: submission.timestamp,
     });
 
-    console.info("[confirm] Email notification result", { emailSent, submissionId: submission.id });
-
     return res.status(200).json({
       success: true,
-      submissionId: submission.id,
-      message: "Your PDD has been submitted for scope review. We will respond within two business days.",
+      submissionId,
+      message: body.submissionSource === "website" ? "Your PDD has been submitted for scope review. We will respond within two business days." : "Internal PDD submission received.",
     });
   } catch (err) {
-    console.error("[confirm] Error confirming submission:", {
-      error: err instanceof Error ? err.message : String(err),
-      key: body.key,
-      r2AccountId: process.env.R2_ACCOUNT_ID ? "set" : "MISSING",
-    });
-    return res.status(500).json({
-      error: "Failed to confirm submission. Please contact us at contact@article6.org.",
-    });
+    console.error("[confirm] Error confirming submission:", err instanceof Error ? err.message : String(err));
+    return res.status(500).json({ error: "Failed to confirm submission. Please contact us at contact@article6.org." });
   }
 }

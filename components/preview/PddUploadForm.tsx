@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { isPdfUpload, MAX_FILE_SIZE, type SubmissionSource } from '../../lib/submissions';
 
 const inputClasses =
   'w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500 transition';
@@ -12,9 +13,16 @@ interface FormFields {
   projectName: string;
   methodology: string;
   note: string;
+  externalContact: string;
+  submissionSource: Exclude<SubmissionSource, 'website'>;
 }
 
-const PddUploadForm: React.FC = () => {
+interface PddUploadFormProps {
+  mode?: 'public' | 'internal';
+}
+
+const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
+  const isInternal = mode === 'internal';
   const [phase, setPhase] = useState<UploadPhase>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [submissionId, setSubmissionId] = useState<string>('');
@@ -25,6 +33,8 @@ const PddUploadForm: React.FC = () => {
     projectName: '',
     methodology: '',
     note: '',
+    externalContact: '',
+    submissionSource: 'internal',
   });
   const [fileName, setFileName] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
@@ -48,16 +58,13 @@ const PddUploadForm: React.FC = () => {
   const validateForm = (): string | null => {
     const { fullName, workEmail, organization, projectName, methodology } = formData;
     if (!fullName.trim()) return 'Full name is required.';
-    if (!workEmail.trim()) return 'Work email is required.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workEmail.trim())) return 'Please enter a valid email address.';
+    if (!isInternal && !workEmail.trim()) return 'Work email is required.';
+    if (workEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workEmail.trim())) return 'Please enter a valid email address.';
     if (!organization.trim()) return 'Organization is required.';
     if (!projectName.trim()) return 'Project name is required.';
     if (!methodology.trim()) return 'Methodology is required.';
     if (!file) return 'Please select a PDF file.';
-    if (file.type !== 'application/pdf') return 'Only PDF files are accepted.';
-    if (file.size > 50 * 1024 * 1024) return 'File size must be under 50MB.';
-    if (file.size === 0) return 'The selected file is empty.';
-    return null;
+    return isPdfUpload(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,11 +94,13 @@ const PddUploadForm: React.FC = () => {
           fileName: file!.name,
           contentType: 'application/pdf',
           fileSize: file!.size,
-          fullName: formData.fullName.trim(),
-          workEmail: formData.workEmail.trim(),
+          contactName: formData.fullName.trim(),
+          workEmail: formData.workEmail.trim() || undefined,
           organization: formData.organization.trim(),
           projectName: formData.projectName.trim(),
           methodology: formData.methodology.trim(),
+          submissionSource: isInternal ? formData.submissionSource : 'website',
+          externalContact: isInternal ? formData.externalContact.trim() || undefined : undefined,
           note: formData.note.trim(),
         }),
       });
@@ -125,6 +134,7 @@ const PddUploadForm: React.FC = () => {
       try {
         uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
+          headers: { 'Content-Type': 'application/pdf' },
           body: file,
         });
       } catch (r2Err) {
@@ -171,11 +181,14 @@ const PddUploadForm: React.FC = () => {
         body: JSON.stringify({
           key,
           fileName: file!.name,
-          fullName: formData.fullName.trim(),
-          workEmail: formData.workEmail.trim(),
+          fileSize: file!.size,
+          contactName: formData.fullName.trim(),
+          workEmail: formData.workEmail.trim() || undefined,
           organization: formData.organization.trim(),
           projectName: formData.projectName.trim(),
           methodology: formData.methodology.trim(),
+          submissionSource: isInternal ? formData.submissionSource : 'website',
+          externalContact: isInternal ? formData.externalContact.trim() || undefined : undefined,
           note: formData.note.trim(),
         }),
       });
@@ -215,8 +228,9 @@ const PddUploadForm: React.FC = () => {
         </div>
         <h3 className="mt-4 text-lg font-semibold text-forest-800">Submission received</h3>
         <p className="mt-2 text-sm text-gray-600 max-w-md mx-auto">
-          Your PDD has been submitted for scope review. We will review your project
-          documentation and respond within two business days.
+          {isInternal
+            ? 'The internal submission has been recorded for scope review.'
+            : 'Your PDD has been submitted for scope review. We will review your project documentation and respond within two business days.'}
         </p>
         {submissionId && (
           <p className="mt-3 text-xs text-gray-400">
@@ -227,7 +241,7 @@ const PddUploadForm: React.FC = () => {
           type="button"
           onClick={() => {
             setPhase('idle');
-            setFormData({ fullName: '', workEmail: '', organization: '', projectName: '', methodology: '', note: '' });
+            setFormData({ fullName: '', workEmail: '', organization: '', projectName: '', methodology: '', note: '', externalContact: '', submissionSource: 'internal' });
             setFile(null);
             setFileName('');
             setSubmissionId('');
@@ -289,13 +303,13 @@ const PddUploadForm: React.FC = () => {
           </div>
           <div>
             <label htmlFor="pdd-workEmail" className="mb-1 block text-sm font-medium text-gray-700">
-              Work email <span className="text-forest-600">*</span>
+              Work email {!isInternal && <span className="text-forest-600">*</span>}
             </label>
             <input
               id="pdd-workEmail"
               name="workEmail"
               type="email"
-              required
+              required={!isInternal}
               placeholder="you@organization.com"
               className={inputClasses}
               value={formData.workEmail}
@@ -354,6 +368,24 @@ const PddUploadForm: React.FC = () => {
           />
         </div>
 
+        {isInternal && (
+          <>
+            <div>
+              <label htmlFor="pdd-submissionSource" className="mb-1 block text-sm font-medium text-gray-700">Submission source <span className="text-forest-600">*</span></label>
+              <select id="pdd-submissionSource" className={inputClasses} value={formData.submissionSource} onChange={(e) => handleChange('submissionSource', e.target.value as FormFields['submissionSource'])} disabled={phase === 'uploading'}>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="email">Email</option>
+                <option value="internal">Internal</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="pdd-externalContact" className="mb-1 block text-sm font-medium text-gray-700">External contact</label>
+              <input id="pdd-externalContact" type="text" placeholder="Phone, WhatsApp ID, or source note" className={inputClasses} value={formData.externalContact} onChange={(e) => handleChange('externalContact', e.target.value)} disabled={phase === 'uploading'} />
+            </div>
+          </>
+        )}
+
         <div>
           <label htmlFor="pdd-file" className="mb-1 block text-sm font-medium text-gray-700">
             PDD upload <span className="text-forest-600">*</span>
@@ -385,7 +417,7 @@ const PddUploadForm: React.FC = () => {
             </button>
           </div>
           <p className="mt-1.5 text-xs text-gray-400">
-            Accepted file type: PDF. Maximum size: 50MB.
+            Accepted file type: PDF. Maximum size: {MAX_FILE_SIZE / (1024 * 1024)}MB. {isInternal && fileName && file && `Selected: ${fileName} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`}
           </p>
         </div>
 
@@ -419,7 +451,7 @@ const PddUploadForm: React.FC = () => {
               Uploading and submitting...
             </span>
           ) : (
-            'Submit PDD for Scope Review'
+            isInternal ? 'Record Internal PDD Submission' : 'Submit PDD for Scope Review'
           )}
         </button>
 
