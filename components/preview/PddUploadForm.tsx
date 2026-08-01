@@ -170,7 +170,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
       if (!uploadRes.ok) {
         const r2ErrorText = await uploadRes.text().catch(() => '');
         console.error('[PddUploadForm] R2 PUT failed', { status: uploadRes.status, body: r2ErrorText });
-        throw new Error('File upload failed. Please try again.');
+        throw new Error(`File upload failed: R2 returned HTTP ${uploadRes.status}${uploadRes.statusText ? ` (${uploadRes.statusText})` : ''}. Please try again.`);
       }
 
       console.info('[PddUploadForm] Step 3: Confirming submission', { key: key.slice(0, 30) + '...' });

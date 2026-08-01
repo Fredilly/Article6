@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildEmailText } from "../lib/email.ts";
+import { generatePresignedUploadUrl } from "../lib/r2.ts";
 import {
   isApprovedSubmissionKey,
   isPdfUpload,
@@ -69,4 +70,16 @@ test("internal notification text works without workEmail and identifies source",
   });
   assert.match(text, /Source:\s+whatsapp/);
   assert.match(text, /Email:\s+Not provided/);
+});
+
+test("presigned browser PUT URLs do not include automatic checksum parameters", async () => {
+  process.env.R2_ACCOUNT_ID = "synthetic-account";
+  process.env.R2_ACCESS_KEY_ID = "synthetic-access-key";
+  process.env.R2_SECRET_ACCESS_KEY = "synthetic-secret-key";
+  process.env.R2_BUCKET_NAME = "synthetic-private-bucket";
+
+  const { uploadUrl } = await generatePresignedUploadUrl();
+  const query = new URL(uploadUrl).searchParams;
+  assert.equal(query.has("x-amz-checksum-crc32"), false);
+  assert.equal(query.has("x-amz-sdk-checksum-algorithm"), false);
 });

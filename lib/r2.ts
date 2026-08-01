@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import { S3Client, PutObjectCommand, HeadObjectCommand, PutBucketCorsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { PDF_CONTENT_TYPE } from "./submissions";
+
+const PDF_CONTENT_TYPE = "application/pdf";
 
 function getR2Credentials() {
   const accountId = process.env.R2_ACCOUNT_ID;
@@ -24,6 +25,8 @@ function getS3Client(): S3Client {
   return new S3Client({
     region: "auto",
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
     credentials: {
       accessKeyId,
       secretAccessKey,
