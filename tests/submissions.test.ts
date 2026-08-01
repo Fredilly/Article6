@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildEmailText } from "../lib/email.ts";
 import { generatePresignedUploadUrl } from "../lib/r2.ts";
+import { getAppLayoutKind } from "../lib/layout.ts";
 import {
   isApprovedSubmissionKey,
   isPdfUpload,
@@ -82,4 +83,11 @@ test("presigned browser PUT URLs do not include automatic checksum parameters", 
   const query = new URL(uploadUrl).searchParams;
   assert.equal(query.has("x-amz-checksum-crc32"), false);
   assert.equal(query.has("x-amz-sdk-checksum-algorithm"), false);
+});
+
+test("public pages use marketing chrome and internal pages do not", () => {
+  assert.equal(getAppLayoutKind("/about-us"), "marketing");
+  assert.equal(getAppLayoutKind("/internal/submissions/new"), "internal");
+  assert.notEqual(getAppLayoutKind("/internal/submissions/new"), "marketing");
+  assert.equal(getAppLayoutKind("/404"), "marketing");
 });
