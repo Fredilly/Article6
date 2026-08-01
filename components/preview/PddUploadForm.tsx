@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { isPdfUpload, MAX_FILE_SIZE, type SubmissionSource } from '../../lib/submissions';
+import { useInternalReset } from '../InternalResetContext';
 
 const inputClasses =
   'w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500 transition';
@@ -23,6 +24,7 @@ interface PddUploadFormProps {
 
 const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
   const isInternal = mode === 'internal';
+  const { resetInternalPage } = useInternalReset();
   const [phase, setPhase] = useState<UploadPhase>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [submissionId, setSubmissionId] = useState<string>('');
@@ -218,6 +220,16 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
     }
   };
 
+  const resetForm = () => {
+    setPhase('idle');
+    setErrorMessage('');
+    setFormData({ fullName: '', workEmail: '', organization: '', projectName: '', methodology: '', note: '', externalContact: '', submissionSource: 'internal' });
+    setFile(null);
+    setFileName('');
+    setSubmissionId('');
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
   if (phase === 'success') {
     return (
       <div className="rounded-lg border border-forest-200 bg-forest-50 p-6 md:p-8 text-center">
@@ -239,14 +251,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
         )}
         <button
           type="button"
-          onClick={() => {
-            setPhase('idle');
-            setFormData({ fullName: '', workEmail: '', organization: '', projectName: '', methodology: '', note: '', externalContact: '', submissionSource: 'internal' });
-            setFile(null);
-            setFileName('');
-            setSubmissionId('');
-            if (fileRef.current) fileRef.current.value = '';
-          }}
+          onClick={isInternal ? resetInternalPage : resetForm}
           className="mt-6 text-sm font-medium text-forest-700 hover:text-forest-800 transition-colors"
         >
           Submit another PDD

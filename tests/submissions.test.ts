@@ -101,7 +101,19 @@ test("internal layout renders only the compact internal header", () => {
   assert.doesNotMatch(internalLayout, /NavBar|Footer|from ["']\.\/Layout/);
   assert.match(header, /Article6 Internal/);
   assert.match(header, /<Link href="\/internal\/submissions\/new"[\s\S]*>\s*Article6 Internal\s*<\/Link>/);
-  assert.match(header, /href="\/internal\/submissions\/new"/);
+  assert.match(header, /href="\/internal\/submissions\/new"[\s\S]*onClick=\{resetInternalPage\}/);
   assert.doesNotMatch(header, /href="\/internal\/submissions"/);
   assert.doesNotMatch(header, /NavBar|Footer|Layout|Sign out|signout/);
+});
+
+test("internal reset is shared by the header and success state and remounts a blank form", () => {
+  const page = fs.readFileSync(new URL("../pages/internal/submissions/new.tsx", import.meta.url), "utf8");
+  const form = fs.readFileSync(new URL("../components/preview/PddUploadForm.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /<PddUploadForm key=\{resetVersion\} mode="internal" \/>/);
+  assert.match(form, /onClick=\{isInternal \? resetInternalPage : resetForm\}/);
+  assert.match(form, /const \[phase, setPhase\] = useState/);
+  assert.match(form, /const \[submissionId, setSubmissionId\] = useState/);
+  assert.match(form, /const \[file, setFile\] = useState/);
+  assert.match(form, /const \[formData, setFormData\] = useState/);
 });
