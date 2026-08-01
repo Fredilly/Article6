@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import fs from "node:fs";
 import test from "node:test";
-import { buildEmailHtml, buildEmailText } from "../lib/email.ts";
-import { generatePresignedUploadUrl } from "../lib/r2.ts";
+import { buildEmailHtml, buildEmailText, normalizeEmailSubjectProject } from "../lib/email.ts";
+import { generatePresignedUploadUrl, resolveUploadReference } from "../lib/r2.ts";
+import { generateSubmissionReference } from "../lib/submission-reference.ts";
 import { getAppLayoutKind } from "../lib/layout.ts";
 import {
   isApprovedSubmissionKey,
@@ -11,7 +13,6 @@ import {
   validateStoredObject,
   validateSubmissionMetadata,
   buildContentDisposition,
-  generateSubmissionReference,
   sanitizeOriginalFilename,
 } from "../lib/submissions.ts";
 
@@ -71,6 +72,13 @@ test("confirmation rejects missing, mismatched, oversized, and non-PDF objects",
   assert.match(validateStoredObject({ exists: true, size: 100 }, 99) || "", /match/i);
   assert.match(validateStoredObject({ exists: true, size: MAX_FILE_SIZE + 1 }, MAX_FILE_SIZE + 1) || "", /50MB/i);
   assert.match(validateStoredObject({ exists: true, size: 100, contentType: "text/plain" }, 100) || "", /PDF/i);
+  assert.match(validateStoredObject({ exists: true, size: 100 }, 100) || "", /PDF/i);
+});
+
+test("confirmation derives the reference and gates notification on upload verification", () => {
+  const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(confirm, /submissionReference:\s*string/);
+  assert.ok(confirm.indexOf("if (storedObjectError)") < confirm.indexOf("await sendSubmissionNotification"));
 });
 
 test("internal notification text works without workEmail and identifies source", () => {
@@ -117,7 +125,32 @@ test("presigned browser PUT URLs do not include automatic checksum parameters", 
   assert.equal(query.has("x-amz-checksum-crc32"), false);
   assert.equal(query.has("x-amz-sdk-checksum-algorithm"), false);
   assert.equal("key" in result, false);
-  assert.match(result.uploadHeaders["Content-Disposition"], /^attachment; filename="[^"]+"$/);
+  const resolved = resolveUploadReference(result.uploadReference);
+  assert.ok(resolved);
+  assert.equal(resolved.submissionReference, result.submissionReference);
+  assert.match(resolved.key, /^submissions\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]{36}\.pdf$/);
+  const [payload, signature] = result.uploadReference.split(".");
+  const tamperedPayload = Buffer.from(JSON.stringify({ key: resolved.key, submissionReference: "A6-20260802-XYZ789", expiresAt: Date.now() + 600000 })).toString("base64url");
+  assert.equal(resolveUploadReference(`${tamperedPayload}.${signature}`), null);
+  const expiredPayload = Buffer.from(JSON.stringify({ key: resolved.key, submissionReference: resolved.submissionReference, expiresAt: Date.now() - 1 })).toString("base64url");
+  const expiredSignature = createHmac("sha256", process.env.R2_SECRET_ACCESS_KEY!).update(expiredPayload).digest("base64url");
+  assert.equal(resolveUploadReference(`${expiredPayload}.${expiredSignature}`), null);
+});
+
+test("browser upload keeps the existing Content-Type-only CORS contract", () => {
+  const form = fs.readFileSync(new URL("../components/preview/PddUploadForm.tsx", import.meta.url), "utf8");
+  const r2 = fs.readFileSync(new URL("../lib/r2.ts", import.meta.url), "utf8");
+  assert.match(form, /headers:\s*\{\s*'Content-Type': 'application\/pdf'\s*\}/);
+  assert.doesNotMatch(form, /uploadHeaders|x-amz-meta-|Content-Disposition/);
+  assert.match(r2, /AllowedHeaders: \["Content-Type"\]/);
+  assert.doesNotMatch(r2, /AllowedHeaders: \[[^\]]*(x-amz-meta|Content-Disposition)/);
+});
+
+test("email subject project normalization removes controls and limits length", () => {
+  const normalized = normalizeEmailSubjectProject("  Project\n\tName\r\0 " + "x".repeat(200));
+  assert.equal(normalized.length, 120);
+  assert.match(normalized, /^Project Name x+/);
+  assert.doesNotMatch(normalized, /[\u0000-\u001f\u007f]/);
 });
 
 test("public pages use marketing chrome and internal pages do not", () => {

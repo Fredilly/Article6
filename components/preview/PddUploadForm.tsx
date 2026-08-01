@@ -121,7 +121,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
         throw new Error(presignBody.error || 'Failed to prepare upload.');
       }
 
-      const { uploadUrl, uploadReference, submissionReference, uploadHeaders } = presignBody as { uploadUrl: string; uploadReference: string; submissionReference: string; uploadHeaders: Record<string, string> };
+      const { uploadUrl, uploadReference } = presignBody as { uploadUrl: string; uploadReference: string };
 
       console.info('[PddUploadForm] Step 2: Uploading file to R2', {
         hasUploadReference: !!uploadReference,
@@ -135,7 +135,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
       try {
         uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
-          headers: uploadHeaders,
+          headers: { 'Content-Type': 'application/pdf' },
           body: file,
         });
       } catch (r2Err) {
@@ -174,14 +174,13 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
         throw new Error(`File upload failed: R2 returned HTTP ${uploadRes.status}${uploadRes.statusText ? ` (${uploadRes.statusText})` : ''}. Please try again.`);
       }
 
-      console.info('[PddUploadForm] Step 3: Confirming submission', { submissionReference });
+      console.info('[PddUploadForm] Step 3: Confirming submission');
 
       const confirmRes = await fetch('/api/upload/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uploadReference,
-          submissionReference,
           fileName: file!.name,
           fileSize: file!.size,
           contactName: formData.fullName.trim(),

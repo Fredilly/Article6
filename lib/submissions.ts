@@ -37,16 +37,6 @@ export function buildContentDisposition(fileName: string): string {
   return `attachment; filename="${sanitizeOriginalFilename(fileName)}"`;
 }
 
-export function generateSubmissionReference(now = new Date()): string {
-  const date = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}`;
-  const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-  const randomValues = new Uint32Array(6);
-  if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(randomValues);
-  else randomValues.forEach((_, index) => { randomValues[index] = Math.floor(Math.random() * 0xffffffff); });
-  const suffix = Array.from(randomValues, (value) => alphabet[value % alphabet.length]).join("");
-  return `A6-${date}-${suffix}`;
-}
-
 export function isSubmissionReference(value: unknown): value is string {
   return typeof value === "string" && /^A6-\d{8}-[0-9A-HJKMNP-TV-Z]{6}$/.test(value);
 }
@@ -101,7 +91,7 @@ export function isPdfUpload(file: { type: string; size: number }): string | null
   return null;
 }
 
-export function isApprovedSubmissionKey(key: unknown): boolean {
+export function isApprovedSubmissionKey(key: unknown): key is string {
   return typeof key === "string" && /^submissions\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]{36}\.pdf$/.test(key);
 }
 
@@ -113,6 +103,6 @@ export function validateStoredObject(
   if (object.size <= 0) return "Uploaded file is empty.";
   if (object.size > MAX_FILE_SIZE) return "Uploaded file exceeds the 50MB limit.";
   if (object.size !== declaredSize) return "Uploaded file size does not match the declared file size.";
-  if (object.contentType && object.contentType !== PDF_CONTENT_TYPE) return "Uploaded file is not a valid PDF.";
+  if (object.contentType !== PDF_CONTENT_TYPE) return "Uploaded file is not a valid PDF.";
   return null;
 }

@@ -18,6 +18,9 @@ const escapeHtml = (value: string): string => value.replace(/&/g, "&amp;").repla
 const optional = (value?: string): string => value?.trim() || "Not provided";
 const formatFileSize = (bytes: number): string => `${(bytes / (1024 * 1024)).toFixed(2)} MiB`;
 const formatTimestamp = (timestamp: string): string => new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(timestamp)) + " UTC";
+export function normalizeEmailSubjectProject(value: string): string {
+  return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || "Unnamed project";
+}
 
 export function buildEmailText(params: SubmissionEmailParams): string {
   const lines = [
@@ -72,7 +75,7 @@ export async function sendSubmissionNotification(params: SubmissionEmailParams):
   const body = {
     from: `Article6 <${fromAddress}>`,
     to: [adminEmail],
-    subject: `New Article6 submission — ${params.projectName} — ${params.submissionReference}`,
+    subject: `New Article6 submission — ${normalizeEmailSubjectProject(params.projectName)} — ${params.submissionReference}`,
     text: buildEmailText(params),
     html: buildEmailHtml(params),
   };
@@ -81,7 +84,7 @@ export async function sendSubmissionNotification(params: SubmissionEmailParams):
     console.info("[email] Sending Resend notification", {
       from: `Article6 <${fromAddress}>`,
       to: adminEmail,
-      subject: `New Article6 submission — ${params.projectName} — ${params.submissionReference}`,
+      subject: `New Article6 submission — ${normalizeEmailSubjectProject(params.projectName)} — ${params.submissionReference}`,
     });
 
     const response = await fetch("https://api.resend.com/emails", {

@@ -1,7 +1,8 @@
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
 import { S3Client, PutObjectCommand, HeadObjectCommand, PutBucketCorsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { buildContentDisposition, generateSubmissionReference, sanitizeOriginalFilename, type SubmissionMetadata } from "./submissions.ts";
+import { isApprovedSubmissionKey, isSubmissionReference } from "./submissions.ts";
+import { generateSubmissionReference } from "./submission-reference.ts";
 
 const PDF_CONTENT_TYPE = "application/pdf";
 
@@ -20,22 +21,30 @@ function getR2Credentials() {
   return { accountId, accessKeyId, secretAccessKey, bucketName };
 }
 
-function signUploadReference(key: string, expiresAt: number): string {
+export interface ResolvedUploadReference {
+  key: string;
+  submissionReference: string;
+}
+
+function signUploadReference(key: string, submissionReference: string, expiresAt: number): string {
   const secret = getR2Credentials().secretAccessKey;
-  const payload = Buffer.from(JSON.stringify({ key, expiresAt })).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({ key, submissionReference, expiresAt })).toString("base64url");
   const signature = createHmac("sha256", secret).update(payload).digest("base64url");
   return `${payload}.${signature}`;
 }
 
-export function resolveUploadReference(reference: unknown): string | null {
+export function resolveUploadReference(reference: unknown): ResolvedUploadReference | null {
   if (typeof reference !== "string") return null;
-  const [payload, signature] = reference.split(".");
+  const parts = reference.split(".");
+  if (parts.length !== 2) return null;
+  const [payload, signature] = parts;
   if (!payload || !signature) return null;
   const expected = createHmac("sha256", getR2Credentials().secretAccessKey).update(payload).digest("base64url");
-  if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  if (!/^[A-Za-z0-9_-]+$/.test(signature) || signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
   try {
-    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { key?: unknown; expiresAt?: unknown };
-    return typeof parsed.key === "string" && typeof parsed.expiresAt === "number" && parsed.expiresAt > Date.now() && /^submissions\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]{36}\.pdf$/.test(parsed.key) ? parsed.key : null;
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { key?: unknown; submissionReference?: unknown; expiresAt?: unknown };
+    if (!isApprovedSubmissionKey(parsed.key) || !isSubmissionReference(parsed.submissionReference) || typeof parsed.expiresAt !== "number" || parsed.expiresAt <= Date.now()) return null;
+    return { key: parsed.key, submissionReference: parsed.submissionReference };
   } catch {
     return null;
   }
@@ -78,7 +87,7 @@ export async function configureBucketCors(): Promise<void> {
         {
           AllowedOrigins: ["*"],
           AllowedMethods: ["PUT"],
-          AllowedHeaders: ["Content-Type", "Content-Disposition", "x-amz-meta-*"],
+          AllowedHeaders: ["Content-Type"],
           ExposeHeaders: ["ETag"],
           MaxAgeSeconds: 3600,
         },
@@ -91,38 +100,12 @@ export async function configureBucketCors(): Promise<void> {
   console.info("[r2] CORS configuration applied", { bucket: bucketName });
 }
 
-export async function generatePresignedUploadUrl(metadata: SubmissionMetadata = {
-  contactName: "",
-  organization: "",
-  projectName: "",
-  methodology: "",
-  submissionSource: "internal",
-  fileName: "document.pdf",
-  fileSize: 1,
-}): Promise<{ uploadUrl: string; uploadReference: string; submissionReference: string; uploadHeaders: Record<string, string> }> {
+export async function generatePresignedUploadUrl(): Promise<{ uploadUrl: string; uploadReference: string; submissionReference: string }> {
   const s3 = getS3Client();
   const { bucketName } = getR2Credentials();
   const key = generateKey();
   const submissionReference = generateSubmissionReference();
   const expiresAt = Date.now() + 10 * 60 * 1000;
-  const submissionTimestamp = new Date().toISOString();
-  const metadataValue = (value: string): string => value.replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, 512);
-  const originalFilename = sanitizeOriginalFilename(metadata.fileName);
-  const uploadHeaders = {
-    "Content-Type": PDF_CONTENT_TYPE,
-    "Content-Disposition": buildContentDisposition(metadata.fileName),
-    "x-amz-meta-original-filename": originalFilename,
-    "x-amz-meta-project-name": metadataValue(metadata.projectName),
-    "x-amz-meta-organization": metadataValue(metadata.organization),
-    "x-amz-meta-contact-name": metadataValue(metadata.contactName),
-    ...(metadata.workEmail ? { "x-amz-meta-work-email": metadataValue(metadata.workEmail) } : {}),
-    ...(metadata.externalContact ? { "x-amz-meta-external-contact": metadataValue(metadata.externalContact) } : {}),
-    "x-amz-meta-submission-source": metadata.submissionSource,
-    "x-amz-meta-methodology": metadataValue(metadata.methodology),
-    "x-amz-meta-file-size": String(metadata.fileSize),
-    "x-amz-meta-submission-timestamp": submissionTimestamp,
-    "x-amz-meta-submission-reference": submissionReference,
-  };
 
   console.info("[r2] Generating presigned PUT URL", { bucket: bucketName, key });
 
@@ -130,20 +113,6 @@ export async function generatePresignedUploadUrl(metadata: SubmissionMetadata = 
     Bucket: bucketName,
     Key: key,
     ContentType: PDF_CONTENT_TYPE,
-    ContentDisposition: uploadHeaders["Content-Disposition"],
-    Metadata: {
-      "original-filename": originalFilename,
-      "project-name": metadataValue(metadata.projectName),
-      organization: metadataValue(metadata.organization),
-      "contact-name": metadataValue(metadata.contactName),
-      ...(metadata.workEmail ? { "work-email": metadataValue(metadata.workEmail) } : {}),
-      ...(metadata.externalContact ? { "external-contact": metadataValue(metadata.externalContact) } : {}),
-      "submission-source": metadata.submissionSource,
-      methodology: metadataValue(metadata.methodology),
-      "file-size": String(metadata.fileSize),
-      "submission-timestamp": submissionTimestamp,
-      "submission-reference": submissionReference,
-    },
   });
 
   const uploadUrl = await getSignedUrl(s3, command, {
@@ -152,7 +121,7 @@ export async function generatePresignedUploadUrl(metadata: SubmissionMetadata = 
 
   console.info("[r2] Presigned URL generated", { key, expiresIn: 600 });
 
-  return { uploadUrl, uploadReference: signUploadReference(key, expiresAt), submissionReference, uploadHeaders };
+  return { uploadUrl, uploadReference: signUploadReference(key, submissionReference, expiresAt), submissionReference };
 }
 
 export interface ObjectVerificationResult {

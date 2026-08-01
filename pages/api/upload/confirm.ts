@@ -2,11 +2,10 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getBucketName, resolveUploadReference, verifyObjectExists } from "../../../lib/r2";
 import { sendSubmissionNotification } from "../../../lib/email";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
-import { isSubmissionReference, validateStoredObject, validateSubmissionMetadata, type SubmissionSource } from "../../../lib/submissions";
+import { sanitizeOriginalFilename, validateStoredObject, validateSubmissionMetadata, type SubmissionSource } from "../../../lib/submissions";
 
 interface ConfirmRequestBody {
   uploadReference: string;
-  submissionReference: string;
   fileName: string;
   fileSize: number;
   contactName: string;
@@ -20,7 +19,7 @@ interface ConfirmRequestBody {
 }
 
 export function validateConfirmRequest(body: Partial<ConfirmRequestBody>): string | null {
-  if (!body.uploadReference || !body.submissionReference || !isSubmissionReference(body.submissionReference)) return "Invalid upload reference.";
+  if (!body.uploadReference) return "Invalid upload reference.";
   return validateSubmissionMetadata(body);
 }
 
@@ -39,20 +38,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const key = resolveUploadReference(body.uploadReference);
-    if (!key) return res.status(400).json({ error: "Invalid or expired upload reference." });
-    const verification = await verifyObjectExists(key);
+    const resolved = resolveUploadReference(body.uploadReference);
+    if (!resolved) return res.status(400).json({ error: "Invalid or expired upload reference." });
+    const verification = await verifyObjectExists(resolved.key);
     const storedObjectError = validateStoredObject(verification, body.fileSize!);
     if (storedObjectError) return res.status(400).json({ error: storedObjectError });
-
-    const submissionId = body.submissionReference!;
+    const submissionId = resolved.submissionReference;
     const timestamp = new Date().toISOString();
     const submission = {
       id: submissionId,
       timestamp,
-      key,
+      key: resolved.key,
       bucket: getBucketName(),
-      fileName: body.fileName!.trim(),
+      fileName: sanitizeOriginalFilename(body.fileName!),
       fileSize: verification.size,
       contactName: body.contactName!.trim(),
       workEmail: body.workEmail?.trim().toLowerCase() || undefined,
@@ -76,14 +74,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       note: submission.note,
       fileName: submission.fileName,
       submissionId: submission.id,
-      submissionReference: body.submissionReference!,
+      submissionReference: resolved.submissionReference,
       fileSize: submission.fileSize,
       timestamp: submission.timestamp,
     });
 
     return res.status(200).json({
       success: true,
-      submissionId: body.submissionReference,
+      submissionId: resolved.submissionReference,
       message: body.submissionSource === "website" ? "Your PDD has been submitted for scope review. We will respond within two business days." : "Internal PDD submission received.",
     });
   } catch (err) {
