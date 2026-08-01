@@ -20,6 +20,37 @@ export const NON_WEBSITE_SOURCES: SubmissionSource[] = ["whatsapp", "email", "in
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export function sanitizeOriginalFilename(fileName: string): string {
+  const baseName = fileName.replace(/\\/g, "/").split("/").pop() || "document.pdf";
+  const sanitized = baseName
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/["']/g, "")
+    .replace(/[^a-zA-Z0-9._()\- ]/g, "_")
+    .replace(/^\.+/, "")
+    .trim()
+    .slice(0, 180);
+  return sanitized || "document.pdf";
+}
+
+export function buildContentDisposition(fileName: string): string {
+  return `attachment; filename="${sanitizeOriginalFilename(fileName)}"`;
+}
+
+export function generateSubmissionReference(now = new Date()): string {
+  const date = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}`;
+  const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  const randomValues = new Uint32Array(6);
+  if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(randomValues);
+  else randomValues.forEach((_, index) => { randomValues[index] = Math.floor(Math.random() * 0xffffffff); });
+  const suffix = Array.from(randomValues, (value) => alphabet[value % alphabet.length]).join("");
+  return `A6-${date}-${suffix}`;
+}
+
+export function isSubmissionReference(value: unknown): value is string {
+  return typeof value === "string" && /^A6-\d{8}-[0-9A-HJKMNP-TV-Z]{6}$/.test(value);
+}
+
 export function validateSubmissionMetadata(
   input: Partial<SubmissionMetadata> & { submissionSource?: unknown }
 ): string | null {

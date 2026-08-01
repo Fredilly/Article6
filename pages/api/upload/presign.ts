@@ -44,8 +44,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.warn("[presign] CORS configuration skipped:", corsErr instanceof Error ? corsErr.message : String(corsErr));
     }
 
-    const { uploadUrl, key } = await generatePresignedUploadUrl();
-    return res.status(200).json({ uploadUrl, key, expiresIn: 600 });
+    const { uploadUrl, uploadReference, submissionReference, uploadHeaders } = await generatePresignedUploadUrl(body as PresignRequestBody);
+    return res.status(200).json({ uploadUrl, uploadReference, submissionReference, uploadHeaders, expiresIn: 600 });
   } catch (err) {
     console.error("[presign] Error generating upload URL:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ error: "Failed to generate upload URL. Please try again later." });

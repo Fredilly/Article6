@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-import { buildEmailText } from "../lib/email.ts";
+import { buildEmailHtml, buildEmailText } from "../lib/email.ts";
 import { generatePresignedUploadUrl } from "../lib/r2.ts";
 import { getAppLayoutKind } from "../lib/layout.ts";
 import {
@@ -10,6 +10,9 @@ import {
   MAX_FILE_SIZE,
   validateStoredObject,
   validateSubmissionMetadata,
+  buildContentDisposition,
+  generateSubmissionReference,
+  sanitizeOriginalFilename,
 } from "../lib/submissions.ts";
 
 const base = {
@@ -51,6 +54,18 @@ test("only opaque submission keys are approved", () => {
   assert.equal(isApprovedSubmissionKey("submissions/2026-08-01/123e4567-e89b-12d3-a456-426614174000-client.pdf"), false);
 });
 
+test("submission references are readable and independent of the R2 key", () => {
+  const reference = generateSubmissionReference(new Date("2026-08-02T12:00:00Z"));
+  assert.match(reference, /^A6-20260802-[0-9A-HJKMNP-TV-Z]{6}$/);
+  assert.doesNotMatch(reference, /Synthetic|client|email/i);
+});
+
+test("original filenames are sanitized for safe download headers", () => {
+  const safe = sanitizeOriginalFilename('../client name\"\r\n.pdf');
+  assert.equal(safe, "client name.pdf");
+  assert.equal(buildContentDisposition('../client name\"\r\n.pdf'), 'attachment; filename="client name.pdf"');
+});
+
 test("confirmation rejects missing, mismatched, oversized, and non-PDF objects", () => {
   assert.match(validateStoredObject({ exists: false, size: 0 }, 1) || "", /not found/i);
   assert.match(validateStoredObject({ exists: true, size: 100 }, 99) || "", /match/i);
@@ -67,11 +82,27 @@ test("internal notification text works without workEmail and identifies source",
     note: "",
     fileName: "synthetic.pdf",
     submissionId: "synthetic-reference",
+    submissionReference: "A6-20260801-ABC123",
+    fileSize: 51329000,
     timestamp: "2026-08-01T00:00:00.000Z",
     submissionSource: "whatsapp",
   });
   assert.match(text, /Source:\s+whatsapp/);
   assert.match(text, /Email:\s+Not provided/);
+});
+
+test("internal notification HTML has escaped fields, optional values, and no R2 URL", () => {
+  const html = buildEmailHtml({
+    contactName: '<img src=x onerror="bad">', organization: "Synthetic Organization", projectName: "Synthetic Project",
+    methodology: "Synthetic Methodology", note: "<script>alert(1)</script>", fileName: "client.pdf", submissionId: "id",
+    submissionReference: "A6-20260801-ABC123", fileSize: 51329000, timestamp: "2026-08-01T00:00:00.000Z", submissionSource: "internal",
+  });
+  assert.match(html, /New Article6 document submission/);
+  assert.match(html, /Reference/);
+  assert.match(html, /External contact/);
+  assert.match(html, /Not provided/);
+  assert.match(html, /&lt;img/);
+  assert.doesNotMatch(html, /<img|<script|r2\.cloudflarestorage\.com/);
 });
 
 test("presigned browser PUT URLs do not include automatic checksum parameters", async () => {
@@ -80,10 +111,13 @@ test("presigned browser PUT URLs do not include automatic checksum parameters", 
   process.env.R2_SECRET_ACCESS_KEY = "synthetic-secret-key";
   process.env.R2_BUCKET_NAME = "synthetic-private-bucket";
 
-  const { uploadUrl } = await generatePresignedUploadUrl();
+  const result = await generatePresignedUploadUrl();
+  const { uploadUrl } = result;
   const query = new URL(uploadUrl).searchParams;
   assert.equal(query.has("x-amz-checksum-crc32"), false);
   assert.equal(query.has("x-amz-sdk-checksum-algorithm"), false);
+  assert.equal("key" in result, false);
+  assert.match(result.uploadHeaders["Content-Disposition"], /^attachment; filename="[^"]+"$/);
 });
 
 test("public pages use marketing chrome and internal pages do not", () => {
