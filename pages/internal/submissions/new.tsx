@@ -1,7 +1,10 @@
 import Head from "next/head";
 import PddUploadForm from "../../../components/preview/PddUploadForm";
+import { useInternalReset } from "../../../components/InternalResetContext";
 
 export default function NewInternalSubmissionPage() {
+  const { resetVersion } = useInternalReset();
+
   return (
     <>
       <Head>
@@ -16,7 +19,7 @@ export default function NewInternalSubmissionPage() {
             Use this protected form for documents received outside the public website. The PDF uploads directly to the private R2 bucket.
           </p>
           <div className="mt-8 rounded-lg border border-gray-200 bg-white p-5 shadow-sm md:p-7">
-            <PddUploadForm mode="internal" />
+            <PddUploadForm key={resetVersion} mode="internal" />
           </div>
         </div>
       </main>

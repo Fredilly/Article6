@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 import { buildEmailText } from "../lib/email.ts";
 import { generatePresignedUploadUrl } from "../lib/r2.ts";
@@ -90,4 +91,29 @@ test("public pages use marketing chrome and internal pages do not", () => {
   assert.equal(getAppLayoutKind("/internal/submissions/new"), "internal");
   assert.notEqual(getAppLayoutKind("/internal/submissions/new"), "marketing");
   assert.equal(getAppLayoutKind("/404"), "marketing");
+});
+
+test("internal layout renders only the compact internal header", () => {
+  const header = fs.readFileSync(new URL("../components/InternalHeader.tsx", import.meta.url), "utf8");
+  const internalLayout = fs.readFileSync(new URL("../components/InternalLayout.tsx", import.meta.url), "utf8");
+
+  assert.match(internalLayout, /<InternalHeader \/>/);
+  assert.doesNotMatch(internalLayout, /NavBar|Footer|from ["']\.\/Layout/);
+  assert.match(header, /Article6 Internal/);
+  assert.match(header, /<Link href="\/internal\/submissions\/new"[\s\S]*>\s*Article6 Internal\s*<\/Link>/);
+  assert.match(header, /href="\/internal\/submissions\/new"[\s\S]*onClick=\{resetInternalPage\}/);
+  assert.doesNotMatch(header, /href="\/internal\/submissions"/);
+  assert.doesNotMatch(header, /NavBar|Footer|Layout|Sign out|signout/);
+});
+
+test("internal reset is shared by the header and success state and remounts a blank form", () => {
+  const page = fs.readFileSync(new URL("../pages/internal/submissions/new.tsx", import.meta.url), "utf8");
+  const form = fs.readFileSync(new URL("../components/preview/PddUploadForm.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /<PddUploadForm key=\{resetVersion\} mode="internal" \/>/);
+  assert.match(form, /onClick=\{isInternal \? resetInternalPage : resetForm\}/);
+  assert.match(form, /const \[phase, setPhase\] = useState/);
+  assert.match(form, /const \[submissionId, setSubmissionId\] = useState/);
+  assert.match(form, /const \[file, setFile\] = useState/);
+  assert.match(form, /const \[formData, setFormData\] = useState/);
 });
