@@ -1,8 +1,14 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 import { buildEmailText } from "../lib/email.ts";
 import { generatePresignedUploadUrl } from "../lib/r2.ts";
 import { getAppLayoutKind } from "../lib/layout.ts";
+import {
+  getExpiredInternalSessionCookie,
+  INTERNAL_SESSION_COOKIE,
+  INTERNAL_SIGNOUT_REDIRECT,
+} from "../lib/internal-auth.ts";
 import {
   isApprovedSubmissionKey,
   isPdfUpload,
@@ -90,4 +96,35 @@ test("public pages use marketing chrome and internal pages do not", () => {
   assert.equal(getAppLayoutKind("/internal/submissions/new"), "internal");
   assert.notEqual(getAppLayoutKind("/internal/submissions/new"), "marketing");
   assert.equal(getAppLayoutKind("/404"), "marketing");
+});
+
+test("internal layout renders only the compact internal header", () => {
+  const header = fs.readFileSync(new URL("../components/InternalHeader.tsx", import.meta.url), "utf8");
+  const internalLayout = fs.readFileSync(new URL("../components/InternalLayout.tsx", import.meta.url), "utf8");
+
+  assert.match(internalLayout, /<InternalHeader \/>/);
+  assert.match(header, /Article6 Internal/);
+  assert.match(header, /href="\/internal\/submissions"/);
+  assert.match(header, /href="\/internal\/submissions\/new"/);
+  assert.match(header, /action="\/api\/internal\/signout"/);
+  assert.doesNotMatch(header, /NavBar|Footer|Layout/);
+});
+
+test("sign out expires the internal session cookie and redirects to the protected form", async () => {
+  const signout = fs.readFileSync(new URL("../pages/api/internal/signout.ts", import.meta.url), "utf8");
+
+  assert.equal(INTERNAL_SESSION_COOKIE, "article6_internal_upload");
+  assert.match(getExpiredInternalSessionCookie(false), /^article6_internal_upload=; Max-Age=0; Path=\/; HttpOnly; SameSite=Strict$/);
+  assert.match(signout, /getExpiredInternalSessionCookie/);
+  assert.match(signout, /res\.redirect\(303, INTERNAL_SIGNOUT_REDIRECT\)/);
+  assert.equal(INTERNAL_SIGNOUT_REDIRECT, "/internal/submissions/new");
+});
+
+test("the protected internal route challenges again without Basic Auth after sign out", () => {
+  const middleware = fs.readFileSync(new URL("../middleware.ts", import.meta.url), "utf8");
+
+  assert.match(middleware, /matcher: \["\/internal\/:path\*"\]/);
+  assert.match(middleware, /if \(!authorization\?\.startsWith\("Basic "\)\)/);
+  assert.match(middleware, /status: 401/);
+  assert.match(middleware, /WWW-Authenticate/);
 });

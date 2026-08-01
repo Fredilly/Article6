@@ -1,7 +1,12 @@
 import type { NextApiRequest } from "next";
 
 export const INTERNAL_SESSION_COOKIE = "article6_internal_upload";
+export const INTERNAL_SIGNOUT_REDIRECT = "/internal/submissions/new";
 const SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
+
+export function getExpiredInternalSessionCookie(secure = process.env.NODE_ENV === "production"): string {
+  return `${INTERNAL_SESSION_COOKIE}=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict${secure ? "; Secure" : ""}`;
+}
 
 function encode(value: string): Uint8Array {
   return new TextEncoder().encode(value);
