@@ -2,6 +2,8 @@ import { randomUUID } from "crypto";
 import { S3Client, PutObjectCommand, HeadObjectCommand, PutBucketCorsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+const PDF_CONTENT_TYPE = "application/pdf";
+
 function getR2Credentials() {
   const accountId = process.env.R2_ACCOUNT_ID;
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
@@ -23,6 +25,8 @@ function getS3Client(): S3Client {
   return new S3Client({
     region: "auto",
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
     credentials: {
       accessKeyId,
       secretAccessKey,
@@ -30,14 +34,13 @@ function getS3Client(): S3Client {
   });
 }
 
-function generateKey(fileName: string): string {
+function generateKey(): string {
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
   const uuid = randomUUID();
-  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-  return `submissions/${yyyy}/${mm}/${dd}/${uuid}-${safeName}`;
+  return `submissions/${yyyy}-${mm}-${dd}/${uuid}.pdf`;
 }
 
 export async function configureBucketCors(): Promise<void> {
@@ -66,16 +69,17 @@ export async function configureBucketCors(): Promise<void> {
   console.info("[r2] CORS configuration applied", { bucket: bucketName });
 }
 
-export async function generatePresignedUploadUrl(fileName: string): Promise<{ uploadUrl: string; key: string }> {
+export async function generatePresignedUploadUrl(): Promise<{ uploadUrl: string; key: string }> {
   const s3 = getS3Client();
   const { bucketName } = getR2Credentials();
-  const key = generateKey(fileName);
+  const key = generateKey();
 
   console.info("[r2] Generating presigned PUT URL", { bucket: bucketName, key });
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
     Key: key,
+    ContentType: PDF_CONTENT_TYPE,
   });
 
   const uploadUrl = await getSignedUrl(s3, command, {
