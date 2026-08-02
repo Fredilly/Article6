@@ -3,6 +3,7 @@ import { getBucketName, resolveUploadReference, verifyObjectExists } from "../..
 import { sendSubmissionNotification } from "../../../lib/email";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
 import { sanitizeOriginalFilename, validateStoredObject, validateSubmissionMetadata, type SubmissionSource } from "../../../lib/submissions";
+import { createSubmission } from "../../../lib/submission-store";
 
 interface ConfirmRequestBody {
   uploadReference: string;
@@ -43,45 +44,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const verification = await verifyObjectExists(resolved.key);
     const storedObjectError = validateStoredObject(verification, body.fileSize!);
     if (storedObjectError) return res.status(400).json({ error: storedObjectError });
-    const submissionId = resolved.submissionReference;
     const timestamp = new Date().toISOString();
-    const submission = {
-      id: submissionId,
-      timestamp,
-      key: resolved.key,
+    const submission = await createSubmission({
+      reference: resolved.submissionReference,
+      objectKey: resolved.key,
       bucket: getBucketName(),
-      fileName: sanitizeOriginalFilename(body.fileName!),
+      originalFilename: sanitizeOriginalFilename(body.fileName!),
       fileSize: verification.size,
+      contentType: verification.contentType!,
+      project: body.projectName!.trim(),
       contactName: body.contactName!.trim(),
       workEmail: body.workEmail?.trim().toLowerCase() || undefined,
       organization: body.organization!.trim(),
-      projectName: body.projectName!.trim(),
       methodology: body.methodology!.trim(),
-      submissionSource: body.submissionSource,
+      submissionSource: body.submissionSource!,
       externalContact: body.externalContact?.trim() || undefined,
-      note: body.note?.trim() || "",
-    };
+      notes: body.note?.trim() || "",
+      createdAt: timestamp,
+    });
 
-    console.log("[Submission Confirmed]", JSON.stringify(submission, null, 2));
+    console.log("[Submission Confirmed]", JSON.stringify({ reference: submission.reference, bucket: submission.bucket, objectKey: submission.objectKey }));
     await sendSubmissionNotification({
       contactName: submission.contactName,
       workEmail: submission.workEmail,
       organization: submission.organization,
-      projectName: submission.projectName,
+      projectName: submission.project,
       methodology: submission.methodology,
-      submissionSource: submission.submissionSource!,
+      submissionSource: submission.submissionSource,
       externalContact: submission.externalContact,
-      note: submission.note,
-      fileName: submission.fileName,
+      note: submission.notes,
+      fileName: submission.originalFilename,
       submissionId: submission.id,
-      submissionReference: resolved.submissionReference,
+      submissionReference: submission.reference,
       fileSize: submission.fileSize,
-      timestamp: submission.timestamp,
+      timestamp: submission.createdAt,
     });
 
     return res.status(200).json({
       success: true,
-      submissionId: resolved.submissionReference,
+      submissionId: submission.reference,
       message: body.submissionSource === "website" ? "Your PDD has been submitted for scope review. We will respond within two business days." : "Internal PDD submission received.",
     });
   } catch (err) {

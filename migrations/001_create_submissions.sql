@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS submissions (
+  id UUID PRIMARY KEY,
+  reference VARCHAR(32) NOT NULL UNIQUE,
+  object_key TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  original_filename TEXT NOT NULL,
+  file_size BIGINT NOT NULL,
+  content_type VARCHAR(255) NOT NULL,
+  project TEXT NOT NULL,
+  organization TEXT NOT NULL,
+  contact_name TEXT NOT NULL,
+  work_email TEXT,
+  external_contact TEXT,
+  submission_source VARCHAR(32) NOT NULL,
+  methodology TEXT NOT NULL,
+  notes TEXT NOT NULL DEFAULT '',
+  status VARCHAR(32) NOT NULL DEFAULT 'received',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);

@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import fs from "node:fs";
 import test from "node:test";
-import { buildEmailHtml, buildEmailText, normalizeEmailSubjectProject } from "../lib/email.ts";
+import { buildEmailHtml, buildEmailText, getInternalSubmissionUrl, normalizeEmailSubjectProject } from "../lib/email.ts";
 import { generatePresignedUploadUrl, resolveUploadReference } from "../lib/r2.ts";
 import { generateSubmissionReference } from "../lib/submission-reference.ts";
 import { getAppLayoutKind } from "../lib/layout.ts";
+import { buildSubmissionRecord } from "../lib/submission-store.ts";
 import {
   isApprovedSubmissionKey,
   isPdfUpload,
@@ -79,6 +80,48 @@ test("confirmation derives the reference and gates notification on upload verifi
   const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
   assert.doesNotMatch(confirm, /submissionReference:\s*string/);
   assert.ok(confirm.indexOf("if (storedObjectError)") < confirm.indexOf("await sendSubmissionNotification"));
+  assert.ok(confirm.indexOf("await createSubmission") < confirm.indexOf("await sendSubmissionNotification"));
+  assert.ok(confirm.indexOf("resolveUploadReference") < confirm.indexOf("await createSubmission"));
+});
+
+test("persisted submission keeps the exact reference, bucket, and opaque object mapping", () => {
+  const record = buildSubmissionRecord({
+    reference: "A6-20260802-ABC123", objectKey: "submissions/2026-08-02/opaque.pdf", bucket: "private-bucket",
+    originalFilename: "client.pdf", fileSize: 1234, contentType: "application/pdf", project: "Project",
+    organization: "Organization", contactName: "Contact", submissionSource: "website", methodology: "Method",
+    notes: "Notes", createdAt: "2026-08-02T12:00:00.000Z",
+  });
+  assert.equal(record.reference, "A6-20260802-ABC123");
+  assert.equal(record.bucket, "private-bucket");
+  assert.equal(record.objectKey, "submissions/2026-08-02/opaque.pdf");
+  assert.equal("publicUrl" in record, false);
+  assert.equal("presignedUrl" in record, false);
+});
+
+test("invalid references and missing objects are rejected before persistence", () => {
+  const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
+  assert.ok(confirm.indexOf("if (!resolved)") < confirm.indexOf("await createSubmission"));
+  assert.ok(confirm.indexOf("if (storedObjectError)") < confirm.indexOf("await createSubmission"));
+});
+
+test("submission notification includes an internal detail link and no R2 URL", () => {
+  process.env.INTERNAL_APP_URL = "https://article6.org";
+  const text = buildEmailText({ ...base, note: "", submissionId: "id", submissionReference: "A6-20260802-ABC123", timestamp: "2026-08-02T12:00:00.000Z", submissionSource: "website" });
+  const html = buildEmailHtml({ ...base, note: "", submissionId: "id", submissionReference: "A6-20260802-ABC123", timestamp: "2026-08-02T12:00:00.000Z", submissionSource: "website" });
+  assert.match(text, /View submission: https:\/\/article6\.org\/internal\/submissions\/A6-20260802-ABC123/);
+  assert.match(html, /View submission/);
+  assert.match(html, /https:\/\/article6\.org\/internal\/submissions\/A6-20260802-ABC123/);
+  assert.doesNotMatch(`${text}${html}`, /r2\.cloudflarestorage\.com|presigned|submissions\/2026/);
+  assert.equal(getInternalSubmissionUrl("A6-20260802-ABC123"), "https://article6.org/internal/submissions/A6-20260802-ABC123");
+});
+
+test("internal submission detail route is protected by the existing internal middleware", () => {
+  const middleware = fs.readFileSync(new URL("../middleware.ts", import.meta.url), "utf8");
+  const detail = fs.readFileSync(new URL("../pages/internal/submissions/[reference].tsx", import.meta.url), "utf8");
+  assert.match(middleware, /matcher: \["\/internal\/:path\*"\]/);
+  assert.match(detail, /getServerSideProps/);
+  assert.match(detail, /getSubmissionByReference/);
+  assert.doesNotMatch(detail, /objectKey|bucket|presigned|r2\.cloudflarestorage/);
 });
 
 test("internal notification text works without workEmail and identifies source", () => {
