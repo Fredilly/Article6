@@ -1,5 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
-import { S3Client, PutObjectCommand, HeadObjectCommand, PutBucketCorsCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { isApprovedSubmissionKey, isSubmissionReference } from "./submissions.ts";
 import { generateSubmissionReference } from "./submission-reference.ts";
@@ -72,32 +72,6 @@ function generateKey(): string {
   const dd = String(now.getDate()).padStart(2, "0");
   const uuid = randomUUID();
   return `submissions/${yyyy}-${mm}-${dd}/${uuid}.pdf`;
-}
-
-export async function configureBucketCors(): Promise<void> {
-  const s3 = getS3Client();
-  const { bucketName } = getR2Credentials();
-
-  console.info("[r2] Configuring CORS for bucket", { bucket: bucketName });
-
-  const command = new PutBucketCorsCommand({
-    Bucket: bucketName,
-    CORSConfiguration: {
-      CORSRules: [
-        {
-          AllowedOrigins: ["*"],
-          AllowedMethods: ["PUT"],
-          AllowedHeaders: ["Content-Type"],
-          ExposeHeaders: ["ETag"],
-          MaxAgeSeconds: 3600,
-        },
-      ],
-    },
-  });
-
-  await s3.send(command);
-
-  console.info("[r2] CORS configuration applied", { bucket: bucketName });
 }
 
 export async function generatePresignedUploadUrl(): Promise<{ uploadUrl: string; uploadReference: string; submissionReference: string }> {

@@ -140,10 +140,11 @@ test("presigned browser PUT URLs do not include automatic checksum parameters", 
 test("browser upload keeps the existing Content-Type-only CORS contract", () => {
   const form = fs.readFileSync(new URL("../components/preview/PddUploadForm.tsx", import.meta.url), "utf8");
   const r2 = fs.readFileSync(new URL("../lib/r2.ts", import.meta.url), "utf8");
+  const presign = fs.readFileSync(new URL("../pages/api/upload/presign.ts", import.meta.url), "utf8");
   assert.match(form, /headers:\s*\{\s*'Content-Type': 'application\/pdf'\s*\}/);
   assert.doesNotMatch(form, /uploadHeaders|x-amz-meta-|Content-Disposition/);
-  assert.match(r2, /AllowedHeaders: \["Content-Type"\]/);
-  assert.doesNotMatch(r2, /AllowedHeaders: \[[^\]]*(x-amz-meta|Content-Disposition)/);
+  assert.doesNotMatch(r2, /PutBucketCorsCommand|configureBucketCors|AllowedHeaders/);
+  assert.doesNotMatch(presign, /PutBucketCorsCommand|configureBucketCors|CORS/);
 });
 
 test("email subject project normalization removes controls and limits length", () => {
