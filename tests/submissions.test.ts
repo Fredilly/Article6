@@ -153,6 +153,20 @@ test("VERCEL_URL provides the deployment-aware fallback when INTERNAL_APP_URL is
   delete process.env.INTERNAL_APP_URL;
   process.env.VERCEL_URL = "article6-git-feature.vercel.app";
   assert.equal(getInternalSubmissionUrl("A6-20260802-ABC123"), "https://article6-git-feature.vercel.app/internal/submissions/A6-20260802-ABC123");
+  const text = buildEmailText({ ...base, note: "", submissionId: "id", submissionReference: "A6-20260802-ABC123", timestamp: "2026-08-02T12:00:00.000Z", submissionSource: "website" });
+  assert.match(text, /View submission: https:\/\/article6-git-feature\.vercel\.app\/internal\/submissions\/A6-20260802-ABC123/);
+  if (previousInternalUrl === undefined) delete process.env.INTERNAL_APP_URL;
+  else process.env.INTERNAL_APP_URL = previousInternalUrl;
+  if (previousVercelUrl === undefined) delete process.env.VERCEL_URL;
+  else process.env.VERCEL_URL = previousVercelUrl;
+});
+
+test("legacy http://internal does not override the Vercel deployment URL", () => {
+  const previousInternalUrl = process.env.INTERNAL_APP_URL;
+  const previousVercelUrl = process.env.VERCEL_URL;
+  process.env.INTERNAL_APP_URL = "http://internal";
+  process.env.VERCEL_URL = "article6-git-feature.vercel.app";
+  assert.equal(getInternalSubmissionUrl("A6-20260802-ABC123"), "https://article6-git-feature.vercel.app/internal/submissions/A6-20260802-ABC123");
   if (previousInternalUrl === undefined) delete process.env.INTERNAL_APP_URL;
   else process.env.INTERNAL_APP_URL = previousInternalUrl;
   if (previousVercelUrl === undefined) delete process.env.VERCEL_URL;

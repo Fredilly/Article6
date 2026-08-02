@@ -21,7 +21,12 @@ const formatTimestamp = (timestamp: string): string => new Intl.DateTimeFormat("
 export function getInternalSubmissionUrl(reference: string): string {
   const configuredBaseUrl = process.env.INTERNAL_APP_URL?.trim();
   const vercelHost = process.env.VERCEL_URL?.trim();
-  const baseUrlValue = configuredBaseUrl || (vercelHost ? `https://${vercelHost}` : undefined);
+  const isLegacyInternalPlaceholder = configuredBaseUrl === "http://internal" || configuredBaseUrl === "https://internal";
+  const baseUrlValue = !isLegacyInternalPlaceholder && configuredBaseUrl
+    ? configuredBaseUrl
+    : vercelHost
+      ? `https://${vercelHost}`
+      : undefined;
   if (!baseUrlValue) throw new Error("INTERNAL_APP_URL or VERCEL_URL must be configured to generate submission notification links.");
   let baseUrl: URL;
   try {
@@ -31,6 +36,9 @@ export function getInternalSubmissionUrl(reference: string): string {
   }
   if (baseUrl.protocol !== "http:" && baseUrl.protocol !== "https:") {
     throw new Error("INTERNAL_APP_URL or VERCEL_URL must use http or https.");
+  }
+  if (baseUrl.hostname === "internal") {
+    throw new Error("INTERNAL_APP_URL or VERCEL_URL must resolve to a deployment hostname.");
   }
   const path = `/internal/submissions/${encodeURIComponent(reference)}`;
   return `${baseUrlValue.replace(/\/$/, "")}${path}`;
