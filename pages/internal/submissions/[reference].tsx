@@ -30,7 +30,7 @@ export default function SubmissionDetailPage({ submission }: InferGetServerSideP
         <Detail label="File size" value={`${(submission.fileSize / (1024 * 1024)).toFixed(2)} MiB`} />
         <Detail label="Submitted" value={new Date(submission.createdAt).toLocaleString()} /><Detail label="Status" value={submission.status} />
       </dl><div className="mt-6 border-t border-gray-100 pt-6"><Detail label="Notes" value={submission.notes} /></div>
-      <div className="mt-8 flex flex-wrap gap-3 border-t border-gray-100 pt-6"><button type="button" disabled className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-500">Download PDF</button><button type="button" disabled className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-500">Run Quick Check</button></div>
+      <div className="mt-8 flex flex-wrap gap-3 border-t border-gray-100 pt-6"><a href={`/api/internal/submissions/${submission.reference}/download`} className="rounded-md bg-forest-700 px-4 py-2 text-sm font-medium text-white hover:bg-forest-800">Download PDF</a><button type="button" disabled className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-500">Run Quick Check</button></div>
       </div>
     </div></main>
   </>;

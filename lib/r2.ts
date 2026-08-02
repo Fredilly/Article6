@@ -1,5 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
-import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { isApprovedSubmissionKey, isSubmissionReference } from "./submissions.ts";
 import { generateSubmissionReference } from "./submission-reference.ts";
@@ -98,6 +98,22 @@ export async function generatePresignedUploadUrl(): Promise<{ uploadUrl: string;
   return { uploadUrl, uploadReference: signUploadReference(key, submissionReference, expiresAt), submissionReference };
 }
 
+export async function generatePresignedDownloadUrl(bucket: string, key: string): Promise<string> {
+  if (!bucket || !isApprovedSubmissionKey(key)) {
+    throw new Error("Invalid stored submission object.");
+  }
+
+  const s3 = getS3Client();
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ResponseContentType: PDF_CONTENT_TYPE,
+    ResponseContentDisposition: "attachment",
+  });
+
+  return getSignedUrl(s3, command, { expiresIn: 300 });
+}
+
 export interface ObjectVerificationResult {
   exists: boolean;
   size: number;
@@ -105,9 +121,9 @@ export interface ObjectVerificationResult {
   lastModified: Date | undefined;
 }
 
-export async function verifyObjectExists(key: string): Promise<ObjectVerificationResult> {
+export async function verifyObjectExists(key: string, bucket?: string): Promise<ObjectVerificationResult> {
   const s3 = getS3Client();
-  const { bucketName } = getR2Credentials();
+  const bucketName = bucket || getR2Credentials().bucketName;
 
   console.info("[r2] Verifying object existence", { bucket: bucketName, key });
 

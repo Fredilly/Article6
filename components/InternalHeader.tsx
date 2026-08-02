@@ -11,6 +11,9 @@ export default function InternalHeader() {
           Article6 Internal
         </Link>
         <div className="flex items-center gap-4 text-sm">
+          <Link href="/internal/submissions" className="text-gray-600 hover:text-gray-900">
+            Submissions
+          </Link>
           <Link href="/internal/submissions/new" onClick={resetInternalPage} className="text-forest-700 hover:text-forest-800">
             New submission
           </Link>
