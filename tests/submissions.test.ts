@@ -257,6 +257,16 @@ test("Quick Check records remote failures without exposing signed URLs", async (
   finally { globalThis.fetch = previousFetch; }
 });
 
+test("stored Quick Check version 1 results retain their legacy rendering contract", () => {
+  const page = fs.readFileSync(new URL("../pages/internal/submissions/[reference].tsx", import.meta.url), "utf8");
+  const legacy: import("../lib/quick-check.ts").QuickCheckResultV1 = {
+    version: 1, fileSize: 1234, isPdf: true, pageCount: 585, extractedTextPreview: "Project Description", checks: [{ name: "pdf_signature", passed: true, detail: "PDF signature detected." }],
+  };
+  assert.equal(legacy.version, 1);
+  assert.match(page, /result\.version === 1/);
+  for (const field of ["result.isPdf", "result.fileSize", "result.checks", "result.pageCount", "result.extractedTextPreview"]) assert.match(page, new RegExp(field.replace(".", "\\.")));
+});
+
 test("Quick Check route requires auth, resolves the submission, verifies R2, and persists completion", () => {
   const route = fs.readFileSync(new URL("../pages/api/internal/submissions/[reference]/quick-check.ts", import.meta.url), "utf8");
   const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");

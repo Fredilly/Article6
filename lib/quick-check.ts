@@ -7,7 +7,16 @@ export interface QuickCheckInput {
   fileSize: number;
 }
 
-export interface QuickCheckResult {
+export interface QuickCheckResultV1 {
+  version: 1;
+  fileSize: number;
+  isPdf: boolean;
+  pageCount: number | null;
+  extractedTextPreview: string;
+  checks: { name: string; passed: boolean; detail: string }[];
+}
+
+export interface QuickCheckResultV2 {
   version: 2;
   parserEngine: string;
   parserVersion: string | null;
@@ -17,9 +26,15 @@ export interface QuickCheckResult {
   extractionError?: string;
 }
 
+export type QuickCheckResult = QuickCheckResultV1 | QuickCheckResultV2;
+
 const MAX_PREVIEW_LENGTH = 2000;
-const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_RESPONSE_BYTES = 256 * 1024;
+
+function processorTimeoutMs(): number {
+  const configured = Number(process.env.APP_ARTICLE6_PROCESSOR_TIMEOUT_MS || 150_000);
+  return Number.isFinite(configured) && configured > 0 ? configured : 150_000;
+}
 
 function processorUrl(): string {
   const value = process.env.APP_ARTICLE6_PROCESSOR_URL?.trim();
@@ -64,7 +79,7 @@ function cleanPreview(value: unknown): string {
 
 export async function runQuickCheck(input: QuickCheckInput): Promise<QuickCheckResult> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), processorTimeoutMs());
   try {
     const response = await fetch(processorUrl(), {
       method: "POST",
