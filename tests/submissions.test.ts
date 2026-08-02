@@ -264,3 +264,11 @@ test("internal reset is shared by the header and success state and remounts a bl
   assert.match(form, /const \[file, setFile\] = useState/);
   assert.match(form, /const \[formData, setFormData\] = useState/);
 });
+
+test("upload progress styling is green only while uploading and keeps the existing success/error states", () => {
+  const form = fs.readFileSync(new URL("../components/preview/PddUploadForm.tsx", import.meta.url), "utf8");
+  assert.match(form, /phase === 'uploading'[\s\S]*role="progressbar"[\s\S]*bg-forest-600/);
+  assert.match(form, /phase === 'success'/);
+  assert.match(form, /phase === 'error'/);
+  assert.match(form, /border-red-200 bg-red-50/);
+});
