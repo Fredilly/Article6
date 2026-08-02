@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import fs from "node:fs";
 import test from "node:test";
-import { buildEmailHtml, buildEmailText, normalizeEmailSubjectProject } from "../lib/email.ts";
+import { buildEmailHtml, buildEmailText, getInternalSubmissionUrl, normalizeEmailSubjectProject } from "../lib/email.ts";
 import { generatePresignedUploadUrl, resolveUploadReference } from "../lib/r2.ts";
 import { generateSubmissionReference } from "../lib/submission-reference.ts";
 import { getAppLayoutKind } from "../lib/layout.ts";
+import { buildSubmissionRecord } from "../lib/submission-store.ts";
 import {
   isApprovedSubmissionKey,
   isPdfUpload,
@@ -79,6 +80,118 @@ test("confirmation derives the reference and gates notification on upload verifi
   const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
   assert.doesNotMatch(confirm, /submissionReference:\s*string/);
   assert.ok(confirm.indexOf("if (storedObjectError)") < confirm.indexOf("await sendSubmissionNotification"));
+  assert.ok(confirm.indexOf("await createSubmissionIfAbsent") < confirm.indexOf("await sendSubmissionNotification"));
+  assert.ok(confirm.indexOf("resolveUploadReference") < confirm.indexOf("await createSubmissionIfAbsent"));
+});
+
+test("atomic confirmation creates once, reuses duplicates, and sends one notification", () => {
+  const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
+  const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(confirm, /getSubmissionByReference/);
+  assert.ok(confirm.indexOf("if (created) await sendSubmissionNotification") > confirm.indexOf("await createSubmissionIfAbsent"));
+  assert.match(store, /ON CONFLICT \(reference\) DO NOTHING/);
+  assert.match(store, /created: false/);
+  assert.match(store, /if \(result\.rows\[0\]\) return \{ submission: toRecord\(result\.rows\[0\]\), created: true \}/);
+  assert.match(store, /const existing = await getSubmissionByReference\(record\.reference\)/);
+});
+
+test("concurrent confirmations use one atomic insert and one notification decision", () => {
+  const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
+  const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
+  assert.equal((store.match(/ON CONFLICT \(reference\) DO NOTHING/g) || []).length, 1);
+  assert.equal((confirm.match(/sendSubmissionNotification\(\{/g) || []).length, 1);
+  assert.match(confirm, /const \{ submission, created \} = await createSubmissionIfAbsent/);
+  assert.match(confirm, /if \(created\) await sendSubmissionNotification/);
+});
+
+test("submission store relies on the applied migration rather than runtime schema mutation", () => {
+  const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(store, /CREATE TABLE|ensureTable|tableReady/);
+  assert.match(fs.readFileSync(new URL("../migrations/001_create_submissions.sql", import.meta.url), "utf8"), /CREATE TABLE IF NOT EXISTS submissions/);
+  assert.match(store, /rejectUnauthorized: true/);
+  assert.doesNotMatch(store, /rejectUnauthorized: false/);
+});
+
+test("persisted submission keeps the exact reference, bucket, and opaque object mapping", () => {
+  const record = buildSubmissionRecord({
+    reference: "A6-20260802-ABC123", objectKey: "submissions/2026-08-02/opaque.pdf", bucket: "private-bucket",
+    originalFilename: "client.pdf", fileSize: 1234, contentType: "application/pdf", project: "Project",
+    organization: "Organization", contactName: "Contact", submissionSource: "website", methodology: "Method",
+    notes: "Notes", createdAt: "2026-08-02T12:00:00.000Z",
+  });
+  assert.equal(record.reference, "A6-20260802-ABC123");
+  assert.equal(record.bucket, "private-bucket");
+  assert.equal(record.objectKey, "submissions/2026-08-02/opaque.pdf");
+  assert.equal("publicUrl" in record, false);
+  assert.equal("presignedUrl" in record, false);
+});
+
+test("invalid references and missing objects are rejected before persistence", () => {
+  const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
+  assert.ok(confirm.indexOf("if (!resolved)") < confirm.indexOf("await createSubmission"));
+  assert.ok(confirm.indexOf("if (storedObjectError)") < confirm.indexOf("await createSubmission"));
+});
+
+test("submission notification includes an internal detail link and no R2 URL", () => {
+  const previousVercelUrl = process.env.VERCEL_URL;
+  process.env.INTERNAL_APP_URL = "https://article6.org";
+  process.env.VERCEL_URL = "preview.example.vercel.app";
+  const text = buildEmailText({ ...base, note: "", submissionId: "id", submissionReference: "A6-20260802-ABC123", timestamp: "2026-08-02T12:00:00.000Z", submissionSource: "website" });
+  const html = buildEmailHtml({ ...base, note: "", submissionId: "id", submissionReference: "A6-20260802-ABC123", timestamp: "2026-08-02T12:00:00.000Z", submissionSource: "website" });
+  assert.match(text, /View submission: https:\/\/article6\.org\/internal\/submissions\/A6-20260802-ABC123/);
+  assert.match(html, /View submission/);
+  assert.match(html, /https:\/\/article6\.org\/internal\/submissions\/A6-20260802-ABC123/);
+  assert.doesNotMatch(`${text}${html}`, /r2\.cloudflarestorage\.com|presigned|submissions\/2026/);
+  assert.equal(getInternalSubmissionUrl("A6-20260802-ABC123"), "https://article6.org/internal/submissions/A6-20260802-ABC123");
+  if (previousVercelUrl === undefined) delete process.env.VERCEL_URL;
+  else process.env.VERCEL_URL = previousVercelUrl;
+});
+
+test("VERCEL_URL provides the deployment-aware fallback when INTERNAL_APP_URL is absent", () => {
+  const previousInternalUrl = process.env.INTERNAL_APP_URL;
+  const previousVercelUrl = process.env.VERCEL_URL;
+  delete process.env.INTERNAL_APP_URL;
+  process.env.VERCEL_URL = "article6-git-feature.vercel.app";
+  assert.equal(getInternalSubmissionUrl("A6-20260802-ABC123"), "https://article6-git-feature.vercel.app/internal/submissions/A6-20260802-ABC123");
+  const text = buildEmailText({ ...base, note: "", submissionId: "id", submissionReference: "A6-20260802-ABC123", timestamp: "2026-08-02T12:00:00.000Z", submissionSource: "website" });
+  assert.match(text, /View submission: https:\/\/article6-git-feature\.vercel\.app\/internal\/submissions\/A6-20260802-ABC123/);
+  if (previousInternalUrl === undefined) delete process.env.INTERNAL_APP_URL;
+  else process.env.INTERNAL_APP_URL = previousInternalUrl;
+  if (previousVercelUrl === undefined) delete process.env.VERCEL_URL;
+  else process.env.VERCEL_URL = previousVercelUrl;
+});
+
+test("legacy http://internal does not override the Vercel deployment URL", () => {
+  const previousInternalUrl = process.env.INTERNAL_APP_URL;
+  const previousVercelUrl = process.env.VERCEL_URL;
+  process.env.INTERNAL_APP_URL = "http://internal";
+  process.env.VERCEL_URL = "article6-git-feature.vercel.app";
+  assert.equal(getInternalSubmissionUrl("A6-20260802-ABC123"), "https://article6-git-feature.vercel.app/internal/submissions/A6-20260802-ABC123");
+  if (previousInternalUrl === undefined) delete process.env.INTERNAL_APP_URL;
+  else process.env.INTERNAL_APP_URL = previousInternalUrl;
+  if (previousVercelUrl === undefined) delete process.env.VERCEL_URL;
+  else process.env.VERCEL_URL = previousVercelUrl;
+});
+
+test("missing INTERNAL_APP_URL and VERCEL_URL fails clearly instead of generating a relative link", () => {
+  const previousInternalUrl = process.env.INTERNAL_APP_URL;
+  const previousVercelUrl = process.env.VERCEL_URL;
+  delete process.env.INTERNAL_APP_URL;
+  delete process.env.VERCEL_URL;
+  assert.throws(() => getInternalSubmissionUrl("A6-20260802-ABC123"), /INTERNAL_APP_URL or VERCEL_URL must be configured/);
+  if (previousInternalUrl === undefined) delete process.env.INTERNAL_APP_URL;
+  else process.env.INTERNAL_APP_URL = previousInternalUrl;
+  if (previousVercelUrl === undefined) delete process.env.VERCEL_URL;
+  else process.env.VERCEL_URL = previousVercelUrl;
+});
+
+test("internal submission detail route is protected by the existing internal middleware", () => {
+  const middleware = fs.readFileSync(new URL("../middleware.ts", import.meta.url), "utf8");
+  const detail = fs.readFileSync(new URL("../pages/internal/submissions/[reference].tsx", import.meta.url), "utf8");
+  assert.match(middleware, /matcher: \["\/internal\/:path\*"\]/);
+  assert.match(detail, /getServerSideProps/);
+  assert.match(detail, /getSubmissionByReference/);
+  assert.doesNotMatch(detail, /objectKey|bucket|presigned|r2\.cloudflarestorage/);
 });
 
 test("internal notification text works without workEmail and identifies source", () => {
@@ -184,4 +297,12 @@ test("internal reset is shared by the header and success state and remounts a bl
   assert.match(form, /const \[submissionId, setSubmissionId\] = useState/);
   assert.match(form, /const \[file, setFile\] = useState/);
   assert.match(form, /const \[formData, setFormData\] = useState/);
+});
+
+test("upload progress styling is green only while uploading and keeps the existing success/error states", () => {
+  const form = fs.readFileSync(new URL("../components/preview/PddUploadForm.tsx", import.meta.url), "utf8");
+  assert.match(form, /phase === 'uploading'[\s\S]*role="progressbar"[\s\S]*bg-forest-600/);
+  assert.match(form, /phase === 'success'/);
+  assert.match(form, /phase === 'error'/);
+  assert.match(form, /border-red-200 bg-red-50/);
 });

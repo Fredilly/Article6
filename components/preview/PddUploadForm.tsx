@@ -459,6 +459,12 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
           )}
         </button>
 
+        {phase === 'uploading' && (
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200" role="progressbar" aria-label="Upload in progress">
+            <div className="h-full w-1/2 animate-pulse rounded-full bg-forest-600" />
+          </div>
+        )}
+
         <p className="text-xs text-gray-400 leading-relaxed">
           Submitting a PDD does not begin a paid engagement. We will first review the scope
           and confirm the next steps.
