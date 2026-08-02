@@ -20,18 +20,20 @@ const formatFileSize = (bytes: number): string => `${(bytes / (1024 * 1024)).toF
 const formatTimestamp = (timestamp: string): string => new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(timestamp)) + " UTC";
 export function getInternalSubmissionUrl(reference: string): string {
   const configuredBaseUrl = process.env.INTERNAL_APP_URL?.trim();
-  if (!configuredBaseUrl) throw new Error("INTERNAL_APP_URL must be configured to generate submission notification links.");
+  const vercelHost = process.env.VERCEL_URL?.trim();
+  const baseUrlValue = configuredBaseUrl || (vercelHost ? `https://${vercelHost}` : undefined);
+  if (!baseUrlValue) throw new Error("INTERNAL_APP_URL or VERCEL_URL must be configured to generate submission notification links.");
   let baseUrl: URL;
   try {
-    baseUrl = new URL(configuredBaseUrl);
+    baseUrl = new URL(baseUrlValue);
   } catch {
-    throw new Error("INTERNAL_APP_URL must be a valid absolute URL.");
+    throw new Error("INTERNAL_APP_URL or VERCEL_URL must resolve to a valid absolute URL.");
   }
   if (baseUrl.protocol !== "http:" && baseUrl.protocol !== "https:") {
-    throw new Error("INTERNAL_APP_URL must use http or https.");
+    throw new Error("INTERNAL_APP_URL or VERCEL_URL must use http or https.");
   }
   const path = `/internal/submissions/${encodeURIComponent(reference)}`;
-  return `${configuredBaseUrl.replace(/\/$/, "")}${path}`;
+  return `${baseUrlValue.replace(/\/$/, "")}${path}`;
 }
 export function normalizeEmailSubjectProject(value: string): string {
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || "Unnamed project";

@@ -133,7 +133,9 @@ test("invalid references and missing objects are rejected before persistence", (
 });
 
 test("submission notification includes an internal detail link and no R2 URL", () => {
+  const previousVercelUrl = process.env.VERCEL_URL;
   process.env.INTERNAL_APP_URL = "https://article6.org";
+  process.env.VERCEL_URL = "preview.example.vercel.app";
   const text = buildEmailText({ ...base, note: "", submissionId: "id", submissionReference: "A6-20260802-ABC123", timestamp: "2026-08-02T12:00:00.000Z", submissionSource: "website" });
   const html = buildEmailHtml({ ...base, note: "", submissionId: "id", submissionReference: "A6-20260802-ABC123", timestamp: "2026-08-02T12:00:00.000Z", submissionSource: "website" });
   assert.match(text, /View submission: https:\/\/article6\.org\/internal\/submissions\/A6-20260802-ABC123/);
@@ -141,14 +143,32 @@ test("submission notification includes an internal detail link and no R2 URL", (
   assert.match(html, /https:\/\/article6\.org\/internal\/submissions\/A6-20260802-ABC123/);
   assert.doesNotMatch(`${text}${html}`, /r2\.cloudflarestorage\.com|presigned|submissions\/2026/);
   assert.equal(getInternalSubmissionUrl("A6-20260802-ABC123"), "https://article6.org/internal/submissions/A6-20260802-ABC123");
+  if (previousVercelUrl === undefined) delete process.env.VERCEL_URL;
+  else process.env.VERCEL_URL = previousVercelUrl;
 });
 
-test("missing INTERNAL_APP_URL fails clearly instead of generating a relative link", () => {
-  const previous = process.env.INTERNAL_APP_URL;
+test("VERCEL_URL provides the deployment-aware fallback when INTERNAL_APP_URL is absent", () => {
+  const previousInternalUrl = process.env.INTERNAL_APP_URL;
+  const previousVercelUrl = process.env.VERCEL_URL;
   delete process.env.INTERNAL_APP_URL;
-  assert.throws(() => getInternalSubmissionUrl("A6-20260802-ABC123"), /INTERNAL_APP_URL must be configured/);
-  if (previous === undefined) delete process.env.INTERNAL_APP_URL;
-  else process.env.INTERNAL_APP_URL = previous;
+  process.env.VERCEL_URL = "article6-git-feature.vercel.app";
+  assert.equal(getInternalSubmissionUrl("A6-20260802-ABC123"), "https://article6-git-feature.vercel.app/internal/submissions/A6-20260802-ABC123");
+  if (previousInternalUrl === undefined) delete process.env.INTERNAL_APP_URL;
+  else process.env.INTERNAL_APP_URL = previousInternalUrl;
+  if (previousVercelUrl === undefined) delete process.env.VERCEL_URL;
+  else process.env.VERCEL_URL = previousVercelUrl;
+});
+
+test("missing INTERNAL_APP_URL and VERCEL_URL fails clearly instead of generating a relative link", () => {
+  const previousInternalUrl = process.env.INTERNAL_APP_URL;
+  const previousVercelUrl = process.env.VERCEL_URL;
+  delete process.env.INTERNAL_APP_URL;
+  delete process.env.VERCEL_URL;
+  assert.throws(() => getInternalSubmissionUrl("A6-20260802-ABC123"), /INTERNAL_APP_URL or VERCEL_URL must be configured/);
+  if (previousInternalUrl === undefined) delete process.env.INTERNAL_APP_URL;
+  else process.env.INTERNAL_APP_URL = previousInternalUrl;
+  if (previousVercelUrl === undefined) delete process.env.VERCEL_URL;
+  else process.env.VERCEL_URL = previousVercelUrl;
 });
 
 test("internal submission detail route is protected by the existing internal middleware", () => {
