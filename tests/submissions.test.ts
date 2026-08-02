@@ -229,24 +229,32 @@ test("submission PDF download requires the internal session and signs the stored
   assert.match(route, /status\(404\)/);
 });
 
-test("Quick Check validates a private PDF and returns an auditable result", () => {
-  const result = runQuickCheck(Buffer.from("%PDF-1.7 /Type /Page /Type /Page"));
-  assert.equal(result.isPdf, true);
-  assert.equal(result.pageCount, 2);
-  assert.equal(result.checks.every((check) => check.passed), true);
-  assert.equal(runQuickCheck(Buffer.from("not a pdf")).isPdf, false);
+test("Quick Check calls the authenticated remote processor and returns readable text", async () => {
+  process.env.APP_ARTICLE6_PROCESSOR_URL = "https://processor.example.test/internal/pdf-extract";
+  process.env.APP_ARTICLE6_PROCESSOR_SECRET = "processor-secret";
+  const calls: { url: string; init?: RequestInit }[] = [];
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = (async (url, init) => {
+    calls.push({ url: String(url), init });
+    return new Response(JSON.stringify({ parserEngine: "pymupdf", parserVersion: "1.24", pageCount: 1, extractedTextPreview: "Project Description\nBaseline Scenario\nLeakage\nMonitoring Plan", extractionStatus: "completed" }));
+  }) as typeof fetch;
+  try {
+    const result = await runQuickCheck({ submissionReference: "A6-20260802-ABC123", documentUrl: "https://r2.example.test/signed", filename: "pdd.pdf", fileSize: 1234 });
+    assert.equal(calls[0]?.url, process.env.APP_ARTICLE6_PROCESSOR_URL);
+    assert.equal(new Headers(calls[0]?.init?.headers).get("authorization"), "Bearer processor-secret");
+    assert.match(result.extractedTextPreview, /Project Description/);
+    assert.equal(result.extractedTextPreview.startsWith("%PDF"), false);
+    assert.doesNotMatch(JSON.stringify(result), /r2\.example|processor-secret|signed/);
+  } finally { globalThis.fetch = previousFetch; }
 });
 
-test("Quick Check extracts readable page text and never stores raw PDF markers", () => {
-  const fixture = fs.readFileSync(new URL("./fixtures/quick-check-pdd.pdf", import.meta.url));
-  const result = runQuickCheck(fixture);
-  assert.equal(result.isPdf, true);
-  assert.equal(result.pageCount, 1);
-  assert.match(result.extractedTextPreview, /Project Description/);
-  assert.match(result.extractedTextPreview, /Baseline Scenario/);
-  assert.match(result.extractedTextPreview, /Leakage/);
-  assert.match(result.extractedTextPreview, /Monitoring Plan/);
-  assert.equal(result.extractedTextPreview.startsWith("%PDF"), false);
+test("Quick Check records remote failures without exposing signed URLs", async () => {
+  process.env.APP_ARTICLE6_PROCESSOR_URL = "https://processor.example.test/internal/pdf-extract";
+  process.env.APP_ARTICLE6_PROCESSOR_SECRET = "processor-secret";
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(JSON.stringify({ error: "Extraction processor failed." }), { status: 502 })) as typeof fetch;
+  try { await assert.rejects(() => runQuickCheck({ submissionReference: "A6-20260802-ABC123", documentUrl: "https://r2.example.test/signed-secret", filename: "pdd.pdf", fileSize: 1234 }), /Extraction processor failed/); }
+  finally { globalThis.fetch = previousFetch; }
 });
 
 test("Quick Check route requires auth, resolves the submission, verifies R2, and persists completion", () => {
@@ -256,7 +264,8 @@ test("Quick Check route requires auth, resolves the submission, verifies R2, and
   assert.match(route, /status\(401\)/);
   assert.match(route, /getSubmissionByReference/);
   assert.match(route, /verifyObjectExists\(submission\.objectKey, submission\.bucket\)/);
-  assert.match(route, /getPrivateObject\(submission\.objectKey, submission\.bucket\)/);
+  assert.match(route, /generatePresignedDownloadUrl\(submission\.bucket, submission\.objectKey\)/);
+  assert.match(route, /documentUrl/);
   assert.match(route, /runQuickCheck/);
   assert.match(route, /startQuickCheck/);
   assert.match(route, /completeQuickCheck/);
