@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { configureBucketCors, generatePresignedUploadUrl } from "../../../lib/r2";
+import { generatePresignedUploadUrl } from "../../../lib/r2";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
 import { PDF_CONTENT_TYPE, validateSubmissionMetadata, type SubmissionSource } from "../../../lib/submissions";
 
@@ -38,14 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    try {
-      await configureBucketCors();
-    } catch (corsErr) {
-      console.warn("[presign] CORS configuration skipped:", corsErr instanceof Error ? corsErr.message : String(corsErr));
-    }
-
-    const { uploadUrl, key } = await generatePresignedUploadUrl();
-    return res.status(200).json({ uploadUrl, key, expiresIn: 600 });
+    const { uploadUrl, uploadReference } = await generatePresignedUploadUrl();
+    return res.status(200).json({ uploadUrl, uploadReference, expiresIn: 600 });
   } catch (err) {
     console.error("[presign] Error generating upload URL:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ error: "Failed to generate upload URL. Please try again later." });

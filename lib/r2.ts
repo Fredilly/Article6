@@ -1,6 +1,8 @@
-import { randomUUID } from "crypto";
-import { S3Client, PutObjectCommand, HeadObjectCommand, PutBucketCorsCommand } from "@aws-sdk/client-s3";
+import { createHmac, randomUUID, timingSafeEqual } from "crypto";
+import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { isApprovedSubmissionKey, isSubmissionReference } from "./submissions.ts";
+import { generateSubmissionReference } from "./submission-reference.ts";
 
 const PDF_CONTENT_TYPE = "application/pdf";
 
@@ -17,6 +19,35 @@ function getR2Credentials() {
   }
 
   return { accountId, accessKeyId, secretAccessKey, bucketName };
+}
+
+export interface ResolvedUploadReference {
+  key: string;
+  submissionReference: string;
+}
+
+function signUploadReference(key: string, submissionReference: string, expiresAt: number): string {
+  const secret = getR2Credentials().secretAccessKey;
+  const payload = Buffer.from(JSON.stringify({ key, submissionReference, expiresAt })).toString("base64url");
+  const signature = createHmac("sha256", secret).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+export function resolveUploadReference(reference: unknown): ResolvedUploadReference | null {
+  if (typeof reference !== "string") return null;
+  const parts = reference.split(".");
+  if (parts.length !== 2) return null;
+  const [payload, signature] = parts;
+  if (!payload || !signature) return null;
+  const expected = createHmac("sha256", getR2Credentials().secretAccessKey).update(payload).digest("base64url");
+  if (!/^[A-Za-z0-9_-]+$/.test(signature) || signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { key?: unknown; submissionReference?: unknown; expiresAt?: unknown };
+    if (!isApprovedSubmissionKey(parsed.key) || !isSubmissionReference(parsed.submissionReference) || typeof parsed.expiresAt !== "number" || parsed.expiresAt <= Date.now()) return null;
+    return { key: parsed.key, submissionReference: parsed.submissionReference };
+  } catch {
+    return null;
+  }
 }
 
 function getS3Client(): S3Client {
@@ -43,36 +74,12 @@ function generateKey(): string {
   return `submissions/${yyyy}-${mm}-${dd}/${uuid}.pdf`;
 }
 
-export async function configureBucketCors(): Promise<void> {
-  const s3 = getS3Client();
-  const { bucketName } = getR2Credentials();
-
-  console.info("[r2] Configuring CORS for bucket", { bucket: bucketName });
-
-  const command = new PutBucketCorsCommand({
-    Bucket: bucketName,
-    CORSConfiguration: {
-      CORSRules: [
-        {
-          AllowedOrigins: ["*"],
-          AllowedMethods: ["PUT"],
-          AllowedHeaders: ["Content-Type"],
-          ExposeHeaders: ["ETag"],
-          MaxAgeSeconds: 3600,
-        },
-      ],
-    },
-  });
-
-  await s3.send(command);
-
-  console.info("[r2] CORS configuration applied", { bucket: bucketName });
-}
-
-export async function generatePresignedUploadUrl(): Promise<{ uploadUrl: string; key: string }> {
+export async function generatePresignedUploadUrl(): Promise<{ uploadUrl: string; uploadReference: string; submissionReference: string }> {
   const s3 = getS3Client();
   const { bucketName } = getR2Credentials();
   const key = generateKey();
+  const submissionReference = generateSubmissionReference();
+  const expiresAt = Date.now() + 10 * 60 * 1000;
 
   console.info("[r2] Generating presigned PUT URL", { bucket: bucketName, key });
 
@@ -88,7 +95,7 @@ export async function generatePresignedUploadUrl(): Promise<{ uploadUrl: string;
 
   console.info("[r2] Presigned URL generated", { key, expiresIn: 600 });
 
-  return { uploadUrl, key };
+  return { uploadUrl, uploadReference: signUploadReference(key, submissionReference, expiresAt), submissionReference };
 }
 
 export interface ObjectVerificationResult {

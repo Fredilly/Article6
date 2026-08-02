@@ -20,6 +20,27 @@ export const NON_WEBSITE_SOURCES: SubmissionSource[] = ["whatsapp", "email", "in
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export function sanitizeOriginalFilename(fileName: string): string {
+  const baseName = fileName.replace(/\\/g, "/").split("/").pop() || "document.pdf";
+  const sanitized = baseName
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/["']/g, "")
+    .replace(/[^a-zA-Z0-9._()\- ]/g, "_")
+    .replace(/^\.+/, "")
+    .trim()
+    .slice(0, 180);
+  return sanitized || "document.pdf";
+}
+
+export function buildContentDisposition(fileName: string): string {
+  return `attachment; filename="${sanitizeOriginalFilename(fileName)}"`;
+}
+
+export function isSubmissionReference(value: unknown): value is string {
+  return typeof value === "string" && /^A6-\d{8}-[0-9A-HJKMNP-TV-Z]{6}$/.test(value);
+}
+
 export function validateSubmissionMetadata(
   input: Partial<SubmissionMetadata> & { submissionSource?: unknown }
 ): string | null {
@@ -70,7 +91,7 @@ export function isPdfUpload(file: { type: string; size: number }): string | null
   return null;
 }
 
-export function isApprovedSubmissionKey(key: unknown): boolean {
+export function isApprovedSubmissionKey(key: unknown): key is string {
   return typeof key === "string" && /^submissions\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]{36}\.pdf$/.test(key);
 }
 
@@ -82,6 +103,6 @@ export function validateStoredObject(
   if (object.size <= 0) return "Uploaded file is empty.";
   if (object.size > MAX_FILE_SIZE) return "Uploaded file exceeds the 50MB limit.";
   if (object.size !== declaredSize) return "Uploaded file size does not match the declared file size.";
-  if (object.contentType && object.contentType !== PDF_CONTENT_TYPE) return "Uploaded file is not a valid PDF.";
+  if (object.contentType !== PDF_CONTENT_TYPE) return "Uploaded file is not a valid PDF.";
   return null;
 }

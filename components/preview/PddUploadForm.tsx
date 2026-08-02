@@ -113,7 +113,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
         status: presignRes.status,
         ok: presignRes.ok,
         hasUploadUrl: !!(presignBody as { uploadUrl?: string }).uploadUrl,
-        key: ((presignBody as { key?: string }).key || '').slice(0, 30) + '...',
+        hasUploadReference: !!(presignBody as { uploadReference?: string }).uploadReference,
         error: presignBody.error,
       });
 
@@ -121,12 +121,11 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
         throw new Error(presignBody.error || 'Failed to prepare upload.');
       }
 
-      const { uploadUrl, key } = presignBody as { uploadUrl: string; key: string };
+      const { uploadUrl, uploadReference } = presignBody as { uploadUrl: string; uploadReference: string };
 
       console.info('[PddUploadForm] Step 2: Uploading file to R2', {
-        key: key.slice(0, 30) + '...',
+        hasUploadReference: !!uploadReference,
         urlHost: new URL(uploadUrl).hostname,
-        urlPath: new URL(uploadUrl).pathname.slice(0, 50) + '...',
         urlParams: new URL(uploadUrl).search.slice(0, 100) + '...',
         fileSize: file!.size,
         fileType: file!.type,
@@ -175,13 +174,13 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
         throw new Error(`File upload failed: R2 returned HTTP ${uploadRes.status}${uploadRes.statusText ? ` (${uploadRes.statusText})` : ''}. Please try again.`);
       }
 
-      console.info('[PddUploadForm] Step 3: Confirming submission', { key: key.slice(0, 30) + '...' });
+      console.info('[PddUploadForm] Step 3: Confirming submission');
 
       const confirmRes = await fetch('/api/upload/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          key,
+          uploadReference,
           fileName: file!.name,
           fileSize: file!.size,
           contactName: formData.fullName.trim(),
@@ -201,7 +200,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
         status: confirmRes.status,
         ok: confirmRes.ok,
         success: confirmBody.success,
-        submissionId: confirmBody.submissionId ? (confirmBody.submissionId as string).slice(0, 8) + '...' : undefined,
+        submissionReference: confirmBody.submissionId,
         message: confirmBody.message,
         error: confirmBody.error,
       });
@@ -212,7 +211,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
 
       setSubmissionId(confirmBody.submissionId);
       setPhase('success');
-      console.info('[PddUploadForm] Upload flow complete', { submissionId: confirmBody.submissionId });
+      console.info('[PddUploadForm] Upload flow complete', { submissionReference: confirmBody.submissionId });
     } catch (err) {
       console.error('[PddUploadForm] Upload flow error', err);
       setPhase('error');
@@ -246,7 +245,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
         </p>
         {submissionId && (
           <p className="mt-3 text-xs text-gray-400">
-            Reference: <code className="text-gray-500">{submissionId.slice(0, 8)}</code>
+            Reference: <code className="text-gray-500">{submissionId}</code>
           </p>
         )}
         <button

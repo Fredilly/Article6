@@ -10,11 +10,21 @@ interface SubmissionEmailParams {
   timestamp: string;
   submissionSource: string;
   externalContact?: string;
+  submissionReference: string;
+  fileSize: number;
+}
+
+const escapeHtml = (value: string): string => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+const optional = (value?: string): string => value?.trim() || "Not provided";
+const formatFileSize = (bytes: number): string => `${(bytes / (1024 * 1024)).toFixed(2)} MiB`;
+const formatTimestamp = (timestamp: string): string => new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(timestamp)) + " UTC";
+export function normalizeEmailSubjectProject(value: string): string {
+  return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || "Unnamed project";
 }
 
 export function buildEmailText(params: SubmissionEmailParams): string {
   const lines = [
-    "New evidence readiness assessment request.",
+    "New Article6 document submission",
     "",
     "Contact:",
     "",
@@ -24,18 +34,31 @@ export function buildEmailText(params: SubmissionEmailParams): string {
     `Project:       ${params.projectName}`,
     `Methodology:   ${params.methodology}`,
     `Source:        ${params.submissionSource}`,
-    `Reference ID:  ${params.submissionId}`,
-    `File:          ${params.fileName}`,
-    `Submitted:     ${params.timestamp}`,
+    `Reference:     ${params.submissionReference}`,
+    `Document:      ${params.fileName}`,
+    `File size:     ${formatFileSize(params.fileSize)}`,
+    `Submitted:     ${formatTimestamp(params.timestamp)}`,
   ];
 
-  if (params.externalContact) lines.push(`External contact: ${params.externalContact}`);
+  lines.splice(8, 0, `External contact: ${params.externalContact || "Not provided"}`);
 
   if (params.note) {
     lines.push("", `Additional note: ${params.note}`);
   }
 
   return lines.join("\n");
+}
+
+export function buildEmailHtml(params: SubmissionEmailParams): string {
+  const rows: Array<[string, string]> = [
+    ["Reference", params.submissionReference], ["Project", params.projectName], ["Organization", params.organization],
+    ["Contact", params.contactName], ["Work email", optional(params.workEmail)], ["External contact", optional(params.externalContact)],
+    ["Source", params.submissionSource], ["Methodology", params.methodology], ["Document", params.fileName],
+    ["File size", formatFileSize(params.fileSize)], ["Submitted", formatTimestamp(params.timestamp)],
+  ];
+  const table = rows.map(([label, value]) => `<tr><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600;vertical-align:top;white-space:nowrap;">${escapeHtml(label)}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#111827;word-break:break-word;">${escapeHtml(value)}</td></tr>`).join("");
+  const notes = params.note?.trim() ? `<h2 style="font-size:16px;color:#111827;margin:24px 0 8px;">Notes</h2><div style="padding:12px;background:#f3f4f6;color:#374151;white-space:pre-wrap;">${escapeHtml(params.note)}</div>` : "";
+  return `<!doctype html><html><body style="margin:0;background:#f9fafb;font-family:Arial,Helvetica,sans-serif;color:#111827;"><div style="max-width:640px;margin:0 auto;padding:24px 16px;"><div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;"><h1 style="font-size:20px;margin:0 0 20px;color:#14532d;">New Article6 document submission</h1><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;font-size:14px;">${table}</table>${notes}</div></div></body></html>`;
 }
 
 export async function sendSubmissionNotification(params: SubmissionEmailParams): Promise<boolean> {
@@ -52,15 +75,16 @@ export async function sendSubmissionNotification(params: SubmissionEmailParams):
   const body = {
     from: `Article6 <${fromAddress}>`,
     to: [adminEmail],
-    subject: "New Article6 PDD submission received",
+    subject: `New Article6 submission — ${normalizeEmailSubjectProject(params.projectName)} — ${params.submissionReference}`,
     text: buildEmailText(params),
+    html: buildEmailHtml(params),
   };
 
   try {
     console.info("[email] Sending Resend notification", {
       from: `Article6 <${fromAddress}>`,
       to: adminEmail,
-      subject: "New Article6 PDD submission received",
+      subject: `New Article6 submission — ${normalizeEmailSubjectProject(params.projectName)} — ${params.submissionReference}`,
     });
 
     const response = await fetch("https://api.resend.com/emails", {
