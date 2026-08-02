@@ -32,8 +32,8 @@ const MAX_PREVIEW_LENGTH = 2000;
 const MAX_RESPONSE_BYTES = 256 * 1024;
 
 function processorTimeoutMs(): number {
-  const configured = Number(process.env.APP_ARTICLE6_PROCESSOR_TIMEOUT_MS || 150_000);
-  return Number.isFinite(configured) && configured > 0 ? configured : 150_000;
+  const configured = Number(process.env.APP_ARTICLE6_PROCESSOR_TIMEOUT_MS || 180_000);
+  return Number.isFinite(configured) && configured > 0 ? configured : 180_000;
 }
 
 function processorUrl(): string {
