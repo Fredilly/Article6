@@ -81,16 +81,27 @@ test("confirmation derives the reference and gates notification on upload verifi
   assert.doesNotMatch(confirm, /submissionReference:\s*string/);
   assert.ok(confirm.indexOf("if (storedObjectError)") < confirm.indexOf("await sendSubmissionNotification"));
   assert.ok(confirm.indexOf("await createSubmissionIfAbsent") < confirm.indexOf("await sendSubmissionNotification"));
-  assert.ok(confirm.indexOf("resolveUploadReference") < confirm.indexOf("await getSubmissionByReference"));
+  assert.ok(confirm.indexOf("resolveUploadReference") < confirm.indexOf("await createSubmissionIfAbsent"));
 });
 
-test("duplicate confirmation reuses the existing record and sends one notification", () => {
+test("atomic confirmation creates once, reuses duplicates, and sends one notification", () => {
   const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
   const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
-  assert.ok(confirm.indexOf("if (existing)") < confirm.indexOf("await createSubmissionIfAbsent"));
+  assert.doesNotMatch(confirm, /getSubmissionByReference/);
   assert.ok(confirm.indexOf("if (created) await sendSubmissionNotification") > confirm.indexOf("await createSubmissionIfAbsent"));
   assert.match(store, /ON CONFLICT \(reference\) DO NOTHING/);
   assert.match(store, /created: false/);
+  assert.match(store, /if \(result\.rows\[0\]\) return \{ submission: toRecord\(result\.rows\[0\]\), created: true \}/);
+  assert.match(store, /const existing = await getSubmissionByReference\(record\.reference\)/);
+});
+
+test("concurrent confirmations use one atomic insert and one notification decision", () => {
+  const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
+  const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
+  assert.equal((store.match(/ON CONFLICT \(reference\) DO NOTHING/g) || []).length, 1);
+  assert.equal((confirm.match(/sendSubmissionNotification\(\{/g) || []).length, 1);
+  assert.match(confirm, /const \{ submission, created \} = await createSubmissionIfAbsent/);
+  assert.match(confirm, /if \(created\) await sendSubmissionNotification/);
 });
 
 test("submission store relies on the applied migration rather than runtime schema mutation", () => {

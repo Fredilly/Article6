@@ -3,7 +3,7 @@ import { getBucketName, resolveUploadReference, verifyObjectExists } from "../..
 import { sendSubmissionNotification } from "../../../lib/email";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
 import { sanitizeOriginalFilename, validateStoredObject, validateSubmissionMetadata, type SubmissionSource } from "../../../lib/submissions";
-import { createSubmissionIfAbsent, getSubmissionByReference } from "../../../lib/submission-store";
+import { createSubmissionIfAbsent } from "../../../lib/submission-store";
 
 interface ConfirmRequestBody {
   uploadReference: string;
@@ -44,14 +44,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const verification = await verifyObjectExists(resolved.key);
     const storedObjectError = validateStoredObject(verification, body.fileSize!);
     if (storedObjectError) return res.status(400).json({ error: storedObjectError });
-    const existing = await getSubmissionByReference(resolved.submissionReference);
-    if (existing) {
-      return res.status(200).json({
-        success: true,
-        submissionId: existing.reference,
-        message: body.submissionSource === "website" ? "Your PDD has been submitted for scope review. We will respond within two business days." : "Internal PDD submission received.",
-      });
-    }
     const timestamp = new Date().toISOString();
     const { submission, created } = await createSubmissionIfAbsent({
       reference: resolved.submissionReference,
