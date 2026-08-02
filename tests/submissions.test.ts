@@ -7,6 +7,7 @@ import { generatePresignedDownloadUrl, generatePresignedUploadUrl, resolveUpload
 import { generateSubmissionReference } from "../lib/submission-reference.ts";
 import { getAppLayoutKind } from "../lib/layout.ts";
 import { buildSubmissionRecord } from "../lib/submission-store.ts";
+import { runQuickCheck } from "../lib/quick-check.ts";
 import {
   isApprovedSubmissionKey,
   isPdfUpload,
@@ -214,6 +215,40 @@ test("submission PDF download requires the internal session and signs the stored
   assert.match(route, /generatePresignedDownloadUrl\(submission\.bucket, submission\.objectKey\)/);
   assert.match(route, /res\.redirect\(307/);
   assert.match(route, /status\(404\)/);
+});
+
+test("Quick Check validates a private PDF and returns an auditable result", () => {
+  const result = runQuickCheck(Buffer.from("%PDF-1.7 /Type /Page /Type /Page"));
+  assert.equal(result.isPdf, true);
+  assert.equal(result.pageCount, 2);
+  assert.equal(result.checks.every((check) => check.passed), true);
+  assert.equal(runQuickCheck(Buffer.from("not a pdf")).isPdf, false);
+});
+
+test("Quick Check route requires auth, resolves the submission, verifies R2, and persists completion", () => {
+  const route = fs.readFileSync(new URL("../pages/api/internal/submissions/[reference]/quick-check.ts", import.meta.url), "utf8");
+  const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
+  assert.match(route, /hasInternalUploadSession/);
+  assert.match(route, /status\(401\)/);
+  assert.match(route, /getSubmissionByReference/);
+  assert.match(route, /verifyObjectExists\(submission\.objectKey, submission\.bucket\)/);
+  assert.match(route, /getPrivateObject\(submission\.objectKey, submission\.bucket\)/);
+  assert.match(route, /runQuickCheck/);
+  assert.match(route, /startQuickCheck/);
+  assert.match(route, /completeQuickCheck/);
+  assert.match(route, /failQuickCheck/);
+  assert.match(store, /quick_check_status = 'processing'/);
+  assert.match(store, /quick_check_status = 'completed'/);
+  assert.match(store, /quick_check_status = 'failed'/);
+});
+
+test("Quick Check migration preserves the existing upload schema and stores an audit result", () => {
+  const migration = fs.readFileSync(new URL("../migrations/002_add_quick_check.sql", import.meta.url), "utf8");
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS quick_check_status/);
+  assert.match(migration, /quick_check_id UUID/);
+  assert.match(migration, /quick_check_result JSONB/);
+  assert.match(migration, /quick_check_started_at/);
+  assert.match(migration, /quick_check_completed_at/);
 });
 
 test("R2 download signing uses the persisted bucket and short-lived GET URL", async () => {
