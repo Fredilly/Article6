@@ -164,6 +164,13 @@ export async function verifyObjectExists(key: string, bucket?: string): Promise<
   }
 }
 
+export async function getPrivateObject(key: string, bucket?: string): Promise<Buffer> {
+  if (!bucket || !isApprovedSubmissionKey(key)) throw new Error("Invalid stored submission object.");
+  const response = await getS3Client().send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  if (!response.Body) throw new Error("Stored submission object has no body.");
+  return Buffer.from(await response.Body.transformToByteArray());
+}
+
 export function getBucketName(): string {
   return getR2Credentials().bucketName;
 }

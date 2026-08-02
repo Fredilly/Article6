@@ -1,5 +1,6 @@
 import Head from "next/head";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import { useState } from "react";
 import { getSubmissionByReference, type SubmissionRecord } from "../../../lib/submission-store";
 import { isSubmissionReference } from "../../../lib/submissions";
 
@@ -17,6 +18,20 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 export default function SubmissionDetailPage({ submission }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const [quickCheckStatus, setQuickCheckStatus] = useState(submission.quickCheckStatus);
+  const [quickCheckId, setQuickCheckId] = useState(submission.quickCheckId);
+  const [quickCheckError, setQuickCheckError] = useState<string>();
+  async function runCheck() {
+    setQuickCheckStatus("processing"); setQuickCheckError(undefined);
+    try {
+      const response = await fetch(`/api/internal/submissions/${submission.reference}/quick-check`, { method: "POST" });
+      const body = await response.json() as { status?: typeof quickCheckStatus; quickCheckId?: string; error?: string };
+      if (!response.ok) { setQuickCheckStatus("failed"); setQuickCheckError(body.error || "Unable to run Quick Check."); return; }
+      setQuickCheckStatus(body.status || "completed"); setQuickCheckId(body.quickCheckId);
+    } catch {
+      setQuickCheckStatus("failed"); setQuickCheckError("Unable to reach the Quick Check service.");
+    }
+  }
   return <>
     <Head><title>{submission.reference} | Article6 Internal</title><meta name="robots" content="noindex,nofollow" /></Head>
     <main className="min-h-screen bg-gray-50 px-4 py-12 text-gray-900"><div className="mx-auto max-w-3xl">
@@ -28,9 +43,9 @@ export default function SubmissionDetailPage({ submission }: InferGetServerSideP
         <Detail label="External contact" value={submission.externalContact || ""} /><Detail label="Methodology" value={submission.methodology} />
         <Detail label="Source" value={submission.submissionSource} /><Detail label="Original filename" value={submission.originalFilename} />
         <Detail label="File size" value={`${(submission.fileSize / (1024 * 1024)).toFixed(2)} MiB`} />
-        <Detail label="Submitted" value={new Date(submission.createdAt).toLocaleString()} /><Detail label="Status" value={submission.status} />
+        <Detail label="Submitted" value={new Date(submission.createdAt).toLocaleString()} /><Detail label="Status" value={submission.status} /><Detail label="Quick Check" value={quickCheckStatus} />
       </dl><div className="mt-6 border-t border-gray-100 pt-6"><Detail label="Notes" value={submission.notes} /></div>
-      <div className="mt-8 flex flex-wrap gap-3 border-t border-gray-100 pt-6"><a href={`/api/internal/submissions/${submission.reference}/download`} className="rounded-md bg-forest-700 px-4 py-2 text-sm font-medium text-white hover:bg-forest-800">Download PDF</a><button type="button" disabled className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-500">Run Quick Check</button></div>
+      <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-6"><a href={`/api/internal/submissions/${submission.reference}/download`} className="rounded-md bg-forest-700 px-4 py-2 text-sm font-medium text-white hover:bg-forest-800">Download PDF</a><button type="button" onClick={runCheck} disabled={quickCheckStatus === "processing"} className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 disabled:cursor-wait disabled:opacity-60">{quickCheckStatus === "processing" ? "Running Quick Check…" : "Run Quick Check"}</button>{quickCheckStatus === "completed" && quickCheckId && <span className="text-sm text-gray-600">Result available (audit {quickCheckId})</span>}{quickCheckStatus === "failed" && <span className="text-sm text-red-700">{quickCheckError || "Quick Check failed."}</span>}</div>
       </div>
     </div></main>
   </>;

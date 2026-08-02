@@ -3,12 +3,15 @@ import { Pool, type QueryResultRow } from "pg";
 import type { SubmissionSource } from "./submissions";
 
 export type SubmissionStatus = "received" | "in_review" | "completed" | "rejected";
+export type QuickCheckStatus = "received" | "processing" | "completed" | "failed";
 
 export interface SubmissionRecord {
   id: string; reference: string; objectKey: string; bucket: string; originalFilename: string;
   fileSize: number; contentType: string; project: string; organization: string; contactName: string;
   workEmail?: string; externalContact?: string; submissionSource: SubmissionSource; methodology: string;
   notes: string; status: SubmissionStatus; createdAt: string; updatedAt: string;
+  quickCheckStatus: QuickCheckStatus; quickCheckId?: string; quickCheckResult?: unknown;
+  quickCheckStartedAt?: string; quickCheckCompletedAt?: string; quickCheckFailedAt?: string; quickCheckError?: string;
 }
 
 export interface NewSubmissionRecord {
@@ -44,6 +47,13 @@ function toRecord(row: QueryResultRow): SubmissionRecord {
     workEmail: row.work_email || undefined, externalContact: row.external_contact || undefined,
     submissionSource: row.submission_source as SubmissionSource, methodology: String(row.methodology), notes: String(row.notes || ""),
     status: row.status as SubmissionStatus, createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString(),
+    quickCheckStatus: (row.quick_check_status || "received") as QuickCheckStatus,
+    quickCheckId: row.quick_check_id ? String(row.quick_check_id) : undefined,
+    quickCheckResult: row.quick_check_result || undefined,
+    quickCheckStartedAt: row.quick_check_started_at ? new Date(row.quick_check_started_at).toISOString() : undefined,
+    quickCheckCompletedAt: row.quick_check_completed_at ? new Date(row.quick_check_completed_at).toISOString() : undefined,
+    quickCheckFailedAt: row.quick_check_failed_at ? new Date(row.quick_check_failed_at).toISOString() : undefined,
+    quickCheckError: row.quick_check_error || undefined,
   };
 }
 
@@ -52,7 +62,7 @@ export function buildSubmissionRecord(input: NewSubmissionRecord): SubmissionRec
     originalFilename: input.originalFilename, fileSize: input.fileSize, contentType: input.contentType, project: input.project,
     organization: input.organization, contactName: input.contactName, workEmail: input.workEmail, externalContact: input.externalContact,
     submissionSource: input.submissionSource, methodology: input.methodology, notes: input.notes, status: input.status || "received",
-    createdAt: input.createdAt, updatedAt: input.createdAt };
+    createdAt: input.createdAt, updatedAt: input.createdAt, quickCheckStatus: "received" };
 }
 
 export async function createSubmission(input: NewSubmissionRecord): Promise<SubmissionRecord> {
@@ -95,4 +105,35 @@ export async function getSubmissionByReference(reference: string): Promise<Submi
 export async function getSubmissions(): Promise<SubmissionRecord[]> {
   const result = await getPool().query("SELECT * FROM submissions ORDER BY created_at DESC");
   return result.rows.map(toRecord);
+}
+
+export async function startQuickCheck(reference: string, quickCheckId: string, startedAt: string): Promise<SubmissionRecord | null> {
+  const result = await getPool().query(
+    `UPDATE submissions SET quick_check_status = 'processing', quick_check_id = $2, quick_check_result = NULL,
+       quick_check_started_at = $3, quick_check_completed_at = NULL, quick_check_failed_at = NULL,
+       quick_check_error = NULL, updated_at = $3
+     WHERE reference = $1 AND quick_check_status <> 'processing' RETURNING *`,
+    [reference, quickCheckId, startedAt]
+  );
+  return result.rows[0] ? toRecord(result.rows[0]) : null;
+}
+
+export async function completeQuickCheck(reference: string, quickCheckId: string, resultData: unknown, completedAt: string): Promise<SubmissionRecord | null> {
+  const result = await getPool().query(
+    `UPDATE submissions SET quick_check_status = 'completed', quick_check_result = $3,
+       quick_check_completed_at = $4, quick_check_error = NULL, updated_at = $4
+     WHERE reference = $1 AND quick_check_id = $2 RETURNING *`,
+    [reference, quickCheckId, JSON.stringify(resultData), completedAt]
+  );
+  return result.rows[0] ? toRecord(result.rows[0]) : null;
+}
+
+export async function failQuickCheck(reference: string, quickCheckId: string, errorMessage: string, failedAt: string): Promise<SubmissionRecord | null> {
+  const result = await getPool().query(
+    `UPDATE submissions SET quick_check_status = 'failed', quick_check_error = $3,
+       quick_check_failed_at = $4, updated_at = $4
+     WHERE reference = $1 AND quick_check_id = $2 RETURNING *`,
+    [reference, quickCheckId, errorMessage.slice(0, 1000), failedAt]
+  );
+  return result.rows[0] ? toRecord(result.rows[0]) : null;
 }
