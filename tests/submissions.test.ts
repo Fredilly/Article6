@@ -195,6 +195,18 @@ test("internal submission detail route is protected by the existing internal mid
   assert.doesNotMatch(detail, /objectKey|bucket|presigned|r2\.cloudflarestorage/);
 });
 
+test("internal submission detail renders the persisted Quick Check audit fields", () => {
+  const detail = fs.readFileSync(new URL("../pages/internal/submissions/[reference].tsx", import.meta.url), "utf8");
+  for (const field of ["Audit ID", "Result storage", "Started", "Completed", "Failed", "PDF validation", "Document metadata", "Extracted text", "Page count", "Extracted text preview", "Error details"]) {
+    assert.match(detail, new RegExp(field));
+  }
+  assert.match(detail, /quickCheckResult/);
+  assert.match(detail, /quickCheckStartedAt/);
+  assert.match(detail, /quickCheckCompletedAt/);
+  assert.match(detail, /quickCheckFailedAt/);
+  assert.match(detail, /quickCheckError/);
+});
+
 test("internal submissions index queries newest submissions first and links to detail", () => {
   const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
   const index = fs.readFileSync(new URL("../pages/internal/submissions/index.tsx", import.meta.url), "utf8");
