@@ -237,6 +237,18 @@ test("Quick Check validates a private PDF and returns an auditable result", () =
   assert.equal(runQuickCheck(Buffer.from("not a pdf")).isPdf, false);
 });
 
+test("Quick Check extracts readable page text and never stores raw PDF markers", () => {
+  const fixture = fs.readFileSync(new URL("./fixtures/quick-check-pdd.pdf", import.meta.url));
+  const result = runQuickCheck(fixture);
+  assert.equal(result.isPdf, true);
+  assert.equal(result.pageCount, 1);
+  assert.match(result.extractedTextPreview, /Project Description/);
+  assert.match(result.extractedTextPreview, /Baseline Scenario/);
+  assert.match(result.extractedTextPreview, /Leakage/);
+  assert.match(result.extractedTextPreview, /Monitoring Plan/);
+  assert.equal(result.extractedTextPreview.startsWith("%PDF"), false);
+});
+
 test("Quick Check route requires auth, resolves the submission, verifies R2, and persists completion", () => {
   const route = fs.readFileSync(new URL("../pages/api/internal/submissions/[reference]/quick-check.ts", import.meta.url), "utf8");
   const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
