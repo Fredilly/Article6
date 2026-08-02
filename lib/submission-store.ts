@@ -18,33 +18,22 @@ export interface NewSubmissionRecord {
   status?: SubmissionStatus; createdAt: string;
 }
 
-const CREATE_TABLE_SQL = `
-  CREATE TABLE IF NOT EXISTS submissions (
-    id UUID PRIMARY KEY, reference VARCHAR(32) NOT NULL UNIQUE, object_key TEXT NOT NULL, bucket TEXT NOT NULL,
-    original_filename TEXT NOT NULL, file_size BIGINT NOT NULL, content_type VARCHAR(255) NOT NULL,
-    project TEXT NOT NULL, organization TEXT NOT NULL, contact_name TEXT NOT NULL, work_email TEXT,
-    external_contact TEXT, submission_source VARCHAR(32) NOT NULL, methodology TEXT NOT NULL,
-    notes TEXT NOT NULL DEFAULT '', status VARCHAR(32) NOT NULL DEFAULT 'received',
-    created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL
-  )
-`;
-
 let pool: Pool | undefined;
-let tableReady: Promise<void> | undefined;
 
 function getPool(): Pool {
   if (pool) return pool;
   const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
   if (!connectionString) throw new Error("Missing POSTGRES_URL or DATABASE_URL environment variable.");
-  pool = new Pool({ connectionString, max: 3, ssl: connectionString.includes("localhost") ? undefined : { rejectUnauthorized: false } });
+  pool = new Pool({
+    connectionString,
+    max: 3,
+    ...(process.env.NODE_ENV === "production"
+      ? { ssl: { rejectUnauthorized: true } }
+      : connectionString.includes("localhost")
+        ? { ssl: false }
+        : {}),
+  });
   return pool;
-}
-
-async function ensureTable(): Promise<void> {
-  if (!tableReady) {
-    tableReady = getPool().query(CREATE_TABLE_SQL).then(() => undefined).catch((error) => { tableReady = undefined; throw error; });
-  }
-  return tableReady;
 }
 
 function toRecord(row: QueryResultRow): SubmissionRecord {
@@ -67,7 +56,6 @@ export function buildSubmissionRecord(input: NewSubmissionRecord): SubmissionRec
 }
 
 export async function createSubmission(input: NewSubmissionRecord): Promise<SubmissionRecord> {
-  await ensureTable();
   const record = buildSubmissionRecord(input);
   const result = await getPool().query(
     `INSERT INTO submissions
@@ -81,8 +69,25 @@ export async function createSubmission(input: NewSubmissionRecord): Promise<Subm
   return toRecord(result.rows[0]);
 }
 
+export async function createSubmissionIfAbsent(input: NewSubmissionRecord): Promise<{ submission: SubmissionRecord; created: boolean }> {
+  const record = buildSubmissionRecord(input);
+  const result = await getPool().query(
+    `INSERT INTO submissions
+      (id, reference, object_key, bucket, original_filename, file_size, content_type, project, organization,
+       contact_name, work_email, external_contact, submission_source, methodology, notes, status, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $17)
+     ON CONFLICT (reference) DO NOTHING RETURNING *`,
+    [record.id, record.reference, record.objectKey, record.bucket, record.originalFilename, record.fileSize, record.contentType,
+      record.project, record.organization, record.contactName, record.workEmail || null, record.externalContact || null,
+      record.submissionSource, record.methodology, record.notes, record.status, record.createdAt]
+  );
+  if (result.rows[0]) return { submission: toRecord(result.rows[0]), created: true };
+  const existing = await getSubmissionByReference(record.reference);
+  if (!existing) throw new Error(`Submission ${record.reference} could not be created or read after a conflict.`);
+  return { submission: existing, created: false };
+}
+
 export async function getSubmissionByReference(reference: string): Promise<SubmissionRecord | null> {
-  await ensureTable();
   const result = await getPool().query("SELECT * FROM submissions WHERE reference = $1 LIMIT 1", [reference]);
   return result.rows[0] ? toRecord(result.rows[0]) : null;
 }

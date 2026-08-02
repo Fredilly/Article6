@@ -80,8 +80,25 @@ test("confirmation derives the reference and gates notification on upload verifi
   const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
   assert.doesNotMatch(confirm, /submissionReference:\s*string/);
   assert.ok(confirm.indexOf("if (storedObjectError)") < confirm.indexOf("await sendSubmissionNotification"));
-  assert.ok(confirm.indexOf("await createSubmission") < confirm.indexOf("await sendSubmissionNotification"));
-  assert.ok(confirm.indexOf("resolveUploadReference") < confirm.indexOf("await createSubmission"));
+  assert.ok(confirm.indexOf("await createSubmissionIfAbsent") < confirm.indexOf("await sendSubmissionNotification"));
+  assert.ok(confirm.indexOf("resolveUploadReference") < confirm.indexOf("await getSubmissionByReference"));
+});
+
+test("duplicate confirmation reuses the existing record and sends one notification", () => {
+  const confirm = fs.readFileSync(new URL("../pages/api/upload/confirm.ts", import.meta.url), "utf8");
+  const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
+  assert.ok(confirm.indexOf("if (existing)") < confirm.indexOf("await createSubmissionIfAbsent"));
+  assert.ok(confirm.indexOf("if (created) await sendSubmissionNotification") > confirm.indexOf("await createSubmissionIfAbsent"));
+  assert.match(store, /ON CONFLICT \(reference\) DO NOTHING/);
+  assert.match(store, /created: false/);
+});
+
+test("submission store relies on the applied migration rather than runtime schema mutation", () => {
+  const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(store, /CREATE TABLE|ensureTable|tableReady/);
+  assert.match(fs.readFileSync(new URL("../migrations/001_create_submissions.sql", import.meta.url), "utf8"), /CREATE TABLE IF NOT EXISTS submissions/);
+  assert.match(store, /rejectUnauthorized: true/);
+  assert.doesNotMatch(store, /rejectUnauthorized: false/);
 });
 
 test("persisted submission keeps the exact reference, bucket, and opaque object mapping", () => {
@@ -113,6 +130,14 @@ test("submission notification includes an internal detail link and no R2 URL", (
   assert.match(html, /https:\/\/article6\.org\/internal\/submissions\/A6-20260802-ABC123/);
   assert.doesNotMatch(`${text}${html}`, /r2\.cloudflarestorage\.com|presigned|submissions\/2026/);
   assert.equal(getInternalSubmissionUrl("A6-20260802-ABC123"), "https://article6.org/internal/submissions/A6-20260802-ABC123");
+});
+
+test("missing INTERNAL_APP_URL fails clearly instead of generating a relative link", () => {
+  const previous = process.env.INTERNAL_APP_URL;
+  delete process.env.INTERNAL_APP_URL;
+  assert.throws(() => getInternalSubmissionUrl("A6-20260802-ABC123"), /INTERNAL_APP_URL must be configured/);
+  if (previous === undefined) delete process.env.INTERNAL_APP_URL;
+  else process.env.INTERNAL_APP_URL = previous;
 });
 
 test("internal submission detail route is protected by the existing internal middleware", () => {

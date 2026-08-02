@@ -19,8 +19,19 @@ const optional = (value?: string): string => value?.trim() || "Not provided";
 const formatFileSize = (bytes: number): string => `${(bytes / (1024 * 1024)).toFixed(2)} MiB`;
 const formatTimestamp = (timestamp: string): string => new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(timestamp)) + " UTC";
 export function getInternalSubmissionUrl(reference: string): string {
+  const configuredBaseUrl = process.env.INTERNAL_APP_URL?.trim();
+  if (!configuredBaseUrl) throw new Error("INTERNAL_APP_URL must be configured to generate submission notification links.");
+  let baseUrl: URL;
+  try {
+    baseUrl = new URL(configuredBaseUrl);
+  } catch {
+    throw new Error("INTERNAL_APP_URL must be a valid absolute URL.");
+  }
+  if (baseUrl.protocol !== "http:" && baseUrl.protocol !== "https:") {
+    throw new Error("INTERNAL_APP_URL must use http or https.");
+  }
   const path = `/internal/submissions/${encodeURIComponent(reference)}`;
-  return `${process.env.INTERNAL_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || ""}${path}`;
+  return `${configuredBaseUrl.replace(/\/$/, "")}${path}`;
 }
 export function normalizeEmailSubjectProject(value: string): string {
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || "Unnamed project";
