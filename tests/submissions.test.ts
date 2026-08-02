@@ -3,7 +3,7 @@ import { createHmac } from "node:crypto";
 import fs from "node:fs";
 import test from "node:test";
 import { buildEmailHtml, buildEmailText, getInternalSubmissionUrl, normalizeEmailSubjectProject } from "../lib/email.ts";
-import { generatePresignedUploadUrl, resolveUploadReference } from "../lib/r2.ts";
+import { generatePresignedDownloadUrl, generatePresignedUploadUrl, resolveUploadReference } from "../lib/r2.ts";
 import { generateSubmissionReference } from "../lib/submission-reference.ts";
 import { getAppLayoutKind } from "../lib/layout.ts";
 import { buildSubmissionRecord } from "../lib/submission-store.ts";
@@ -194,6 +194,49 @@ test("internal submission detail route is protected by the existing internal mid
   assert.doesNotMatch(detail, /objectKey|bucket|presigned|r2\.cloudflarestorage/);
 });
 
+test("internal submissions index queries newest submissions first and links to detail", () => {
+  const store = fs.readFileSync(new URL("../lib/submission-store.ts", import.meta.url), "utf8");
+  const index = fs.readFileSync(new URL("../pages/internal/submissions/index.tsx", import.meta.url), "utf8");
+  assert.match(store, /export async function getSubmissions/);
+  assert.match(store, /ORDER BY created_at DESC/);
+  assert.match(index, /getServerSideProps/);
+  assert.match(index, /Reference/);
+  assert.match(index, /Submitted date/);
+  assert.match(index, /`\/internal\/submissions\/\$\{submission\.reference\}`/);
+});
+
+test("submission PDF download requires the internal session and signs the stored object", () => {
+  const route = fs.readFileSync(new URL("../pages/api/internal/submissions/[reference]/download.ts", import.meta.url), "utf8");
+  assert.match(route, /hasInternalUploadSession/);
+  assert.match(route, /status\(401\)/);
+  assert.match(route, /getSubmissionByReference/);
+  assert.match(route, /verifyObjectExists\(submission\.objectKey, submission\.bucket\)/);
+  assert.match(route, /generatePresignedDownloadUrl\(submission\.bucket, submission\.objectKey\)/);
+  assert.match(route, /res\.redirect\(307/);
+  assert.match(route, /status\(404\)/);
+});
+
+test("R2 download signing uses the persisted bucket and short-lived GET URL", async () => {
+  const previous = {
+    account: process.env.R2_ACCOUNT_ID,
+    access: process.env.R2_ACCESS_KEY_ID,
+    secret: process.env.R2_SECRET_ACCESS_KEY,
+    bucket: process.env.R2_BUCKET_NAME,
+  };
+  process.env.R2_ACCOUNT_ID = "synthetic-account";
+  process.env.R2_ACCESS_KEY_ID = "synthetic-access-key";
+  process.env.R2_SECRET_ACCESS_KEY = "synthetic-secret-key";
+  process.env.R2_BUCKET_NAME = "configured-bucket";
+  const url = await generatePresignedDownloadUrl("persisted-bucket", "submissions/2026-08-02/123e4567-e89b-12d3-a456-426614174000.pdf");
+  assert.equal(new URL(url).hostname, "persisted-bucket.synthetic-account.r2.cloudflarestorage.com");
+  assert.match(url, /persisted-bucket/);
+  assert.match(url, /X-Amz-Expires=300/);
+  for (const [key, value] of Object.entries({ R2_ACCOUNT_ID: previous.account, R2_ACCESS_KEY_ID: previous.access, R2_SECRET_ACCESS_KEY: previous.secret, R2_BUCKET_NAME: previous.bucket })) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
+
 test("internal notification text works without workEmail and identifies source", () => {
   const text = buildEmailText({
     contactName: "Synthetic Contact",
@@ -283,7 +326,7 @@ test("internal layout renders only the compact internal header", () => {
   assert.match(header, /Article6 Internal/);
   assert.match(header, /<Link href="\/internal\/submissions\/new"[\s\S]*>\s*Article6 Internal\s*<\/Link>/);
   assert.match(header, /href="\/internal\/submissions\/new"[\s\S]*onClick=\{resetInternalPage\}/);
-  assert.doesNotMatch(header, /href="\/internal\/submissions"/);
+  assert.match(header, /href="\/internal\/submissions"/);
   assert.doesNotMatch(header, /NavBar|Footer|Layout|Sign out|signout/);
 });
 

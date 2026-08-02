@@ -91,3 +91,8 @@ export async function getSubmissionByReference(reference: string): Promise<Submi
   const result = await getPool().query("SELECT * FROM submissions WHERE reference = $1 LIMIT 1", [reference]);
   return result.rows[0] ? toRecord(result.rows[0]) : null;
 }
+
+export async function getSubmissions(): Promise<SubmissionRecord[]> {
+  const result = await getPool().query("SELECT * FROM submissions ORDER BY created_at DESC");
+  return result.rows.map(toRecord);
+}
