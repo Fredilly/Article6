@@ -22,26 +22,36 @@ function formatDate(value?: string) {
   return value ? new Date(value).toLocaleString() : "Not recorded";
 }
 
-function formatBytes(value: number) {
-  return `${(value / (1024 * 1024)).toFixed(2)} MiB`;
-}
-
 function CheckResult({ result }: { result: QuickCheckResult }) {
-  return <div className="mt-6 border-t border-gray-100 pt-6">
+  if (result.version === 1) return <div className="mt-6 border-t border-gray-100 pt-6">
     <h2 className="text-base font-semibold text-gray-900">Quick Check results</h2>
     <dl className="mt-5 grid gap-6 sm:grid-cols-2">
       <Detail label="PDF validation" value={result.isPdf ? "Valid PDF signature" : "PDF signature not detected"} />
-      <Detail label="Document metadata" value={`${formatBytes(result.fileSize)} · ${result.checks.length} checks`} />
+      <Detail label="Document metadata" value={`${(result.fileSize / (1024 * 1024)).toFixed(2)} MiB · ${result.checks.length} checks`} />
+      <Detail label="Extracted text" value={result.extractedTextPreview ? "Available" : "Not available"} />
+      <Detail label="Page count" value={result.pageCount === null ? "Not stored" : String(result.pageCount)} />
+    </dl>
+    <div className="mt-6">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Validation checks</h3>
+      <ul className="mt-2 divide-y divide-gray-100 rounded-md border border-gray-200 text-sm">{result.checks.map((check) => <li key={check.name} className="flex flex-wrap items-start justify-between gap-3 px-3 py-2"><span className="font-medium text-gray-900">{check.name}</span><span className={check.passed ? "text-green-700" : "text-red-700"}>{check.passed ? "Passed" : "Failed"}: {check.detail}</span></li>)}</ul>
+    </div>
+    <div className="mt-6"><h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Extracted text preview</h3><pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap rounded-md bg-gray-50 p-3 text-xs leading-5 text-gray-700">{result.extractedTextPreview || "No extracted text preview was stored."}</pre></div>
+  </div>;
+  return <div className="mt-6 border-t border-gray-100 pt-6">
+    <h2 className="text-base font-semibold text-gray-900">Quick Check results</h2>
+    <dl className="mt-5 grid gap-6 sm:grid-cols-2">
+      <Detail label="PDF validation" value="Signature and size validated" />
+      <Detail label="Document metadata" value={`${result.parserEngine}${result.parserVersion ? ` · ${result.parserVersion}` : ""}`} />
       <Detail label="Extracted text" value={result.extractedTextPreview ? "Available" : "Not available"} />
       <Detail label="Page count" value={result.pageCount === null ? "Not stored" : String(result.pageCount)} />
     </dl>
     <div className="mt-6">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Validation checks</h3>
       <ul className="mt-2 divide-y divide-gray-100 rounded-md border border-gray-200 text-sm">
-        {result.checks.map((check) => <li key={check.name} className="flex flex-wrap items-start justify-between gap-3 px-3 py-2">
-          <span className="font-medium text-gray-900">{check.name}</span>
-          <span className={check.passed ? "text-green-700" : "text-red-700"}>{check.passed ? "Passed" : "Failed"}: {check.detail}</span>
-        </li>)}
+        <li className="flex flex-wrap items-start justify-between gap-3 px-3 py-2">
+          <span className="font-medium text-gray-900">extraction</span>
+          <span className={result.extractionStatus === "completed" ? "text-green-700" : "text-red-700"}>{result.extractionStatus}</span>
+        </li>
       </ul>
     </div>
     <div className="mt-6">

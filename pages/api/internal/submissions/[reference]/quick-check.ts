@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { hasInternalUploadSession } from "../../../../../lib/internal-auth";
-import { getPrivateObject, verifyObjectExists } from "../../../../../lib/r2";
+import { generatePresignedDownloadUrl, verifyObjectExists } from "../../../../../lib/r2";
 import { runQuickCheck } from "../../../../../lib/quick-check";
 import { completeQuickCheck, failQuickCheck, getSubmissionByReference, startQuickCheck } from "../../../../../lib/submission-store";
 import { isSubmissionReference } from "../../../../../lib/submissions";
@@ -21,7 +21,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const started = await startQuickCheck(reference, quickCheckId, new Date().toISOString());
     if (!started) return res.status(409).json({ error: "A Quick Check is already processing." });
     try {
-      const result = runQuickCheck(await getPrivateObject(submission.objectKey, submission.bucket));
+      const documentUrl = await generatePresignedDownloadUrl(submission.bucket, submission.objectKey);
+      const result = await runQuickCheck({
+        submissionReference: reference,
+        documentUrl,
+        filename: submission.originalFilename,
+        fileSize: submission.fileSize,
+      });
       const completed = await completeQuickCheck(reference, quickCheckId, result, new Date().toISOString());
       return res.status(200).json({ status: completed?.quickCheckStatus || "completed", quickCheckId, result });
     } catch (error) {
@@ -29,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw error;
     }
   } catch (error) {
-    console.error("[submissions] Quick Check failed", { reference, error });
+    console.error("[submissions] Quick Check failed", { reference });
     return res.status(502).json({ error: "Unable to run Quick Check." });
   }
 }
