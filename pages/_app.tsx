@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import InternalLayout from '../components/InternalLayout';
 import PreviewLayout from '../components/preview/PreviewLayout';
 import { getAppLayoutKind } from '../lib/layout';
+import { Analytics } from '@vercel/analytics/next';
 
 function MyApp({ Component, pageProps, router }: AppProps) {
   const layoutKind = getAppLayoutKind(router.pathname);
@@ -30,6 +31,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
           <Component {...pageProps} />
         </Layout>
       )}
+      <Analytics />
     </>
   );
 }
