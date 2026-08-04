@@ -14,6 +14,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1095.0",
     "@heroicons/react": "^2.0.18",
     "@svg-maps/nigeria": "^1.0.0",
+    "@vercel/analytics": "^2.0.1",
     "embla-carousel-react": "^8.6.0",
     "googleapis": "^126.0.1",
     "lucide-react": "^0.539.0",
