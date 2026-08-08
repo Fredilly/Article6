@@ -1,4 +1,4 @@
-export const MAX_FILE_SIZE = 50 * 1024 * 1024;
+export const MAX_FILE_SIZE = 150 * 1024 * 1024;
 export const PDF_CONTENT_TYPE = "application/pdf";
 
 export type SubmissionSource = "website" | "whatsapp" | "email" | "internal" | "other";
@@ -79,7 +79,7 @@ export function validateSubmissionMetadata(
     return "Invalid file size.";
   }
   if (value.fileSize > MAX_FILE_SIZE) {
-    return "File size must be under 50MB.";
+    return "File size must be under 150MB.";
   }
   return null;
 }
@@ -87,7 +87,7 @@ export function validateSubmissionMetadata(
 export function isPdfUpload(file: { type: string; size: number }): string | null {
   if (file.type !== PDF_CONTENT_TYPE) return "Only PDF files are accepted.";
   if (file.size <= 0) return "The selected file is empty.";
-  if (file.size > MAX_FILE_SIZE) return "File size must be under 50MB.";
+  if (file.size > MAX_FILE_SIZE) return "File size must be under 150MB.";
   return null;
 }
 
@@ -101,7 +101,7 @@ export function validateStoredObject(
 ): string | null {
   if (!object.exists) return "Uploaded file not found.";
   if (object.size <= 0) return "Uploaded file is empty.";
-  if (object.size > MAX_FILE_SIZE) return "Uploaded file exceeds the 50MB limit.";
+  if (object.size > MAX_FILE_SIZE) return "Uploaded file exceeds the 150MB limit.";
   if (object.size !== declaredSize) return "Uploaded file size does not match the declared file size.";
   if (object.contentType !== PDF_CONTENT_TYPE) return "Uploaded file is not a valid PDF.";
   return null;
