@@ -75,12 +75,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const status = value(req.body, "status");
       const objection = value(req.body, "objectionCode");
       if (!isSalesOrganizationStatus(status)) return res.status(400).json({ error: "Invalid organization status." });
-      if (objection && !isSalesObjectionCode(objection)) return res.status(400).json({ error: "Invalid objection code." });
+      const objectionCode = objection && isSalesObjectionCode(objection) ? objection : undefined;
+      if (objection && !objectionCode) return res.status(400).json({ error: "Invalid objection code." });
       const internalTeamValue = value(req.body, "internalCertificationTeam");
       await updateSalesOrganizationState({
         organizationId,
         status,
-        objectionCode: objection || undefined,
+        objectionCode,
         internalCertificationTeam: internalTeamValue === "" ? undefined : internalTeamValue === "true",
         doNotContact: req.body?.doNotContact === "on",
         notes: value(req.body, "notes"),
