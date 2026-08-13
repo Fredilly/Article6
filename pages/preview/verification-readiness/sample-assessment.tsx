@@ -4,8 +4,14 @@ import SectionHeading from '../../../components/preview/SectionHeading';
 import ReportPreview from '../../../components/preview/ReportPreview';
 import AssessmentStatusCard from '../../../components/preview/AssessmentStatusCard';
 import DisclaimerPanel from '../../../components/preview/DisclaimerPanel';
+import { useEffect } from 'react';
+import { trackEvent } from '../../../lib/analytics';
 
 export default function SampleAssessmentPage() {
+  useEffect(() => {
+    trackEvent('sample_assessment_view');
+  }, []);
+
   const reportContents = [
     'Executive readiness summary',
     'Priority findings',
@@ -99,6 +105,7 @@ export default function SampleAssessmentPage() {
           target="_blank"
           rel="noopener noreferrer"
           download
+          onClick={() => trackEvent('sample_pdf_download')}
           className="mt-6 inline-flex items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
         >
           Download Sample Report (PDF)
