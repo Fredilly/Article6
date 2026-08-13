@@ -5,7 +5,13 @@ type Status = 'supported' | 'unclear' | 'action-required';
 interface AssessmentStatusCardProps {
   status: Status;
   title: string;
-  children: React.ReactNode;
+  context?: string;
+  evidence?: string;
+  gap?: string;
+  whyItMatters?: string;
+  requiredAction?: string;
+  resolution?: string;
+  children?: React.ReactNode;
 }
 
 const statusConfig: Record<Status, { label: string; dotClass: string; borderClass: string }> = {
@@ -26,7 +32,17 @@ const statusConfig: Record<Status, { label: string; dotClass: string; borderClas
   },
 };
 
-const AssessmentStatusCard: React.FC<AssessmentStatusCardProps> = ({ status, title, children }) => {
+const AssessmentStatusCard: React.FC<AssessmentStatusCardProps> = ({
+  status,
+  title,
+  context,
+  evidence,
+  gap,
+  whyItMatters,
+  requiredAction,
+  resolution,
+  children,
+}) => {
   const config = statusConfig[status];
 
   return (
@@ -40,7 +56,36 @@ const AssessmentStatusCard: React.FC<AssessmentStatusCardProps> = ({ status, tit
         </span>
       </div>
       <h4 className="text-base md:text-lg font-semibold text-forest-900">{title}</h4>
-      <p className="mt-2 text-sm text-gray-600 leading-relaxed">{children}</p>
+      {children ? (
+        <p className="mt-2 text-sm text-gray-600 leading-relaxed">{children}</p>
+      ) : (
+      <dl className="mt-4 grid gap-3 text-sm leading-relaxed">
+        <div>
+          <dt className="font-semibold text-gray-800">Requirement / review context</dt>
+          <dd className="text-gray-600">{context}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-gray-800">Evidence reviewed</dt>
+          <dd className="text-gray-600">{evidence}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-gray-800">Gap or issue identified</dt>
+          <dd className="text-gray-600">{gap}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-gray-800">Why it matters</dt>
+          <dd className="text-gray-600">{whyItMatters}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-gray-800">Required action</dt>
+          <dd className="text-gray-600">{requiredAction}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-gray-800">Resolution criterion</dt>
+          <dd className="text-gray-600">{resolution}</dd>
+        </div>
+      </dl>
+      )}
     </div>
   );
 };

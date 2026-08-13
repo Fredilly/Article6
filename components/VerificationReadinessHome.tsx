@@ -24,20 +24,20 @@ export default function VerificationReadinessHome() {
               <div className="border border-forest-600/40 px-4 py-5 text-center">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-forest-300">Article6</p>
                 <p className="text-xl font-bold text-white mt-3 leading-tight">
-                  VM0007 v1.8
+                  PRE-VALIDATION
                 </p>
                 <p className="text-xs text-forest-200 mt-1">
-                  REDD+ Methodology Framework
+                  EVIDENCE ASSESSMENT
                 </p>
                 <div className="mt-4 w-12 h-px bg-forest-600 mx-auto" />
                 <p className="text-xs text-forest-200 mt-3">
-                  Pre-Validation
+                  Methodology-Specific
                 </p>
                 <p className="text-xs text-forest-200">
-                  Evidence Assessment
+                  Project Readiness Review
                 </p>
                 <p className="text-[10px] text-forest-400 mt-3">
-                  Illustrative Client Deliverable
+                  Illustrative Deliverable
                 </p>
               </div>
             </div>
@@ -48,7 +48,7 @@ export default function VerificationReadinessHome() {
                 Readiness Dashboard
               </p>
               <p className="text-xs text-gray-500 mb-3">
-                58 methodology requirements reviewed
+                Methodology requirements reviewed
               </p>
               <div className="space-y-2">
                 {[
@@ -192,8 +192,8 @@ export default function VerificationReadinessHome() {
                 <p className="text-xs uppercase tracking-[0.15em] text-forest-200">
                   Evidence Readiness Assessment
                 </p>
-                <p className="text-lg font-bold mt-1.5">VM0007 v1.8</p>
-                <p className="text-forest-200 text-xs mt-1">Sample Report</p>
+                <p className="text-lg font-bold mt-1.5">Article6 Assessment</p>
+                <p className="text-forest-200 text-xs mt-1">Illustrative Report</p>
                 <div className="mt-4 border-t border-forest-600 pt-3 text-[10px] text-forest-200">
                   Prepared by Article6
                 </div>
