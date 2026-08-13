@@ -66,23 +66,23 @@ export default function SampleAssessmentPage() {
             />
             <AssessmentStatusCard
               status="action-required"
-              title="Sampling evidence is not yet demonstrably representative"
-              context="Monitoring and field sampling should support representative estimates for the project area and the reported monitoring period."
-              evidence="A sampling description and selected observations are present, but the sampling frame, selection method, and coverage by stratum are not fully evidenced."
-              gap="The reviewed material does not allow a reviewer to reproduce why the sample is representative of the stated project area."
-              whyItMatters="Weak representativeness support can undermine confidence in activity data and uncertainty treatment."
-              requiredAction="Provide the sampling frame, stratification logic, sample-size basis, locations or identifiers, and coverage reconciliation."
-              resolution="The sampling design and results can be traced from the project area and strata through to the reported estimate."
+              title="Sampling design is not sufficiently supported in the PDD"
+              context="The PDD should substantiate the sampling and stratification design required by the applicable methodology, including its basis for representativeness."
+              evidence="The PDD describes sampling and identifies strata, but the stratification logic and sample-size rationale, where applicable, are not fully supported by internal references."
+              gap="The PDD does not make it possible to trace how the proposed design supports representative coverage or remains consistent with the applicable methodology."
+              whyItMatters="An under-supported design creates an evidence-readiness gap before a validator can assess whether the PDD's approach is adequately justified."
+              requiredAction="Add the design basis, stratification logic, sample-size rationale where applicable, and clear PDD references supporting methodology consistency."
+              resolution="The PDD explains the sampling design and representativeness basis, with each element traceable to the applicable methodology and supporting section."
             />
             <AssessmentStatusCard
               status="unclear"
-              title="Requirement references are inconsistent across the evidence set"
-              context="The assessment checks whether requirement interpretations and evidence references remain consistent across the PDD, annexes, and calculations."
-              evidence="Several sections address the same control or parameter, but they use different internal references and version labels."
-              gap="A reviewer may not be able to determine which cited section or calculation is the controlling source."
-              whyItMatters="Broken traceability increases review time and makes later corrections harder to propagate safely."
-              requiredAction="Create a single reference map and align section, annex, calculation, and methodology-version citations."
-              resolution="Each assessed requirement has one unambiguous current reference, with superseded versions identified or removed."
+              title="Internal methodology references are inconsistent"
+              context="The PDD should use current, unambiguous internal references for each methodology requirement and the evidence supporting it."
+              evidence="Several PDD sections address the same requirement, but some section citations and methodology-version references do not align."
+              gap="Broken or outdated citations make it unclear which PDD section is the controlling reference for the assessed requirement."
+              whyItMatters="A validator may spend additional time resolving traceability defects or question whether the PDD applies the intended methodology version consistently."
+              requiredAction="Review the PDD's internal citations, update outdated methodology or version references, and identify one controlling section for each requirement."
+              resolution="Each assessed requirement has a current, unambiguous PDD reference, with broken citations corrected and superseded references removed or clearly marked."
             />
           </div>
         </div>
