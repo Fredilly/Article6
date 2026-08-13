@@ -28,6 +28,7 @@ export default function SalesIndexPage({ organizations, search }: InferGetServer
       <p className="text-sm font-semibold uppercase tracking-wide text-forest-700">Article6 internal tool</p>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
         <div><h1 className="text-2xl font-bold tracking-tight">Sales memory</h1><p className="mt-2 text-sm text-gray-600">Organization-first relationship history. Search before contacting anyone.</p></div>
+        <Link href="/internal/sales/import-review" className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700">Review imports</Link>
       </div>
 
       <form method="get" className="mt-6 flex gap-2">
