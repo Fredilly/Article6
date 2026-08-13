@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import SectionHeading from '../../../components/preview/SectionHeading';
 import ReportPreview from '../../../components/preview/ReportPreview';
 import AssessmentStatusCard from '../../../components/preview/AssessmentStatusCard';
@@ -53,17 +54,36 @@ export default function SampleAssessmentPage() {
             Illustrative examples
           </p>
           <div className="mt-10 max-w-3xl mx-auto space-y-5">
-            <AssessmentStatusCard status="supported" title="Evidence supported">
-              Relevant project documentation was identified and clearly linked to the assessed
-              requirement.
-            </AssessmentStatusCard>
-            <AssessmentStatusCard status="unclear" title="Evidence unclear">
-              Related information was located, but the supporting basis or document traceability may
-              require clarification.
-            </AssessmentStatusCard>
-            <AssessmentStatusCard status="action-required" title="Action required">
-              Sufficient supporting evidence was not identified in the documents reviewed.
-            </AssessmentStatusCard>
+            <AssessmentStatusCard
+              status="unclear"
+              title="Carbon-pool selection needs a clearer basis"
+              context="Carbon pools included in the accounting boundary, and any exclusions, should be justified against the applicable methodology requirements."
+              evidence="The project description and emissions calculations identify the principal pools; supporting rationale for an excluded pool is not consistently referenced."
+              gap="The exclusion rationale is stated at a high level, but the supporting source or calculation boundary is not traceable from the reviewed documents."
+              whyItMatters="An unsupported exclusion can affect completeness of the baseline and project-emissions assessment."
+              requiredAction="Add a pool-by-pool applicability table with the exclusion basis and direct document or calculation references."
+              resolution="Every excluded pool has a documented applicability rationale that reconciles to the accounting boundary and cited evidence."
+            />
+            <AssessmentStatusCard
+              status="action-required"
+              title="Sampling design is not sufficiently supported in the PDD"
+              context="The PDD should substantiate the sampling and stratification design required by the applicable methodology, including its basis for representativeness."
+              evidence="The PDD describes sampling and identifies strata, but the stratification logic and sample-size rationale, where applicable, are not fully supported by internal references."
+              gap="The PDD does not make it possible to trace how the proposed design supports representative coverage or remains consistent with the applicable methodology."
+              whyItMatters="An under-supported design creates an evidence-readiness gap before a validator can assess whether the PDD's approach is adequately justified."
+              requiredAction="Add the design basis, stratification logic, sample-size rationale where applicable, and clear PDD references supporting methodology consistency."
+              resolution="The PDD explains the sampling design and representativeness basis, with each element traceable to the applicable methodology and supporting section."
+            />
+            <AssessmentStatusCard
+              status="unclear"
+              title="Internal methodology references are inconsistent"
+              context="The PDD should use current, unambiguous internal references for each methodology requirement and the evidence supporting it."
+              evidence="Several PDD sections address the same requirement, but some section citations and methodology-version references do not align."
+              gap="Broken or outdated citations make it unclear which PDD section is the controlling reference for the assessed requirement."
+              whyItMatters="A validator may spend additional time resolving traceability defects or question whether the PDD applies the intended methodology version consistently."
+              requiredAction="Review the PDD's internal citations, update outdated methodology or version references, and identify one controlling section for each requirement."
+              resolution="Each assessed requirement has a current, unambiguous PDD reference, with broken citations corrected and superseded references removed or clearly marked."
+            />
           </div>
         </div>
       </section>
@@ -83,6 +103,12 @@ export default function SampleAssessmentPage() {
         >
           Download Sample Report (PDF)
         </a>
+        <p className="mt-5 text-sm text-gray-500">
+          Reviewing your own project documentation?{' '}
+          <Link href="/#upload-pdd" className="font-semibold text-forest-700 hover:text-forest-800">
+            Start with a scope review &rarr;
+          </Link>
+        </p>
       </section>
 
       {/* Disclaimer */}
