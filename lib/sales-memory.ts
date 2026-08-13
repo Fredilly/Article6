@@ -1,0 +1,51 @@
+export const SALES_ORGANIZATION_STATUSES = [
+  "NEW",
+  "CONTACTED",
+  "ENGAGED",
+  "OPPORTUNITY",
+  "NURTURE",
+  "CLOSED_NO",
+  "CLOSED_WON",
+  "DO_NOT_CONTACT",
+] as const;
+
+export type SalesOrganizationStatus = (typeof SALES_ORGANIZATION_STATUSES)[number];
+
+export const SALES_OBJECTION_CODES = [
+  "INTERNAL_TEAM",
+  "ALREADY_COVERED",
+  "VALIDATION_ADVANCED",
+  "NO_BUDGET",
+  "NO_CURRENT_NEED",
+  "WRONG_PERSON",
+  "EXTERNAL_CONSULTANT",
+  "TIMING",
+  "NO_RESPONSE",
+  "OTHER",
+] as const;
+
+export type SalesObjectionCode = (typeof SALES_OBJECTION_CODES)[number];
+
+export function normalizeOrganizationName(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+export function normalizeDomain(value: string): string | null {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return null;
+  return trimmed.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0] || null;
+}
+
+export function normalizeOptional(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+export function isSalesOrganizationStatus(value: unknown): value is SalesOrganizationStatus {
+  return typeof value === "string" && SALES_ORGANIZATION_STATUSES.includes(value as SalesOrganizationStatus);
+}
+
+export function isSalesObjectionCode(value: unknown): value is SalesObjectionCode {
+  return typeof value === "string" && SALES_OBJECTION_CODES.includes(value as SalesObjectionCode);
+}
