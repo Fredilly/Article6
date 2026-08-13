@@ -11,6 +11,9 @@ export default function InternalHeader() {
           Article6 Internal
         </Link>
         <div className="flex items-center gap-4 text-sm">
+          <Link href="/internal/sales" className="text-gray-600 hover:text-gray-900">
+            Sales
+          </Link>
           <Link href="/internal/submissions" className="text-gray-600 hover:text-gray-900">
             Submissions
           </Link>
