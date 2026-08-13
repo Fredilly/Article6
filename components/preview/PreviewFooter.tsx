@@ -1,15 +1,19 @@
 import React from 'react';
 import Link from 'next/link';
-import { previewNavigationLinks } from './navigation';
+import { getPreviewNavigationLinks } from './navigation';
+import { useRouter } from 'next/router';
 import Logo from '../Logo';
 
-const BASE = '/preview/verification-readiness';
+const PREVIEW_BASE = '/preview/verification-readiness';
 
 const PreviewFooter: React.FC = () => {
+  const router = useRouter();
+  const isPreview = router.pathname.startsWith(PREVIEW_BASE);
+  const navigationLinks = getPreviewNavigationLinks(isPreview);
   return (
     <footer className="border-t border-gray-200 bg-white">
       <div className="mx-auto max-w-6xl px-4 py-10 md:py-12">
-        <Logo href={BASE} />
+        <Logo href={isPreview ? PREVIEW_BASE : '/'} />
         <p className="mt-2 text-sm text-gray-500">
           Evidence readiness assessments for carbon projects.
         </p>
@@ -18,7 +22,7 @@ const PreviewFooter: React.FC = () => {
           verification body.
         </p>
         <div className="mt-5 flex flex-wrap gap-x-5 gap-y-1">
-          {previewNavigationLinks.map(({ href, label }) => (
+          {navigationLinks.map(({ href, label }) => (
             <Link
               key={href}
               href={href}

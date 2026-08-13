@@ -3,14 +3,20 @@ export interface PreviewNavLink {
   label: string;
 }
 
-const BASE = '/preview/verification-readiness';
+const PREVIEW_BASE = '/preview/verification-readiness';
+const PRODUCTION_BASE = '';
 
-export const previewNavigationLinks: PreviewNavLink[] = [
-  { href: `${BASE}/sample-assessment`, label: 'Sample Report' },
-  { href: `${BASE}/how-it-works`, label: 'How It Works' },
-];
+export function getPreviewNavigationLinks(isPreview: boolean): PreviewNavLink[] {
+  const base = isPreview ? PREVIEW_BASE : PRODUCTION_BASE;
+  return [
+    { href: `${base}/sample-assessment`, label: 'Sample Report' },
+    { href: `${base}/how-it-works`, label: 'How It Works' },
+  ];
+}
 
-export const previewCtaLink: PreviewNavLink = {
-  href: `${BASE}#upload-pdd`,
-  label: 'Upload PDD',
-};
+export function getPreviewCtaLink(isPreview: boolean): PreviewNavLink {
+  return {
+    href: `${isPreview ? PREVIEW_BASE : '/'}#upload-pdd`,
+    label: 'Upload PDD',
+  };
+}

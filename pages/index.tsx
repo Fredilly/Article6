@@ -8,7 +8,7 @@ export default function HomePage() {
         <title>Article6 — Pre-Validation Evidence Readiness</title>
         <meta
           name="description"
-          content="Find evidence gaps before your validator does. Article6 reviews your VM0007 v1.8 project documentation against methodology requirements."
+          content="Find evidence gaps before your validator does. Article6 reviews project documentation against applicable methodology requirements to identify missing, unclear, and unsupported evidence before validation begins."
         />
       </Head>
       <VerificationReadinessHome />

@@ -2,16 +2,16 @@ import PreviewHero from './preview/PreviewHero';
 import PddUploadForm from './preview/PddUploadForm';
 import Link from 'next/link';
 
-const SAMPLE_ASSESSMENT_PATH = '/preview/verification-readiness/sample-assessment';
+const SAMPLE_ASSESSMENT_PATH = '/sample-assessment';
 
 export default function VerificationReadinessHome() {
   return (
     <>
       {/* 1. Hero */}
       <PreviewHero
-        eyebrow="VM0007 v1.8 EVIDENCE READINESS"
+        eyebrow="PRE-VALIDATION EVIDENCE READINESS"
         headline="Find the evidence gaps before your validator does."
-        body="Article6 reviews your VM0007 v1.8 project documentation against methodology requirements to identify missing, unclear, and unsupported evidence before validation begins."
+        body="Article6 reviews project documentation against applicable methodology requirements to identify missing, unclear, and unsupported evidence before validation begins."
         trustLine="Independent pre-validation review. No commitment required for initial scope review."
         primaryCta={{ label: 'Upload your PDD', href: '#upload-pdd' }}
         secondaryCta={{ label: 'View Sample Assessment', href: SAMPLE_ASSESSMENT_PATH }}
