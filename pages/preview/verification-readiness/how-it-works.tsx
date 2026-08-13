@@ -2,10 +2,14 @@ import Head from 'next/head';
 import SectionHeading from '../../../components/preview/SectionHeading';
 import ProcessStep from '../../../components/preview/ProcessStep';
 import Link from 'next/link';
-
-const BASE = '/preview/verification-readiness';
+import { useRouter } from 'next/router';
 
 export default function HowItWorksPage() {
+  const router = useRouter();
+  const base = router.pathname.startsWith('/preview/verification-readiness')
+    ? '/preview/verification-readiness'
+    : '/';
+
   return (
     <>
       <Head>
@@ -74,7 +78,7 @@ export default function HowItWorksPage() {
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 pb-16 md:pb-24 text-center">
         <Link
-          href={`${BASE}#upload-pdd`}
+          href={`${base}#upload-pdd`}
           className="inline-flex items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
         >
           Upload your PDD

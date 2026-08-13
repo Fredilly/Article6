@@ -16,7 +16,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {layoutKind === 'preview' && <meta name="robots" content="noindex,nofollow" />}
       </Head>
-      {layoutKind === 'preview' ? (
+      {layoutKind === 'preview' || layoutKind === 'readiness' ? (
         <div style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
           <PreviewLayout>
             <Component {...pageProps} />

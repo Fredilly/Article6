@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { previewNavigationLinks, previewCtaLink } from './navigation';
+import { getPreviewNavigationLinks, getPreviewCtaLink } from './navigation';
 import Logo from '../Logo';
 
-const BASE = '/preview/verification-readiness';
+const PREVIEW_BASE = '/preview/verification-readiness';
 
 const PreviewHeader: React.FC = () => {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const isHomePage = router.pathname === '/' || router.pathname === '/preview/verification-readiness';
-  const brandHref = router.pathname === '/' ? '/' : BASE;
+  const isPreview = router.pathname.startsWith(PREVIEW_BASE);
+  const isHomePage = router.pathname === '/' || router.pathname === PREVIEW_BASE;
+  const navigationLinks = getPreviewNavigationLinks(isPreview);
+  const ctaLink = getPreviewCtaLink(isPreview);
+  const brandHref = isPreview ? PREVIEW_BASE : '/';
 
   useEffect(() => {
     const handleResize = () => {
@@ -38,17 +41,17 @@ const PreviewHeader: React.FC = () => {
             }
           }}
         >
-          {previewCtaLink.label}
+          {ctaLink.label}
         </a>
       );
     }
     return (
       <Link
-        href={previewCtaLink.href}
+        href={ctaLink.href}
         className={`inline-flex items-center rounded-md bg-forest-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 ${className}`}
         onClick={() => setOpen(false)}
       >
-        {previewCtaLink.label}
+          {ctaLink.label}
       </Link>
     );
   };
@@ -59,7 +62,7 @@ const PreviewHeader: React.FC = () => {
         <Logo href={brandHref} />
 
         <ul className="hidden md:flex items-center gap-6">
-          {previewNavigationLinks.map(({ href, label }) => {
+          {navigationLinks.map(({ href, label }) => {
             const isActive = router.asPath === href || router.asPath.startsWith(href + '/');
             return (
               <li key={href}>
@@ -106,7 +109,7 @@ const PreviewHeader: React.FC = () => {
       {open && (
         <div id="preview-mobile-menu" className="md:hidden border-t border-gray-200 bg-white">
           <ul className="flex flex-col px-4 py-3 gap-1.5">
-            {previewNavigationLinks.map(({ href, label }) => {
+            {navigationLinks.map(({ href, label }) => {
               const isActive = router.asPath === href || router.asPath.startsWith(href + '/');
               return (
                 <li key={href}>
