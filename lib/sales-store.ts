@@ -178,6 +178,7 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
       [randomUUID(), vcsId, input.name.trim(), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.notes?.trim() || "", now]
     )).rows[0];
   }
+  if (!projectRow) throw new Error("Project could not be created or resolved.");
   await getPool().query(
     `INSERT INTO sales_organization_projects (organization_id, project_id, role, created_at)
      VALUES ($1,$2,$3,$4) ON CONFLICT (organization_id, project_id) DO UPDATE SET role = EXCLUDED.role`,
