@@ -1,10 +1,30 @@
 import PreviewHero from './preview/PreviewHero';
 import PddUploadForm from './preview/PddUploadForm';
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
+import { trackEvent } from '../lib/analytics';
 
 const SAMPLE_ASSESSMENT_PATH = '/sample-assessment';
 
 export default function VerificationReadinessHome() {
+  const uploadSectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const section = uploadSectionRef.current;
+    if (!section || typeof IntersectionObserver === 'undefined') return;
+
+    let tracked = false;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !tracked) {
+        tracked = true;
+        trackEvent('upload_section_view');
+        observer.disconnect();
+      }
+    });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
       {/* 1. Hero */}
@@ -14,6 +34,7 @@ export default function VerificationReadinessHome() {
         body="Article6 reviews project documentation against applicable methodology requirements to identify missing, unclear, and unsupported evidence before validation begins."
         trustLine="Independent pre-validation review. No commitment required for initial scope review."
         primaryCta={{ label: 'Upload your PDD', href: '#upload-pdd' }}
+        onPrimaryCtaClick={() => trackEvent('homepage_primary_cta', { location: 'hero' })}
         secondaryCta={{ label: 'View Sample Assessment', href: SAMPLE_ASSESSMENT_PATH }}
       >
         {/* Premium report preview */}
@@ -218,7 +239,7 @@ export default function VerificationReadinessHome() {
       </section>
 
       {/* 5. PDD upload form */}
-      <section id="upload-pdd" className="border-y border-gray-200 bg-gray-50 scroll-mt-16">
+      <section ref={uploadSectionRef} id="upload-pdd" className="border-y border-gray-200 bg-gray-50 scroll-mt-16">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
           <div className="max-w-lg mx-auto">
             <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">

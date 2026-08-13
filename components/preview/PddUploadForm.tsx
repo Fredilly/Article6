@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { isPdfUpload, MAX_FILE_SIZE, type SubmissionSource } from '../../lib/submissions';
 import { useInternalReset } from '../InternalResetContext';
+import { trackEvent } from '../../lib/analytics';
 
 const inputClasses =
   'w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500 transition';
@@ -51,6 +52,9 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
     if (selectedFile) {
       setFile(selectedFile);
       setFileName(selectedFile.name);
+      if (!isInternal && isPdfUpload(selectedFile) === null) {
+        trackEvent('upload_file_selected');
+      }
     } else {
       setFile(null);
       setFileName('');
@@ -81,6 +85,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
 
     setPhase('uploading');
     setErrorMessage('');
+    if (!isInternal) trackEvent('scope_review_started');
 
     try {
       console.info('[PddUploadForm] Step 1: Requesting presigned URL', {
@@ -211,6 +216,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
 
       setSubmissionId(confirmBody.submissionId);
       setPhase('success');
+      if (!isInternal) trackEvent('scope_review_submitted');
       console.info('[PddUploadForm] Upload flow complete', { submissionReference: confirmBody.submissionId });
     } catch (err) {
       console.error('[PddUploadForm] Upload flow error', err);

@@ -3,6 +3,7 @@ import SectionHeading from '../../../components/preview/SectionHeading';
 import ProcessStep from '../../../components/preview/ProcessStep';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { trackEvent } from '../../../lib/analytics';
 
 export default function HowItWorksPage() {
   const router = useRouter();
@@ -79,6 +80,7 @@ export default function HowItWorksPage() {
       <section className="mx-auto max-w-6xl px-4 pb-16 md:pb-24 text-center">
         <Link
           href={`${base}#upload-pdd`}
+          onClick={() => trackEvent('homepage_primary_cta', { location: 'mid_page' })}
           className="inline-flex items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
         >
           Upload your PDD

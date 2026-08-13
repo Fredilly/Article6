@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { getPreviewNavigationLinks, getPreviewCtaLink } from './navigation';
 import Logo from '../Logo';
+import { trackEvent } from '../../lib/analytics';
 
 const PREVIEW_BASE = '/preview/verification-readiness';
 
@@ -34,6 +35,7 @@ const PreviewHeader: React.FC = () => {
           className={`inline-flex items-center rounded-md bg-forest-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 ${className}`}
           onClick={(e) => {
             setOpen(false);
+            trackEvent('homepage_primary_cta', { location: 'header' });
             e.preventDefault();
             const el = document.getElementById('upload-pdd');
             if (el) {
