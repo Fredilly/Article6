@@ -11,7 +11,15 @@ export type AnalyticsEvent =
 
 type AnalyticsProperties = Record<string, string | number | boolean | null | undefined>;
 
+const PUBLIC_FUNNEL_ROUTES = new Set(['/', '/sample-assessment', '/how-it-works']);
+
+export function isPublicFunnelRoute(pathname: string): boolean {
+  return PUBLIC_FUNNEL_ROUTES.has(pathname);
+}
+
 export function trackEvent(event: AnalyticsEvent, properties?: AnalyticsProperties): void {
+  if (typeof window === 'undefined' || !isPublicFunnelRoute(window.location.pathname)) return;
+
   try {
     track(event, properties);
   } catch {
