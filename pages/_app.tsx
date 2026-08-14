@@ -31,7 +31,17 @@ function MyApp({ Component, pageProps, router }: AppProps) {
           <Component {...pageProps} />
         </Layout>
       )}
-      <Analytics />
+      <Analytics
+        beforeSend={(event) => {
+          const pathname = new URL(event.url).pathname;
+
+          if (pathname.startsWith('/internal/') || pathname.startsWith('/preview/')) {
+            return null;
+          }
+
+          return event;
+        }}
+      />
     </>
   );
 }
