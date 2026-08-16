@@ -15,8 +15,15 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ params, qu
 
 const fieldClass = "rounded-md border border-gray-300 px-3 py-2 text-sm";
 
+function websiteHref(domain?: string): string | undefined {
+  if (!domain) return undefined;
+  return /^https?:\/\//i.test(domain) ? domain : `https://${domain}`;
+}
+
 export default function OrganizationPage({ detail, duplicate, error }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { organization, contacts, projects, interactions } = detail;
+  const website = websiteHref(organization.domain);
+
   return <>
     <Head><title>{organization.name} | Sales Memory</title><meta name="robots" content="noindex,nofollow" /></Head>
     <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900"><div className="mx-auto max-w-6xl">
@@ -28,7 +35,43 @@ export default function OrganizationPage({ detail, duplicate, error }: InferGetS
       {duplicate ? <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Duplicate prevented. This existing organization matched the name or domain you entered.</div> : null}
       {error ? <div className="mt-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div> : null}
 
-      <section className="mt-8 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Relationship history</h2><p className="mt-1 text-xs text-gray-500">Newest interaction first.</p></div><div className="text-xs text-gray-500">{interactions.length} interactions</div></div>
+      <section className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-gray-900">Account overview</h2>
+        </div>
+        <div className="grid gap-px bg-gray-100 md:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-white px-5 py-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Company</div>
+            <div className="mt-1 text-base font-semibold text-gray-900">{organization.name}</div>
+          </div>
+          <div className="bg-white px-5 py-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Website</div>
+            {website ? <a href={website} target="_blank" rel="noreferrer" className="mt-1 block text-base font-semibold text-forest-700 hover:underline">{organization.domain}</a> : <div className="mt-1 text-base font-semibold text-gray-500">Not recorded</div>}
+          </div>
+          <div className="bg-white px-5 py-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Projects</div>
+            <div className="mt-1 text-base font-semibold text-gray-900">{projects.length}</div>
+          </div>
+          <div className="bg-white px-5 py-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Interactions</div>
+            <div className="mt-1 text-base font-semibold text-gray-900">{interactions.length}</div>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-100">
+          <div className="hidden grid-cols-[minmax(0,2fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-4 bg-gray-50 px-5 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 md:grid">
+            <div>Project</div><div>Project ID</div><div>Methodology</div><div>Version</div>
+          </div>
+          {projects.length ? projects.map((project) => <div key={project.id} className="grid gap-3 border-t border-gray-100 px-5 py-4 first:border-t-0 md:grid-cols-[minmax(0,2fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.8fr)] md:items-center md:gap-4">
+            <div><div className="text-xs font-medium uppercase tracking-wide text-gray-500 md:hidden">Project</div><div className="mt-1 text-sm font-semibold text-gray-900 md:mt-0">{project.name}</div></div>
+            <div><div className="text-xs font-medium uppercase tracking-wide text-gray-500 md:hidden">Project ID</div><div className="mt-1 text-sm font-semibold text-gray-900 md:mt-0">{project.vcsId ? `VCS ${project.vcsId}` : "Not recorded"}</div></div>
+            <div><div className="text-xs font-medium uppercase tracking-wide text-gray-500 md:hidden">Methodology</div><div className="mt-1 text-sm font-semibold text-gray-900 md:mt-0">{project.methodology || "Not recorded"}</div></div>
+            <div><div className="text-xs font-medium uppercase tracking-wide text-gray-500 md:hidden">Version</div><div className="mt-1 text-sm font-semibold text-gray-900 md:mt-0">{project.methodologyVersion || "Not recorded"}</div></div>
+          </div>) : <div className="px-5 py-4 text-sm text-gray-500">No projects recorded.</div>}
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Relationship history</h2><p className="mt-1 text-xs text-gray-500">Newest interaction first.</p></div><div className="text-xs text-gray-500">{interactions.length} interactions</div></div>
         <div className="mt-5 space-y-5">{interactions.length ? interactions.map((interaction) => <article key={interaction.id} className="border-l-2 border-gray-200 pl-4"><div className="flex flex-wrap items-center gap-2 text-xs text-gray-500"><span>{new Date(interaction.occurredAt).toLocaleString()}</span><span>{interaction.direction} · {interaction.channel} · {interaction.interactionType}</span>{interaction.outcomeCode ? <span className="rounded bg-gray-100 px-2 py-0.5 font-medium text-gray-700">{interaction.outcomeCode}</span> : null}</div><div className="mt-1 text-sm font-medium text-gray-900">{interaction.subject || interaction.contactName || "Interaction"}</div><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-gray-700">{interaction.summary}</p><div className="mt-1 text-xs text-gray-500">{[interaction.contactName, interaction.projectName].filter(Boolean).join(" · ")}</div></article>) : <p className="text-sm text-gray-500">No interactions yet.</p>}</div>
       </section>
 
