@@ -7,7 +7,7 @@ import {
   createSalesOrganization,
   updateSalesOrganizationState,
 } from "../../../lib/sales-store";
-import { isSalesObjectionCode, isSalesOrganizationStatus, normalizeOptional } from "../../../lib/sales-memory";
+import { isSalesExperiment, isSalesObjectionCode, isSalesOrganizationStatus, normalizeOptional } from "../../../lib/sales-memory";
 
 function value(body: NextApiRequest["body"], key: string): string {
   const candidate = body?.[key];
@@ -29,8 +29,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     if (action === "create_organization") {
       const name = value(req.body, "name");
+      const experiment = value(req.body, "experiment") || "ARTICLE6_CARBON";
       if (!name) return res.status(400).json({ error: "Organization name is required." });
-      const result = await createSalesOrganization({ name, domain: value(req.body, "domain"), country: value(req.body, "country"), notes: value(req.body, "notes") });
+      if (!isSalesExperiment(experiment)) return res.status(400).json({ error: "Invalid sales experiment." });
+      const result = await createSalesOrganization({ name, domain: value(req.body, "domain"), country: value(req.body, "country"), experiment, notes: value(req.body, "notes") });
       return organizationRedirect(res, result.organization.id, result.created ? undefined : { duplicate: "1" });
     }
 
@@ -73,14 +75,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (action === "update_status") {
       const status = value(req.body, "status");
+      const experiment = value(req.body, "experiment") || "ARTICLE6_CARBON";
       const objection = value(req.body, "objectionCode");
       if (!isSalesOrganizationStatus(status)) return res.status(400).json({ error: "Invalid organization status." });
+      if (!isSalesExperiment(experiment)) return res.status(400).json({ error: "Invalid sales experiment." });
       const objectionCode = objection && isSalesObjectionCode(objection) ? objection : undefined;
       if (objection && !objectionCode) return res.status(400).json({ error: "Invalid objection code." });
       const internalTeamValue = value(req.body, "internalCertificationTeam");
       await updateSalesOrganizationState({
         organizationId,
         status,
+        experiment,
         objectionCode,
         internalCertificationTeam: internalTeamValue === "" ? undefined : internalTeamValue === "true",
         doNotContact: req.body?.doNotContact === "on",
