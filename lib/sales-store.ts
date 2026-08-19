@@ -3,6 +3,7 @@ import { Pool, type QueryResultRow } from "pg";
 import {
   normalizeDomain,
   normalizeOrganizationName,
+  type SalesExperiment,
   type SalesObjectionCode,
   type SalesOrganizationStatus,
 } from "./sales-memory";
@@ -12,6 +13,7 @@ export interface SalesOrganization {
   name: string;
   domain?: string;
   country?: string;
+  experiment: SalesExperiment;
   status: SalesOrganizationStatus;
   objectionCode?: SalesObjectionCode;
   internalCertificationTeam?: boolean;
@@ -99,6 +101,7 @@ function toOrganization(row: QueryResultRow): SalesOrganization {
     name: String(row.name),
     domain: row.domain || undefined,
     country: row.country || undefined,
+    experiment: (row.experiment || "ARTICLE6_CARBON") as SalesExperiment,
     status: row.status as SalesOrganizationStatus,
     objectionCode: row.objection_code || undefined,
     internalCertificationTeam: row.internal_certification_team == null ? undefined : Boolean(row.internal_certification_team),
@@ -123,6 +126,7 @@ export async function listSalesOrganizations(search = ""): Promise<SalesOrganiza
      WHERE $1 = ''
         OR o.name ILIKE '%' || $1 || '%'
         OR COALESCE(o.domain, '') ILIKE '%' || $1 || '%'
+        OR COALESCE(o.experiment, '') ILIKE '%' || $1 || '%'
         OR EXISTS (SELECT 1 FROM sales_contacts c WHERE c.organization_id = o.id AND (c.name ILIKE '%' || $1 || '%' OR COALESCE(c.email, '') ILIKE '%' || $1 || '%'))
         OR EXISTS (SELECT 1 FROM sales_organization_projects op JOIN sales_projects p ON p.id = op.project_id WHERE op.organization_id = o.id AND (p.name ILIKE '%' || $1 || '%' OR COALESCE(p.vcs_id, '') ILIKE '%' || $1 || '%' OR COALESCE(p.methodology, '') ILIKE '%' || $1 || '%'))
      ORDER BY COALESCE((SELECT MAX(i.occurred_at) FROM sales_interactions i WHERE i.organization_id = o.id), o.updated_at) DESC, o.name ASC`,
@@ -131,7 +135,7 @@ export async function listSalesOrganizations(search = ""): Promise<SalesOrganiza
   return result.rows.map(toOrganization);
 }
 
-export async function createSalesOrganization(input: { name: string; domain?: string; country?: string; notes?: string }): Promise<{ organization: SalesOrganization; created: boolean }> {
+export async function createSalesOrganization(input: { name: string; domain?: string; country?: string; experiment?: SalesExperiment; notes?: string }): Promise<{ organization: SalesOrganization; created: boolean }> {
   const now = new Date().toISOString();
   const normalizedName = normalizeOrganizationName(input.name);
   const domain = normalizeDomain(input.domain || "");
@@ -141,9 +145,9 @@ export async function createSalesOrganization(input: { name: string; domain?: st
   );
   if (existing.rows[0]) return { organization: toOrganization(existing.rows[0]), created: false };
   const result = await getPool().query(
-    `INSERT INTO sales_organizations (id, name, normalized_name, domain, country, status, notes, do_not_contact, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,'NEW',$6,FALSE,$7,$7) RETURNING *`,
-    [randomUUID(), input.name.trim(), normalizedName, domain, input.country?.trim() || null, input.notes?.trim() || "", now]
+    `INSERT INTO sales_organizations (id, name, normalized_name, domain, country, experiment, status, notes, do_not_contact, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,'NEW',$7,FALSE,$8,$8) RETURNING *`,
+    [randomUUID(), input.name.trim(), normalizedName, domain, input.country?.trim() || null, input.experiment || "ARTICLE6_CARBON", input.notes?.trim() || "", now]
   );
   return { organization: toOrganization(result.rows[0]), created: true };
 }
@@ -197,10 +201,10 @@ export async function addSalesInteraction(input: { organizationId: string; conta
   await getPool().query("UPDATE sales_organizations SET updated_at = $2 WHERE id = $1", [input.organizationId, createdAt]);
 }
 
-export async function updateSalesOrganizationState(input: { organizationId: string; status: SalesOrganizationStatus; objectionCode?: SalesObjectionCode; internalCertificationTeam?: boolean; doNotContact?: boolean; notes?: string }): Promise<void> {
+export async function updateSalesOrganizationState(input: { organizationId: string; status: SalesOrganizationStatus; experiment?: SalesExperiment; objectionCode?: SalesObjectionCode; internalCertificationTeam?: boolean; doNotContact?: boolean; notes?: string }): Promise<void> {
   await getPool().query(
-    `UPDATE sales_organizations SET status=$2, objection_code=$3, internal_certification_team=$4, do_not_contact=$5, notes=$6, updated_at=$7 WHERE id=$1`,
-    [input.organizationId, input.status, input.objectionCode || null, input.internalCertificationTeam ?? null, Boolean(input.doNotContact), input.notes?.trim() || "", new Date().toISOString()]
+    `UPDATE sales_organizations SET status=$2, experiment=$3, objection_code=$4, internal_certification_team=$5, do_not_contact=$6, notes=$7, updated_at=$8 WHERE id=$1`,
+    [input.organizationId, input.status, input.experiment || "ARTICLE6_CARBON", input.objectionCode || null, input.internalCertificationTeam ?? null, Boolean(input.doNotContact), input.notes?.trim() || "", new Date().toISOString()]
   );
 }
 

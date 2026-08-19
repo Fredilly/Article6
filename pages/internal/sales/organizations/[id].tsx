@@ -2,7 +2,7 @@ import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { getSalesOrganizationDetail, type SalesOrganizationDetail } from "../../../../lib/sales-store";
-import { SALES_OBJECTION_CODES, SALES_ORGANIZATION_STATUSES } from "../../../../lib/sales-memory";
+import { SALES_EXPERIMENTS, SALES_OBJECTION_CODES, SALES_ORGANIZATION_STATUSES } from "../../../../lib/sales-memory";
 
 interface Props { detail: SalesOrganizationDetail; duplicate: boolean; error?: string; }
 
@@ -20,6 +20,13 @@ function websiteHref(domain?: string): string | undefined {
   return /^https?:\/\//i.test(domain) ? domain : `https://${domain}`;
 }
 
+function experimentLabel(value: string) {
+  if (value === "ARTICLE6_CARBON") return "Article6 Carbon";
+  if (value === "TENDER_READINESS") return "Tender Readiness";
+  if (value === "ECOVADIS_SUPPLIER_COMPLIANCE") return "EcoVadis / Supplier Compliance";
+  return "Other";
+}
+
 export default function OrganizationPage({ detail, duplicate, error }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { organization, contacts, projects, interactions } = detail;
   const website = websiteHref(organization.domain);
@@ -29,39 +36,23 @@ export default function OrganizationPage({ detail, duplicate, error }: InferGetS
     <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900"><div className="mx-auto max-w-6xl">
       <Link href="/internal/sales" className="text-sm font-medium text-forest-700">← Sales memory</Link>
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
-        <div><h1 className="text-3xl font-bold tracking-tight">{organization.name}</h1><p className="mt-1 text-sm text-gray-600">{organization.domain || "No domain recorded"}{organization.country ? ` · ${organization.country}` : ""}</p></div>
+        <div><h1 className="text-3xl font-bold tracking-tight">{organization.name}</h1><p className="mt-1 text-sm text-gray-600">{organization.domain || "No domain recorded"}{organization.country ? ` · ${organization.country}` : ""}</p><div className="mt-2"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{experimentLabel(organization.experiment)}</span></div></div>
         <div className="text-right"><div className="text-sm font-semibold">{organization.status}</div>{organization.objectionCode ? <div className="mt-1 text-xs text-gray-500">{organization.objectionCode}</div> : null}{organization.doNotContact ? <div className="mt-2 rounded bg-red-100 px-2 py-1 text-xs font-bold text-red-700">DO NOT CONTACT</div> : null}</div>
       </div>
       {duplicate ? <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Duplicate prevented. This existing organization matched the name or domain you entered.</div> : null}
       {error ? <div className="mt-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div> : null}
 
       <section className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-100 px-5 py-3">
-          <h2 className="text-sm font-semibold text-gray-900">Account overview</h2>
-        </div>
+        <div className="border-b border-gray-100 px-5 py-3"><h2 className="text-sm font-semibold text-gray-900">Account overview</h2></div>
         <div className="grid gap-px bg-gray-100 md:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-white px-5 py-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Company</div>
-            <div className="mt-1 text-base font-semibold text-gray-900">{organization.name}</div>
-          </div>
-          <div className="bg-white px-5 py-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Website</div>
-            {website ? <a href={website} target="_blank" rel="noreferrer" className="mt-1 block text-base font-semibold text-forest-700 hover:underline">{organization.domain}</a> : <div className="mt-1 text-base font-semibold text-gray-500">Not recorded</div>}
-          </div>
-          <div className="bg-white px-5 py-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Projects</div>
-            <div className="mt-1 text-base font-semibold text-gray-900">{projects.length}</div>
-          </div>
-          <div className="bg-white px-5 py-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Interactions</div>
-            <div className="mt-1 text-base font-semibold text-gray-900">{interactions.length}</div>
-          </div>
+          <div className="bg-white px-5 py-4"><div className="text-xs font-medium uppercase tracking-wide text-gray-500">Company</div><div className="mt-1 text-base font-semibold text-gray-900">{organization.name}</div></div>
+          <div className="bg-white px-5 py-4"><div className="text-xs font-medium uppercase tracking-wide text-gray-500">Website</div>{website ? <a href={website} target="_blank" rel="noreferrer" className="mt-1 block text-base font-semibold text-forest-700 hover:underline">{organization.domain}</a> : <div className="mt-1 text-base font-semibold text-gray-500">Not recorded</div>}</div>
+          <div className="bg-white px-5 py-4"><div className="text-xs font-medium uppercase tracking-wide text-gray-500">Projects</div><div className="mt-1 text-base font-semibold text-gray-900">{projects.length}</div></div>
+          <div className="bg-white px-5 py-4"><div className="text-xs font-medium uppercase tracking-wide text-gray-500">Interactions</div><div className="mt-1 text-base font-semibold text-gray-900">{interactions.length}</div></div>
         </div>
 
         <div className="border-t border-gray-100">
-          <div className="hidden grid-cols-[minmax(0,2fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-4 bg-gray-50 px-5 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 md:grid">
-            <div>Project</div><div>Project ID</div><div>Methodology</div><div>Version</div>
-          </div>
+          <div className="hidden grid-cols-[minmax(0,2fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-4 bg-gray-50 px-5 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 md:grid"><div>Project</div><div>Project ID</div><div>Methodology</div><div>Version</div></div>
           {projects.length ? projects.map((project) => <div key={project.id} className="grid gap-3 border-t border-gray-100 px-5 py-4 first:border-t-0 md:grid-cols-[minmax(0,2fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.8fr)] md:items-center md:gap-4">
             <div><div className="text-xs font-medium uppercase tracking-wide text-gray-500 md:hidden">Project</div><div className="mt-1 text-sm font-semibold text-gray-900 md:mt-0">{project.name}</div></div>
             <div><div className="text-xs font-medium uppercase tracking-wide text-gray-500 md:hidden">Project ID</div><div className="mt-1 text-sm font-semibold text-gray-900 md:mt-0">{project.vcsId ? `VCS ${project.vcsId}` : "Not recorded"}</div></div>
@@ -89,7 +80,7 @@ export default function OrganizationPage({ detail, duplicate, error }: InferGetS
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <details className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"><summary className="cursor-pointer list-none font-semibold">Update disposition <span className="ml-2 text-xs font-normal text-gray-500">secondary</span></summary>
-          <form method="post" action="/api/internal/sales" className="mt-4 grid gap-3"><input type="hidden" name="action" value="update_status" /><input type="hidden" name="organizationId" value={organization.id} /><select name="status" defaultValue={organization.status} className={fieldClass}>{SALES_ORGANIZATION_STATUSES.map((value) => <option key={value}>{value}</option>)}</select><select name="objectionCode" defaultValue={organization.objectionCode || ""} className={fieldClass}><option value="">No objection</option>{SALES_OBJECTION_CODES.map((value) => <option key={value}>{value}</option>)}</select><select name="internalCertificationTeam" defaultValue={organization.internalCertificationTeam == null ? "" : String(organization.internalCertificationTeam)} className={fieldClass}><option value="">Internal team unknown</option><option value="true">Internal team: yes</option><option value="false">Internal team: no</option></select><textarea name="notes" defaultValue={organization.notes} placeholder="Organization notes" className={fieldClass} /><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="doNotContact" defaultChecked={organization.doNotContact} /> Do not contact</label><button className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white">Update disposition</button></form>
+          <form method="post" action="/api/internal/sales" className="mt-4 grid gap-3"><input type="hidden" name="action" value="update_status" /><input type="hidden" name="organizationId" value={organization.id} /><select name="experiment" defaultValue={organization.experiment} className={fieldClass}>{SALES_EXPERIMENTS.map((value) => <option key={value} value={value}>{experimentLabel(value)}</option>)}</select><select name="status" defaultValue={organization.status} className={fieldClass}>{SALES_ORGANIZATION_STATUSES.map((value) => <option key={value}>{value}</option>)}</select><select name="objectionCode" defaultValue={organization.objectionCode || ""} className={fieldClass}><option value="">No objection</option>{SALES_OBJECTION_CODES.map((value) => <option key={value}>{value}</option>)}</select><select name="internalCertificationTeam" defaultValue={organization.internalCertificationTeam == null ? "" : String(organization.internalCertificationTeam)} className={fieldClass}><option value="">Internal team unknown</option><option value="true">Internal team: yes</option><option value="false">Internal team: no</option></select><textarea name="notes" defaultValue={organization.notes} placeholder="Organization notes" className={fieldClass} /><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="doNotContact" defaultChecked={organization.doNotContact} /> Do not contact</label><button className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white">Update disposition</button></form>
         </details>
 
         <details className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"><summary className="cursor-pointer list-none font-semibold">Log interaction <span className="ml-2 text-xs font-normal text-gray-500">manual</span></summary>
