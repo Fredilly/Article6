@@ -11,6 +11,15 @@ export const SALES_ORGANIZATION_STATUSES = [
 
 export type SalesOrganizationStatus = (typeof SALES_ORGANIZATION_STATUSES)[number];
 
+export const SALES_EXPERIMENTS = [
+  "ARTICLE6_CARBON",
+  "TENDER_READINESS",
+  "ECOVADIS_SUPPLIER_COMPLIANCE",
+  "OTHER",
+] as const;
+
+export type SalesExperiment = (typeof SALES_EXPERIMENTS)[number];
+
 export const SALES_OBJECTION_CODES = [
   "INTERNAL_TEAM",
   "ALREADY_COVERED",
@@ -44,6 +53,10 @@ export function normalizeOptional(value: unknown): string | null {
 
 export function isSalesOrganizationStatus(value: unknown): value is SalesOrganizationStatus {
   return typeof value === "string" && SALES_ORGANIZATION_STATUSES.includes(value as SalesOrganizationStatus);
+}
+
+export function isSalesExperiment(value: unknown): value is SalesExperiment {
+  return typeof value === "string" && SALES_EXPERIMENTS.includes(value as SalesExperiment);
 }
 
 export function isSalesObjectionCode(value: unknown): value is SalesObjectionCode {
