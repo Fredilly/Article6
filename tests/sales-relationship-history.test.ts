@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import { relationshipHistoryPresentation } from "../lib/sales-interaction-display.ts";
+import { normalizeSalesInteractionTimestamp } from "../lib/sales-timestamps.ts";
 
 test("outbound history uses Fred E. even when a contact is attached", () => {
   assert.deepEqual(relationshipHistoryPresentation("OUTBOUND", "John Kealy"), { direction: "OUTBOUND", actorName: "Fred E.", alignment: "right", recipient: "John Kealy" });
@@ -26,7 +27,7 @@ test("mixed conversations alternate sides and actors by direction", () => {
 
 test("relationship history query returns chronological order without a render-time reverse", () => {
   const store = fs.readFileSync(new URL("../lib/sales-store.ts", import.meta.url), "utf8");
-  assert.match(store, /ORDER BY i\.occurred_at ASC, i\.created_at ASC/);
+  assert.match(store, /ORDER BY COALESCE\(i\.occurred_at, i\.created_at\) ASC, i\.created_at ASC/);
   assert.doesNotMatch(store, /ORDER BY i\.occurred_at DESC, i\.created_at DESC/);
 });
 
@@ -40,4 +41,30 @@ test("conversation cards do not render sender labels or recipient metadata", () 
   assert.doesNotMatch(page, /Author:/);
   assert.doesNotMatch(page, /To: \$\{/);
   assert.doesNotMatch(page, /relationshipDetails/);
+});
+
+test("interaction timestamps normalize to UTC without changing chronology", () => {
+  assert.equal(normalizeSalesInteractionTimestamp("2026-08-21T10:00:00+08:00"), "2026-08-21T02:00:00.000Z");
+  assert.equal(normalizeSalesInteractionTimestamp("1787278800000"), "2026-08-21T02:20:00.000Z");
+});
+
+test("Gmail thread timestamps preserve multiple sends before a timezone-offset reply", () => {
+  const thread = [
+    { subject: "Reply", gmailTimestamp: "2026-08-21T10:05:00+08:00" },
+    { subject: "First send", gmailTimestamp: "2026-08-21T01:00:00Z" },
+    { subject: "Second send", gmailTimestamp: "2026-08-21T01:30:00Z" },
+  ];
+  const ordered = [...thread].sort((a, b) => normalizeSalesInteractionTimestamp(a.gmailTimestamp).localeCompare(normalizeSalesInteractionTimestamp(b.gmailTimestamp)));
+  assert.deepEqual(ordered.map((message) => message.subject), ["First send", "Second send", "Reply"]);
+});
+
+test("imported Gmail timestamps take precedence over fallback occurredAt", () => {
+  const importer = fs.readFileSync(new URL("../lib/sales-import-store.ts", import.meta.url), "utf8");
+  assert.match(importer, /normalizeSalesInteractionTimestamp\(interaction\.gmailTimestamp \?\? interaction\.occurredAt\)/);
+});
+
+test("history orders by interaction time and only falls back to created_at", () => {
+  const store = fs.readFileSync(new URL("../lib/sales-store.ts", import.meta.url), "utf8");
+  assert.match(store, /ORDER BY COALESCE\(i\.occurred_at, i\.created_at\) ASC, i\.created_at ASC/);
+  assert.doesNotMatch(store, /ORDER BY i\.created_at ASC/);
 });
