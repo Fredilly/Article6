@@ -34,3 +34,10 @@ test("inbound history does not expose a second recipient identity", () => {
   const inbound = relationshipHistoryPresentation("INBOUND", "Vijayakumar Rangaraju");
   assert.equal(inbound.recipient, undefined);
 });
+
+test("conversation cards do not render sender labels or recipient metadata", () => {
+  const page = fs.readFileSync(new URL("../pages/internal/sales/organizations/[id].tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(page, /Author:/);
+  assert.doesNotMatch(page, /To: \$\{/);
+  assert.doesNotMatch(page, /relationshipDetails/);
+});
