@@ -5,7 +5,7 @@ import {
   isSalesOrganizationStatus,
   normalizeDomain,
   normalizeOrganizationName,
-} from "../lib/sales-memory";
+} from "../lib/sales-memory.ts";
 
 test("normalizes organization names for duplicate detection", () => {
   assert.equal(normalizeOrganizationName("  Terraformation   Inc  "), "terraformation inc");
