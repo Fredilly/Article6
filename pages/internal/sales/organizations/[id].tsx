@@ -68,7 +68,11 @@ export default function OrganizationPage({ detail, duplicate, error }: InferGetS
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"><h2 className="font-semibold">Contacts <span className="ml-1 text-xs font-normal text-gray-500">({contacts.length})</span></h2>
-          <div className="mt-3 space-y-3">{contacts.length ? contacts.map((contact) => <div key={contact.id} className="rounded-md border border-gray-100 p-3 text-sm"><div className="font-medium">{contact.name}</div><div className="text-gray-600">{contact.title || "No title"}</div><div className="mt-1 text-xs text-gray-500">{contact.email || contact.phone || "No contact details"}</div></div>) : <p className="text-sm text-gray-500">No contacts yet.</p>}</div>
+          <div className="mt-3 space-y-3">{contacts.length ? contacts.map((contact) => <div key={contact.id} className="rounded-md border border-gray-100 p-3 text-sm"><div className="font-medium">{contact.name}</div><div className="text-gray-600">{contact.title || "No title"}</div><div className="mt-1 text-xs text-gray-500">
+            {contact.email ? <div>Email: {contact.email}</div> : null}
+            {contact.phone ? <div>Phone: {contact.phone}</div> : null}
+            {!contact.email && !contact.phone ? "No contact details" : null}
+          </div></div>) : <p className="text-sm text-gray-500">No contacts yet.</p>}</div>
           <details className="mt-4"><summary className="cursor-pointer list-none text-sm font-medium text-forest-700">+ Add contact</summary><form method="post" action="/api/internal/sales" className="mt-3 grid gap-2"><input type="hidden" name="action" value="add_contact" /><input type="hidden" name="organizationId" value={organization.id} /><input required name="name" placeholder="Name" className={fieldClass} /><input name="title" placeholder="Title" className={fieldClass} /><input name="email" type="email" placeholder="Email" className={fieldClass} /><input name="phone" placeholder="Phone" className={fieldClass} /><button className="rounded-md bg-forest-700 px-4 py-2 text-sm font-medium text-white">Add contact</button></form></details>
         </section>
 
