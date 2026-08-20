@@ -5,12 +5,12 @@ import type { SalesMemorySearchEntry } from "./SalesMemorySearch";
 import type { SalesOrganization } from "../lib/sales-store";
 
 function rowClass(status: string, doNotContact: boolean) {
-  if (doNotContact || status === "CLOSED_NO") return "border-l-4 border-red-400 bg-red-50/50 hover:bg-red-50";
-  if (status === "CLOSED_WON" || status === "OPPORTUNITY") return "border-l-4 border-green-400 bg-green-50/40 hover:bg-green-50/70";
-  if (status === "ENGAGED") return "border-l-4 border-violet-400 bg-violet-50/50 hover:bg-violet-50/80";
-  if (status === "NURTURE") return "border-l-4 border-amber-400 bg-amber-50/40 hover:bg-amber-50/70";
-  if (status === "CONTACTED") return "border-l-4 border-blue-300 hover:bg-blue-50/40";
-  return "border-l-4 border-transparent hover:bg-gray-50";
+  if (doNotContact || status === "CLOSED_NO") return "border-l-4 border-red-400 bg-red-50/50";
+  if (status === "CLOSED_WON" || status === "OPPORTUNITY") return "border-l-4 border-green-400";
+  if (status === "ENGAGED") return "border-l-4 border-violet-400";
+  if (status === "NURTURE") return "border-l-4 border-amber-400";
+  if (status === "CONTACTED") return "border-l-4 border-blue-300";
+  return "";
 }
 
 function experimentLabel(value: string) {
@@ -18,10 +18,6 @@ function experimentLabel(value: string) {
   if (value === "TENDER_READINESS") return "Tender Readiness";
   if (value === "ECOVADIS_SUPPLIER_COMPLIANCE") return "EcoVadis / Supplier Compliance";
   return "Other";
-}
-
-function statusClass(status: string) {
-  return status === "ENGAGED" ? "bg-violet-100 text-violet-800" : status === "CONTACTED" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700";
 }
 
 function formatDate(value?: string) {
@@ -37,31 +33,23 @@ export default function SalesOrganizationsTable({ organizations, searchEntries, 
   const [experiment, setExperiment] = useState<ExperimentFilter>("ALL");
   const [sortMode, setSortMode] = useState<SortMode>("NEWEST");
 
-  const filterList = () => {
+  const visibleOrganizations = [...organizations.filter((o) => {
     const needle = activeQuery.trim().toLowerCase();
-    const ids = new Set(searchEntries.filter((entry) => needle.length < 2 || entry.searchText.includes(needle)).map((entry) => entry.organizationId));
-    const result = organizations.filter((o) => (activeStatus === "ALL" || o.status === activeStatus) && (experiment === "ALL" || o.experiment === experiment) && ids.has(o.id));
-    return [...result].sort((a, b) => {
-      const ad = sortMode === "UPDATED" ? a.updatedAt : sortMode === "CONTACTED" ? a.lastInteractionAt : a.createdAt;
-      const bd = sortMode === "UPDATED" ? b.updatedAt : sortMode === "CONTACTED" ? b.lastInteractionAt : b.createdAt;
-      const diff = new Date(bd || 0).getTime() - new Date(ad || 0).getTime();
-      return sortMode === "OLDEST" ? -diff : diff;
-    });
-  };
-
-  const visibleOrganizations = filterList();
-
-  function filterOrganizations(query: string, status: SalesStatusFilter) {
-    setActiveQuery(query);
-    setActiveStatus(status);
-  }
+    const matchesSearch = needle.length < 2 || searchEntries.some((e) => e.organizationId === o.id && e.searchText.includes(needle));
+    return matchesSearch && (activeStatus === "ALL" || o.status === activeStatus) && (experiment === "ALL" || o.experiment === experiment);
+  })].sort((a, b) => {
+    const ad = sortMode === "UPDATED" ? a.updatedAt : a.lastInteractionAt;
+    const bd = sortMode === "UPDATED" ? b.updatedAt : b.lastInteractionAt;
+    const diff = new Date(bd || 0).getTime() - new Date(ad || 0).getTime();
+    return sortMode === "OLDEST" ? -diff : diff;
+  });
 
   return <>
-    <SalesHeader entries={searchEntries} initialQuery={initialQuery} initialStatus={initialStatus} onChange={filterOrganizations} sectionTitle="Organizations" sectionCount={visibleOrganizations.length} />
-    <div className="mt-3 flex flex-wrap gap-3 rounded-lg border border-gray-200 bg-white p-3">
-      <select value={experiment} onChange={(e) => setExperiment(e.target.value as ExperimentFilter)} className="rounded border px-3 py-2 text-sm"><option value="ALL">All Experiments</option><option value="ARTICLE6_CARBON">Article6 Carbon</option><option value="TENDER_READINESS">Tender Readiness</option></select>
-      <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)} className="rounded border px-3 py-2 text-sm"><option value="NEWEST">Newest First</option><option value="OLDEST">Oldest First</option><option value="UPDATED">Recently Updated</option><option value="CONTACTED">Recently Contacted</option></select>
+    <SalesHeader entries={searchEntries} initialQuery={initialQuery} initialStatus={initialStatus} onChange={(q, s) => { setActiveQuery(q); setActiveStatus(s); }} sectionTitle="Organizations" sectionCount={visibleOrganizations.length} />
+    <div className="mt-3 flex gap-3 rounded-lg border bg-white p-3">
+      <select value={experiment} onChange={(e) => setExperiment(e.target.value as ExperimentFilter)}><option value="ALL">All Experiments</option><option value="ARTICLE6_CARBON">Article6 Carbon</option><option value="TENDER_READINESS">Tender Readiness</option></select>
+      <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}><option value="NEWEST">Newest First</option><option value="OLDEST">Oldest First</option><option value="UPDATED">Recently Updated</option><option value="CONTACTED">Recently Contacted</option></select>
     </div>
-    <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"><table className="min-w-full divide-y divide-gray-200 text-left text-sm"><thead className="bg-gray-50 text-xs uppercase text-gray-500"><tr><th className="px-5 py-3">Organization</th><th className="px-5 py-3">Experiment</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Last interaction</th><th /></tr></thead><tbody>{visibleOrganizations.map((organization) => <tr key={organization.id} className={rowClass(organization.status, organization.doNotContact)}><td className="px-5 py-4">{organization.name}<div className="text-xs text-gray-500">{organization.domain || "No domain"}</div></td><td className="px-5 py-4">{experimentLabel(organization.experiment)}</td><td className="px-5 py-4"><span className={statusClass(organization.status)}>{organization.status}</span></td><td className="px-5 py-4">{formatDate(organization.lastInteractionAt)}</td><td className="px-5 py-4 text-right"><Link href={`/internal/sales/organizations/${organization.id}`}>Open →</Link></td></tr>)}</tbody></table></div>
+    <table className="mt-3 min-w-full text-left text-sm"><thead><tr><th>Organization</th><th>Experiment</th><th>Status</th><th>Last interaction</th><th /></tr></thead><tbody>{visibleOrganizations.map((o) => <tr key={o.id} className={rowClass(o.status, o.doNotContact)}><td>{o.name}<div>{o.domain || "No domain"}</div></td><td>{experimentLabel(o.experiment)}</td><td>{o.status}</td><td>{formatDate(o.lastInteractionAt)}</td><td><Link href={`/internal/sales/organizations/${o.id}`}>Open →</Link></td></tr>)}</tbody></table>
   </>;
 }
