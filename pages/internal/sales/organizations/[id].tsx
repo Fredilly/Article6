@@ -1,16 +1,23 @@
 import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import SalesHeader from "../../../../components/SalesHeader";
+import { buildSalesMemorySearchEntries } from "../../../../lib/sales-search";
+import { listSalesOrganizations } from "../../../../lib/sales-store";
 import { getSalesOrganizationDetail, type SalesOrganizationDetail } from "../../../../lib/sales-store";
 import { SALES_EXPERIMENTS, SALES_OBJECTION_CODES, SALES_ORGANIZATION_STATUSES } from "../../../../lib/sales-memory";
 
-interface Props { detail: SalesOrganizationDetail; duplicate: boolean; error?: string; }
+interface Props { detail: SalesOrganizationDetail; duplicate: boolean; error?: string; searchEntries: ReturnType<typeof buildSalesMemorySearchEntries>; initialQuery: string; initialStatus: "ALL" | SalesOrganizationDetail["organization"]["status"]; }
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ params, query }) => {
   const id = typeof params?.id === "string" ? params.id : "";
   const detail = await getSalesOrganizationDetail(id);
   if (!detail) return { notFound: true };
-  return { props: { detail, duplicate: query.duplicate === "1", error: typeof query.error === "string" ? query.error : undefined } };
+  const organizations = await listSalesOrganizations("");
+  const details = (await Promise.all(organizations.map((organization) => getSalesOrganizationDetail(organization.id)))).filter((value): value is NonNullable<typeof value> => Boolean(value));
+  const rawStatus = typeof query.status === "string" ? query.status : "ALL";
+  const initialStatus = rawStatus === "ALL" || detail.organization.status === rawStatus ? rawStatus as Props["initialStatus"] : "ALL";
+  return { props: { detail, duplicate: query.duplicate === "1", error: typeof query.error === "string" ? query.error : undefined, searchEntries: buildSalesMemorySearchEntries(details), initialQuery: typeof query.q === "string" ? query.q : "", initialStatus } };
 };
 
 const fieldClass = "rounded-md border border-gray-300 px-3 py-2 text-sm";
@@ -27,7 +34,7 @@ function experimentLabel(value: string) {
   return "Other";
 }
 
-export default function OrganizationPage({ detail, duplicate, error }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function OrganizationPage({ detail, duplicate, error, searchEntries, initialQuery, initialStatus }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { organization, contacts, projects, interactions } = detail;
   const website = websiteHref(organization.domain);
 
@@ -35,6 +42,7 @@ export default function OrganizationPage({ detail, duplicate, error }: InferGetS
     <Head><title>{organization.name} | Sales Memory</title><meta name="robots" content="noindex,nofollow" /></Head>
     <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900"><div className="mx-auto max-w-6xl">
       <Link href="/internal/sales" className="text-sm font-medium text-forest-700">← Sales memory</Link>
+      <SalesHeader entries={searchEntries} initialQuery={initialQuery} initialStatus={initialStatus} />
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div><h1 className="text-3xl font-bold tracking-tight">{organization.name}</h1><p className="mt-1 text-sm text-gray-600">{organization.domain || "No domain recorded"}{organization.country ? ` · ${organization.country}` : ""}</p><div className="mt-2"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{experimentLabel(organization.experiment)}</span></div></div>
         <div className="text-right"><div className="text-sm font-semibold">{organization.status}</div>{organization.objectionCode ? <div className="mt-1 text-xs text-gray-500">{organization.objectionCode}</div> : null}{organization.doNotContact ? <div className="mt-2 rounded bg-red-100 px-2 py-1 text-xs font-bold text-red-700">DO NOT CONTACT</div> : null}</div>
