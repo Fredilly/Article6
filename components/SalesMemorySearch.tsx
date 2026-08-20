@@ -13,7 +13,7 @@ export interface SalesMemorySearchEntry {
 }
 
 function statusClass(status: string) {
-  if (status === "DO_NOT_CONTACT" || status === "CLOSED_NO") return "bg-red-100 text-red-800";
+  if (status === "CLOSED_NO") return "bg-red-100 text-red-800";
   if (status === "CLOSED_WON") return "bg-emerald-100 text-emerald-800";
   if (status === "OPPORTUNITY") return "bg-green-100 text-green-800";
   if (status === "ENGAGED") return "bg-violet-100 text-violet-800";
