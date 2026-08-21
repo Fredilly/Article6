@@ -5,7 +5,7 @@ import { normalizeSalesInteractionTimestamp } from "./sales-timestamps";
 
 export interface SalesImportContact { name: string; title?: string; email?: string; phone?: string; notes?: string; }
 export interface SalesImportProject { vcsId?: string; name: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string; }
-export interface SalesImportInteraction { contactEmail?: string; projectVcsId?: string; channel?: string; direction?: string; interactionType?: string; gmailTimestamp?: string | number; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string; }
+export interface SalesImportInteraction { contactEmail?: string; projectVcsId?: string; channel?: string; direction?: string; interactionType?: string; gmailThreadId?: string; gmailTimestamp?: string | number; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string; }
 
 export interface SalesImportCandidate {
   id: string;
@@ -159,12 +159,12 @@ export async function approveSalesImportCandidate(id: string, explicitOrganizati
     for (const interaction of (candidate.interactions_json || []) as SalesImportInteraction[]) {
       const occurredAt = normalizeSalesInteractionTimestamp(interaction.gmailTimestamp ?? interaction.occurredAt);
       await client.query(
-        `INSERT INTO sales_interactions (id,organization_id,contact_id,project_id,channel,direction,interaction_type,occurred_at,subject,summary,outcome_code,external_reference,created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+        `INSERT INTO sales_interactions (id,organization_id,contact_id,project_id,channel,direction,interaction_type,occurred_at,subject,summary,outcome_code,external_reference,gmail_thread_id,created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
         [randomUUID(), organizationId, interaction.contactEmail ? contactIds.get(interaction.contactEmail.trim().toLowerCase()) || null : null,
           interaction.projectVcsId ? projectIds.get(interaction.projectVcsId.trim()) || null : null, interaction.channel || "EMAIL", interaction.direction || "INTERNAL",
           interaction.interactionType || "MESSAGE", occurredAt, interaction.subject?.trim() || null, interaction.summary.trim(), interaction.outcomeCode?.trim() || null,
-          interaction.externalReference?.trim() || null, now]
+          interaction.externalReference?.trim() || null, interaction.gmailThreadId?.trim() || null, now]
       );
     }
     if (candidate.proposed_status && isSalesOrganizationStatus(candidate.proposed_status)) {

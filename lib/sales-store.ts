@@ -66,6 +66,7 @@ export interface SalesInteraction {
   summary: string;
   outcomeCode?: string;
   externalReference?: string;
+  gmailThreadId?: string;
 }
 
 export interface SalesOrganizationDetail {
@@ -192,13 +193,13 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
   return { id: String(projectRow.id), vcsId: projectRow.vcs_id || undefined, name: String(projectRow.name), methodology: projectRow.methodology || undefined, methodologyVersion: projectRow.methodology_version || undefined, stage: projectRow.stage || undefined, country: projectRow.country || undefined, vvb: projectRow.vvb || undefined, notes: String(projectRow.notes || ""), role: input.role?.trim() || "OTHER" };
 }
 
-export async function addSalesInteraction(input: { organizationId: string; contactId?: string; projectId?: string; channel: string; direction: string; interactionType: string; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string }): Promise<void> {
+export async function addSalesInteraction(input: { organizationId: string; contactId?: string; projectId?: string; channel: string; direction: string; interactionType: string; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string; gmailThreadId?: string }): Promise<void> {
   const createdAt = new Date().toISOString();
   const occurredAt = normalizeSalesInteractionTimestamp(input.occurredAt);
   await getPool().query(
-    `INSERT INTO sales_interactions (id, organization_id, contact_id, project_id, channel, direction, interaction_type, occurred_at, subject, summary, outcome_code, external_reference, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-    [randomUUID(), input.organizationId, input.contactId || null, input.projectId || null, input.channel, input.direction, input.interactionType, occurredAt, input.subject?.trim() || null, input.summary.trim(), input.outcomeCode?.trim() || null, input.externalReference?.trim() || null, createdAt]
+    `INSERT INTO sales_interactions (id, organization_id, contact_id, project_id, channel, direction, interaction_type, occurred_at, subject, summary, outcome_code, external_reference, gmail_thread_id, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+    [randomUUID(), input.organizationId, input.contactId || null, input.projectId || null, input.channel, input.direction, input.interactionType, occurredAt, input.subject?.trim() || null, input.summary.trim(), input.outcomeCode?.trim() || null, input.externalReference?.trim() || null, input.gmailThreadId?.trim() || null, createdAt]
   );
   await getPool().query("UPDATE sales_organizations SET updated_at = $2 WHERE id = $1", [input.organizationId, createdAt]);
 }
@@ -222,6 +223,6 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
     organization: toOrganization(organizationResult.rows[0]),
     contacts: contactsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), name: String(row.name), title: row.title || undefined, email: row.email || undefined, phone: row.phone || undefined, status: String(row.status), notes: String(row.notes || "") })),
     projects: projectsResult.rows.map((row) => ({ id: String(row.id), vcsId: row.vcs_id || undefined, name: String(row.name), methodology: row.methodology || undefined, methodologyVersion: row.methodology_version || undefined, stage: row.stage || undefined, country: row.country || undefined, vvb: row.vvb || undefined, notes: String(row.notes || ""), role: String(row.role) })),
-    interactions: interactionsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, projectId: row.project_id || undefined, contactName: row.contact_name || undefined, projectName: row.project_name || undefined, channel: String(row.channel), direction: String(row.direction), interactionType: String(row.interaction_type), occurredAt: iso(row.occurred_at || row.created_at), subject: row.subject || undefined, summary: String(row.summary), outcomeCode: row.outcome_code || undefined, externalReference: row.external_reference || undefined })),
+    interactions: interactionsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, projectId: row.project_id || undefined, contactName: row.contact_name || undefined, projectName: row.project_name || undefined, channel: String(row.channel), direction: String(row.direction), interactionType: String(row.interaction_type), occurredAt: iso(row.occurred_at || row.created_at), subject: row.subject || undefined, summary: String(row.summary), outcomeCode: row.outcome_code || undefined, externalReference: row.external_reference || undefined, gmailThreadId: row.gmail_thread_id || undefined })),
   };
 }

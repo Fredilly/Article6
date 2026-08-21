@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
+import { groupSalesInteractions } from "../lib/sales-conversations.ts";
 import { relationshipHistoryPresentation } from "../lib/sales-interaction-display.ts";
 import { normalizeSalesInteractionTimestamp } from "../lib/sales-timestamps.ts";
+import type { SalesInteraction } from "../lib/sales-store.ts";
 
 test("outbound history uses Fred E. even when a contact is attached", () => {
   assert.deepEqual(relationshipHistoryPresentation("OUTBOUND", "John Kealy"), { direction: "OUTBOUND", actorName: "Fred E.", alignment: "right", recipient: "John Kealy" });
@@ -67,4 +69,30 @@ test("history orders by interaction time and only falls back to created_at", () 
   const store = fs.readFileSync(new URL("../lib/sales-store.ts", import.meta.url), "utf8");
   assert.match(store, /ORDER BY COALESCE\(i\.occurred_at, i\.created_at\) ASC, i\.created_at ASC/);
   assert.doesNotMatch(store, /ORDER BY i\.created_at ASC/);
+});
+
+function interaction(id: string, contactId: string, contactName: string, occurredAt: string, summary: string, gmailThreadId?: string, subject = "Fred outreach"): SalesInteraction {
+  return { id, organizationId: "org", contactId, contactName, channel: "EMAIL", direction: summary.startsWith("Fred") ? "OUTBOUND" : "INBOUND", interactionType: "MESSAGE", occurredAt, subject, summary, gmailThreadId };
+}
+
+test("separate Gmail threads at one organization never mix contacts", () => {
+  const conversations = groupSalesInteractions([
+    interaction("v1", "vijay", "Vijay", "2026-08-21T09:00:00.000Z", "Fred outreach", "thread-vijay"),
+    interaction("s1", "samrat", "Samrat", "2026-08-21T09:05:00.000Z", "Fred outreach", "thread-samrat"),
+    interaction("v2", "vijay", "Vijay", "2026-08-21T09:10:00.000Z", "Vijay reply", "thread-vijay"),
+  ]);
+  assert.deepEqual(conversations.map((conversation) => conversation.contactName), ["Vijay", "Samrat"]);
+  assert.deepEqual(conversations[0]?.interactions.map((message) => message.id), ["v1", "v2"]);
+  assert.deepEqual(conversations[1]?.interactions.map((message) => message.id), ["s1"]);
+});
+
+test("legacy rows infer a thread only for the same contact and nearby subject", () => {
+  const conversations = groupSalesInteractions([
+    interaction("v1", "vijay", "Vijay", "2026-08-21T09:00:00.000Z", "Fred outreach"),
+    interaction("s1", "samrat", "Samrat", "2026-08-21T09:05:00.000Z", "Fred outreach"),
+    interaction("v2", "vijay", "Vijay", "2026-08-21T09:10:00.000Z", "Vijay reply", undefined, "Re: Fred outreach"),
+  ]);
+  assert.equal(conversations.length, 2);
+  assert.deepEqual(conversations.find((conversation) => conversation.contactName === "Vijay")?.interactions.map((message) => message.id), ["v1", "v2"]);
+  assert.deepEqual(conversations.find((conversation) => conversation.contactName === "Samrat")?.interactions.map((message) => message.id), ["s1"]);
 });
