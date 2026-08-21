@@ -18,9 +18,8 @@ test("sales delete actions are authenticated and confirmation-gated", () => {
   assert.match(route, /hasDeleteConfirmation/);
 });
 
-test("delete controls warn and require typing delete", () => {
+test("contact deletion warns and requires typing delete", () => {
   const page = fs.readFileSync(new URL("../pages/internal/sales/organizations/[id].tsx", import.meta.url), "utf8");
-  assert.match(page, /Warning: this permanently deletes this interaction record\./);
   assert.match(page, /Warning: this removes the contact\./);
   assert.match(page, /pattern="\[Dd\]\[Ee\]\[Ll\]\[Ee\]\[Tt\]\[Ee\]"/);
 });

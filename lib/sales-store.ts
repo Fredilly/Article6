@@ -185,6 +185,24 @@ export async function addSalesContact(input: { organizationId: string; name: str
   return { id: String(row.id), organizationId: String(row.organization_id), name: String(row.name), title: row.title || undefined, email: row.email || undefined, phone: row.phone || undefined, status: String(row.status), notes: String(row.notes || "") };
 }
 
+export async function updateSalesContact(input: { organizationId: string; contactId: string; name: string; title?: string; email?: string; phone?: string; notes?: string }): Promise<void> {
+  const email = input.email?.trim().toLowerCase() || null;
+  if (email) {
+    const duplicate = await getPool().query(
+      "SELECT id FROM sales_contacts WHERE LOWER(email) = $1 AND id <> $2 LIMIT 1",
+      [email, input.contactId]
+    );
+    if (duplicate.rows[0]) throw new Error("Another contact already uses this email.");
+  }
+  const result = await getPool().query(
+    `UPDATE sales_contacts
+     SET name=$3, title=$4, email=$5, phone=$6, notes=$7, updated_at=$8
+     WHERE id=$1 AND organization_id=$2`,
+    [input.contactId, input.organizationId, input.name.trim(), input.title?.trim() || null, email, input.phone?.trim() || null, input.notes?.trim() || "", new Date().toISOString()]
+  );
+  if (!result.rowCount) throw new Error("Contact not found for this organization.");
+}
+
 export async function deleteSalesContact(organizationId: string, contactId: string): Promise<void> {
   const result = await getPool().query(
     "DELETE FROM sales_contacts WHERE id = $1 AND organization_id = $2 RETURNING id",
@@ -214,6 +232,34 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
     [input.organizationId, projectRow.id, input.role?.trim() || "OTHER", now]
   );
   return { id: String(projectRow.id), vcsId: projectRow.vcs_id || undefined, name: String(projectRow.name), methodology: projectRow.methodology || undefined, methodologyVersion: projectRow.methodology_version || undefined, stage: projectRow.stage || undefined, country: projectRow.country || undefined, vvb: projectRow.vvb || undefined, notes: String(projectRow.notes || ""), role: input.role?.trim() || "OTHER" };
+}
+
+export async function updateSalesProject(input: { organizationId: string; projectId: string; name: string; vcsId?: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string }): Promise<void> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const linked = await client.query(
+      "SELECT 1 FROM sales_organization_projects WHERE organization_id=$1 AND project_id=$2",
+      [input.organizationId, input.projectId]
+    );
+    if (!linked.rows[0]) throw new Error("Project not found for this organization.");
+    await client.query(
+      `UPDATE sales_projects
+       SET vcs_id=$2, name=$3, methodology=$4, methodology_version=$5, stage=$6, country=$7, vvb=$8, notes=$9, updated_at=$10
+       WHERE id=$1`,
+      [input.projectId, input.vcsId?.trim() || null, input.name.trim(), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.notes?.trim() || "", new Date().toISOString()]
+    );
+    await client.query(
+      "UPDATE sales_organization_projects SET role=$3 WHERE organization_id=$1 AND project_id=$2",
+      [input.organizationId, input.projectId, input.role?.trim() || "OTHER"]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function addSalesInteraction(input: { organizationId: string; contactId?: string; projectId?: string; channel: string; direction: string; interactionType: string; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string; gmailThreadId?: string }): Promise<void> {
