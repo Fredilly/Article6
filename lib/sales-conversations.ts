@@ -12,7 +12,14 @@ export interface SalesConversation {
 }
 
 function normalizedSubject(subject?: string): string {
-  return (subject || "").trim().replace(/^(re|fwd?):\s*/i, "").replace(/\s+/g, " ").toLowerCase();
+  return (subject || "")
+    .trim()
+    .replace(/^(?:(?:re|fw|fwd):\s*)+/i, "")
+    .replace(/[\u2010-\u2015-]+/g, " ")
+    .replace(/[^\w]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 }
 
 function contactKey(interaction: SalesInteraction): string {
@@ -27,6 +34,25 @@ function sortInteractions(interactions: SalesInteraction[]): SalesInteraction[] 
       return timestamp || a.index - b.index;
     })
     .map(({ interaction }) => interaction);
+}
+
+function addInteraction(conversation: SalesConversation, interaction: SalesInteraction): void {
+  conversation.contactId ||= interaction.contactId;
+  conversation.contactName ||= interaction.contactName;
+  conversation.subject ||= interaction.subject;
+  conversation.interactions.push(interaction);
+}
+
+function nearbyFallbackCandidates(
+  fallbackGroups: Map<string, SalesConversation[]>,
+  subject: string,
+  timestamp: number,
+): SalesConversation[] {
+  return Array.from(fallbackGroups.values()).reduce<SalesConversation[]>((all, candidates) => all.concat(candidates), []).filter((candidate) => {
+    if (normalizedSubject(candidate.subject) !== subject) return false;
+    const last = candidate.interactions[candidate.interactions.length - 1];
+    return Boolean(last) && Math.abs(timestamp - Date.parse(last.occurredAt)) <= FALLBACK_THREAD_WINDOW_MS;
+  });
 }
 
 export function groupSalesInteractions(interactions: SalesInteraction[]): SalesConversation[] {
@@ -44,36 +70,33 @@ export function groupSalesInteractions(interactions: SalesInteraction[]): SalesC
         groups.push(conversation);
       }
     } else {
-      if (!interaction.contactId && !interaction.contactName) {
-        conversation = { id: `unassigned:${groups.length}`, interactions: [] };
-        groups.push(conversation);
-      }
-      if (conversation) {
-        conversation.contactId ||= interaction.contactId;
-        conversation.contactName ||= interaction.contactName;
-        conversation.subject ||= interaction.subject;
-        conversation.interactions.push(interaction);
-        continue;
-      }
-      const fallbackKey = `${contactKey(interaction)}:${normalizedSubject(interaction.subject)}`;
-      const candidates = fallbackGroups.get(fallbackKey) || [];
+      const subject = normalizedSubject(interaction.subject);
       const timestamp = Date.parse(interaction.occurredAt);
-      conversation = candidates.find((candidate) => {
+      const fallbackKey = `${contactKey(interaction)}:${subject}`;
+      const contactCandidates = fallbackGroups.get(fallbackKey) || [];
+      conversation = contactCandidates.find((candidate) => {
         const last = candidate.interactions[candidate.interactions.length - 1];
         return Math.abs(timestamp - Date.parse(last.occurredAt)) <= FALLBACK_THREAD_WINDOW_MS;
       });
+
+      // Older imports may not have linked the contact on an inbound row. If
+      // exactly one known contact thread has the same subject nearby, it is
+      // safe to attach the message to that thread. Ambiguous messages remain
+      // separate rather than being assigned to the wrong person.
+      if (!conversation && !interaction.contactId && !interaction.contactName) {
+        const nearby = nearbyFallbackCandidates(fallbackGroups, subject, timestamp);
+        if (nearby.length === 1) conversation = nearby[0];
+      }
+
       if (!conversation) {
         conversation = { id: `inferred:${fallbackKey}:${groups.length}`, interactions: [] };
-        candidates.push(conversation);
-        fallbackGroups.set(fallbackKey, candidates);
+        contactCandidates.push(conversation);
+        fallbackGroups.set(fallbackKey, contactCandidates);
         groups.push(conversation);
       }
     }
 
-    conversation.contactId ||= interaction.contactId;
-    conversation.contactName ||= interaction.contactName;
-    conversation.subject ||= interaction.subject;
-    conversation.interactions.push(interaction);
+    addInteraction(conversation, interaction);
   }
 
   return groups.map((conversation) => ({
