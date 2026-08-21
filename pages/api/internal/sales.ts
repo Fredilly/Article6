@@ -7,6 +7,8 @@ import {
   createSalesOrganization,
   deleteSalesContact,
   deleteSalesInteraction,
+  updateSalesContact,
+  updateSalesProject,
   updateSalesOrganizationState,
 } from "../../../lib/sales-store";
 import { isSalesExperiment, isSalesObjectionCode, isSalesOrganizationStatus, normalizeOptional } from "../../../lib/sales-memory";
@@ -56,11 +58,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return organizationRedirect(res, organizationId, { deleted: "1" });
     }
 
+    if (action === "update_contact") {
+      const contactId = value(req.body, "contactId");
+      const name = value(req.body, "name");
+      if (!contactId || !name) return res.status(400).json({ error: "Contact id and name are required." });
+      await updateSalesContact({ organizationId, contactId, name, title: value(req.body, "title"), email: value(req.body, "email"), phone: value(req.body, "phone"), notes: value(req.body, "notes") });
+      return organizationRedirect(res, organizationId, { updated: "1" });
+    }
+
     if (action === "add_project") {
       const name = value(req.body, "name");
       if (!name) return res.status(400).json({ error: "Project name is required." });
       await addSalesProject({ organizationId, name, vcsId: value(req.body, "vcsId"), methodology: value(req.body, "methodology"), methodologyVersion: value(req.body, "methodologyVersion"), stage: value(req.body, "stage"), country: value(req.body, "country"), vvb: value(req.body, "vvb"), role: value(req.body, "role"), notes: value(req.body, "notes") });
       return organizationRedirect(res, organizationId);
+    }
+
+    if (action === "update_project") {
+      const projectId = value(req.body, "projectId");
+      const name = value(req.body, "name");
+      if (!projectId || !name) return res.status(400).json({ error: "Project id and name are required." });
+      await updateSalesProject({ organizationId, projectId, name, vcsId: value(req.body, "vcsId"), methodology: value(req.body, "methodology"), methodologyVersion: value(req.body, "methodologyVersion"), stage: value(req.body, "stage"), country: value(req.body, "country"), vvb: value(req.body, "vvb"), role: value(req.body, "role"), notes: value(req.body, "notes") });
+      return organizationRedirect(res, organizationId, { updated: "1" });
     }
 
     if (action === "add_interaction") {
