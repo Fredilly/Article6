@@ -106,6 +106,16 @@ test("legacy reply subjects with separators and prefixes stay in one conversatio
   assert.deepEqual(conversations[0]?.interactions.map((message) => message.id), ["v1", "v2"]);
 });
 
+test("a legacy Gmail conversation can span more than 72 hours", () => {
+  const conversations = groupSalesInteractions([
+    interaction("v1", "vijay", "Vijay", "2026-08-16T06:59:12.000Z", "Fred outreach", undefined, "HIM Evergreen / VCS 5973 — validation readiness"),
+    interaction("v2", "vijay", "Vijay", "2026-08-20T10:30:23.000Z", "Fred sample", undefined, "Re: HIM Evergreen / VCS 5973 — validation readiness"),
+    interaction("v3", "vijay", "Vijay", "2026-08-20T11:09:17.000Z", "Vijay reply", undefined, "HIM Evergreen / VCS 5973 validation readiness"),
+  ]);
+  assert.equal(conversations.length, 1);
+  assert.deepEqual(conversations[0]?.interactions.map((message) => message.id), ["v1", "v2", "v3"]);
+});
+
 test("an unlinked inbound message joins the only nearby matching contact thread", () => {
   const unlinked = interaction("v2", "", "", "2026-08-21T09:10:00.000Z", "Vijay reply", undefined, "Re: HIM Evergreen / VCS 5973 validation readiness");
   unlinked.contactId = undefined;

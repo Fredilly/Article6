@@ -1,6 +1,8 @@
 import type { SalesInteraction } from "./sales-store";
 
-const FALLBACK_THREAD_WINDOW_MS = 72 * 60 * 60 * 1000;
+// Gmail threads can remain active for weeks. This only applies when a legacy
+// row has no Gmail thread id; known Gmail thread ids remain authoritative.
+const FALLBACK_THREAD_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 export interface SalesConversation {
   id: string;
