@@ -29,7 +29,7 @@ test("mixed conversations alternate sides and actors by direction", () => {
 
 test("relationship history query returns chronological order without a render-time reverse", () => {
   const store = fs.readFileSync(new URL("../lib/sales-store.ts", import.meta.url), "utf8");
-  assert.match(store, /ORDER BY COALESCE\(i\.occurred_at, i\.created_at\) ASC, i\.created_at ASC/);
+  assert.match(store, /ORDER BY i\.occurred_at ASC, i\.created_at ASC/);
   assert.doesNotMatch(store, /ORDER BY i\.occurred_at DESC, i\.created_at DESC/);
 });
 
@@ -43,6 +43,7 @@ test("conversation cards do not render sender labels or recipient metadata", () 
   assert.doesNotMatch(page, /Author:/);
   assert.doesNotMatch(page, /To: \$\{/);
   assert.doesNotMatch(page, /relationshipDetails/);
+  assert.match(page, /presentation\.actorName/);
 });
 
 test("interaction timestamps normalize to UTC without changing chronology", () => {
@@ -67,7 +68,7 @@ test("imported Gmail timestamps take precedence over fallback occurredAt", () =>
 
 test("history orders by interaction time and only falls back to created_at", () => {
   const store = fs.readFileSync(new URL("../lib/sales-store.ts", import.meta.url), "utf8");
-  assert.match(store, /ORDER BY COALESCE\(i\.occurred_at, i\.created_at\) ASC, i\.created_at ASC/);
+  assert.match(store, /ORDER BY i\.occurred_at ASC, i\.created_at ASC/);
   assert.doesNotMatch(store, /ORDER BY i\.created_at ASC/);
 });
 
