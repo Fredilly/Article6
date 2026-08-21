@@ -244,7 +244,7 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
   const [contactsResult, projectsResult, interactionsResult] = await Promise.all([
     getPool().query("SELECT * FROM sales_contacts WHERE organization_id = $1 ORDER BY name ASC", [id]),
     getPool().query(`SELECT p.*, op.role FROM sales_organization_projects op JOIN sales_projects p ON p.id = op.project_id WHERE op.organization_id = $1 ORDER BY p.name ASC`, [id]),
-    getPool().query(`SELECT i.*, ${threadSelect} FROM sales_interactions i LEFT JOIN sales_contacts c ON c.id = i.contact_id LEFT JOIN sales_projects p ON p.id = i.project_id WHERE i.organization_id = $1 ORDER BY COALESCE(i.occurred_at, i.created_at) ASC, i.created_at ASC`, [id]),
+    getPool().query(`SELECT i.*, c.name AS contact_name, p.name AS project_name, ${threadSelect} FROM sales_interactions i LEFT JOIN sales_contacts c ON c.id = i.contact_id LEFT JOIN sales_projects p ON p.id = i.project_id WHERE i.organization_id = $1 ORDER BY COALESCE(i.occurred_at, i.created_at) ASC, i.created_at ASC`, [id]),
   ]);
   return {
     organization: toOrganization(organizationResult.rows[0]),
