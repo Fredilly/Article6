@@ -96,3 +96,38 @@ test("legacy rows infer a thread only for the same contact and nearby subject", 
   assert.deepEqual(conversations.find((conversation) => conversation.contactName === "Vijay")?.interactions.map((message) => message.id), ["v1", "v2"]);
   assert.deepEqual(conversations.find((conversation) => conversation.contactName === "Samrat")?.interactions.map((message) => message.id), ["s1"]);
 });
+
+test("legacy reply subjects with separators and prefixes stay in one conversation", () => {
+  const conversations = groupSalesInteractions([
+    interaction("v1", "vijay", "Vijay", "2026-08-21T09:00:00.000Z", "Fred outreach", undefined, "HIM Evergreen / VCS 5973 — validation readiness"),
+    interaction("v2", "vijay", "Vijay", "2026-08-21T09:10:00.000Z", "Vijay reply", undefined, "Re: HIM Evergreen / VCS 5973 validation readiness"),
+  ]);
+  assert.equal(conversations.length, 1);
+  assert.deepEqual(conversations[0]?.interactions.map((message) => message.id), ["v1", "v2"]);
+});
+
+test("an unlinked inbound message joins the only nearby matching contact thread", () => {
+  const unlinked = interaction("v2", "", "", "2026-08-21T09:10:00.000Z", "Vijay reply", undefined, "Re: HIM Evergreen / VCS 5973 validation readiness");
+  unlinked.contactId = undefined;
+  unlinked.contactName = undefined;
+  const conversations = groupSalesInteractions([
+    interaction("v1", "vijay", "Vijay", "2026-08-21T09:00:00.000Z", "Fred outreach", undefined, "HIM Evergreen / VCS 5973 — validation readiness"),
+    unlinked,
+  ]);
+  assert.equal(conversations.length, 1);
+  assert.equal(conversations[0]?.contactName, "Vijay");
+  assert.deepEqual(conversations[0]?.interactions.map((message) => message.id), ["v1", "v2"]);
+});
+
+test("unlinked messages remain separate when nearby threads are ambiguous", () => {
+  const unlinked = interaction("reply", "", "", "2026-08-21T09:10:00.000Z", "Reply", undefined, "Re: Shared subject");
+  unlinked.contactId = undefined;
+  unlinked.contactName = undefined;
+  const conversations = groupSalesInteractions([
+    interaction("vijay", "vijay", "Vijay", "2026-08-21T09:00:00.000Z", "Outreach", undefined, "Shared subject"),
+    interaction("samrat", "samrat", "Samrat", "2026-08-21T09:01:00.000Z", "Outreach", undefined, "Shared subject"),
+    unlinked,
+  ]);
+  assert.equal(conversations.length, 3);
+  assert.equal(conversations[2]?.contactName, undefined);
+});

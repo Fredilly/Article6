@@ -77,6 +77,7 @@ export interface SalesOrganizationDetail {
 }
 
 let pool: Pool | undefined;
+let gmailThreadColumnAvailable: Promise<boolean> | undefined;
 function getPool(): Pool {
   if (pool) return pool;
   const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
@@ -91,6 +92,20 @@ function getPool(): Pool {
         : {}),
   });
   return pool;
+}
+
+async function hasGmailThreadColumn(): Promise<boolean> {
+  if (!gmailThreadColumnAvailable) {
+    gmailThreadColumnAvailable = getPool().query(
+      `SELECT EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = current_schema()
+           AND table_name = 'sales_interactions'
+           AND column_name = 'gmail_thread_id'
+       ) AS available`
+    ).then((result) => Boolean(result.rows[0]?.available));
+  }
+  return gmailThreadColumnAvailable;
 }
 
 function iso(value: unknown): string {
@@ -196,11 +211,21 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
 export async function addSalesInteraction(input: { organizationId: string; contactId?: string; projectId?: string; channel: string; direction: string; interactionType: string; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string; gmailThreadId?: string }): Promise<void> {
   const createdAt = new Date().toISOString();
   const occurredAt = normalizeSalesInteractionTimestamp(input.occurredAt);
-  await getPool().query(
-    `INSERT INTO sales_interactions (id, organization_id, contact_id, project_id, channel, direction, interaction_type, occurred_at, subject, summary, outcome_code, external_reference, gmail_thread_id, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-    [randomUUID(), input.organizationId, input.contactId || null, input.projectId || null, input.channel, input.direction, input.interactionType, occurredAt, input.subject?.trim() || null, input.summary.trim(), input.outcomeCode?.trim() || null, input.externalReference?.trim() || null, input.gmailThreadId?.trim() || null, createdAt]
-  );
+  const hasThreadColumn = await hasGmailThreadColumn();
+  const values = [randomUUID(), input.organizationId, input.contactId || null, input.projectId || null, input.channel, input.direction, input.interactionType, occurredAt, input.subject?.trim() || null, input.summary.trim(), input.outcomeCode?.trim() || null, input.externalReference?.trim() || null];
+  if (hasThreadColumn) {
+    await getPool().query(
+      `INSERT INTO sales_interactions (id, organization_id, contact_id, project_id, channel, direction, interaction_type, occurred_at, subject, summary, outcome_code, external_reference, gmail_thread_id, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [...values, input.gmailThreadId?.trim() || null, createdAt]
+    );
+  } else {
+    await getPool().query(
+      `INSERT INTO sales_interactions (id, organization_id, contact_id, project_id, channel, direction, interaction_type, occurred_at, subject, summary, outcome_code, external_reference, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [...values, createdAt]
+    );
+  }
   await getPool().query("UPDATE sales_organizations SET updated_at = $2 WHERE id = $1", [input.organizationId, createdAt]);
 }
 
@@ -214,10 +239,12 @@ export async function updateSalesOrganizationState(input: { organizationId: stri
 export async function getSalesOrganizationDetail(id: string): Promise<SalesOrganizationDetail | null> {
   const organizationResult = await getPool().query("SELECT * FROM sales_organizations WHERE id = $1 LIMIT 1", [id]);
   if (!organizationResult.rows[0]) return null;
+  const hasThreadColumn = await hasGmailThreadColumn();
+  const threadSelect = hasThreadColumn ? "i.gmail_thread_id" : "NULL::text AS gmail_thread_id";
   const [contactsResult, projectsResult, interactionsResult] = await Promise.all([
     getPool().query("SELECT * FROM sales_contacts WHERE organization_id = $1 ORDER BY name ASC", [id]),
     getPool().query(`SELECT p.*, op.role FROM sales_organization_projects op JOIN sales_projects p ON p.id = op.project_id WHERE op.organization_id = $1 ORDER BY p.name ASC`, [id]),
-    getPool().query(`SELECT i.*, c.name AS contact_name, p.name AS project_name FROM sales_interactions i LEFT JOIN sales_contacts c ON c.id = i.contact_id LEFT JOIN sales_projects p ON p.id = i.project_id WHERE i.organization_id = $1 ORDER BY COALESCE(i.occurred_at, i.created_at) ASC, i.created_at ASC`, [id]),
+    getPool().query(`SELECT i.*, ${threadSelect} FROM sales_interactions i LEFT JOIN sales_contacts c ON c.id = i.contact_id LEFT JOIN sales_projects p ON p.id = i.project_id WHERE i.organization_id = $1 ORDER BY COALESCE(i.occurred_at, i.created_at) ASC, i.created_at ASC`, [id]),
   ]);
   return {
     organization: toOrganization(organizationResult.rows[0]),

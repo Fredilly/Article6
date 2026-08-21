@@ -28,6 +28,7 @@ export interface SalesImportCandidate {
 }
 
 let pool: Pool | undefined;
+let gmailThreadColumnAvailable: Promise<boolean> | undefined;
 function getPool(): Pool {
   if (pool) return pool;
   const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
@@ -38,6 +39,20 @@ function getPool(): Pool {
     ...(process.env.NODE_ENV === "production" ? { ssl: { rejectUnauthorized: true } } : connectionString.includes("localhost") ? { ssl: false } : {}),
   });
   return pool;
+}
+
+async function hasGmailThreadColumn(): Promise<boolean> {
+  if (!gmailThreadColumnAvailable) {
+    gmailThreadColumnAvailable = getPool().query(
+      `SELECT EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = current_schema()
+           AND table_name = 'sales_interactions'
+           AND column_name = 'gmail_thread_id'
+       ) AS available`
+    ).then((result) => Boolean(result.rows[0]?.available));
+  }
+  return gmailThreadColumnAvailable;
 }
 
 function toCandidate(row: QueryResultRow): SalesImportCandidate {
@@ -114,6 +129,7 @@ export async function approveSalesImportCandidate(id: string, explicitOrganizati
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    const hasThreadColumn = await hasGmailThreadColumn();
     const result = await client.query("SELECT * FROM sales_import_candidates WHERE id=$1 FOR UPDATE", [id]);
     const candidate = result.rows[0];
     if (!candidate) throw new Error("Import candidate not found.");
@@ -158,14 +174,21 @@ export async function approveSalesImportCandidate(id: string, explicitOrganizati
     }
     for (const interaction of (candidate.interactions_json || []) as SalesImportInteraction[]) {
       const occurredAt = normalizeSalesInteractionTimestamp(interaction.gmailTimestamp ?? interaction.occurredAt);
-      await client.query(
-        `INSERT INTO sales_interactions (id,organization_id,contact_id,project_id,channel,direction,interaction_type,occurred_at,subject,summary,outcome_code,external_reference,gmail_thread_id,created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-        [randomUUID(), organizationId, interaction.contactEmail ? contactIds.get(interaction.contactEmail.trim().toLowerCase()) || null : null,
-          interaction.projectVcsId ? projectIds.get(interaction.projectVcsId.trim()) || null : null, interaction.channel || "EMAIL", interaction.direction || "INTERNAL",
-          interaction.interactionType || "MESSAGE", occurredAt, interaction.subject?.trim() || null, interaction.summary.trim(), interaction.outcomeCode?.trim() || null,
-          interaction.externalReference?.trim() || null, interaction.gmailThreadId?.trim() || null, now]
-      );
+      const values = [randomUUID(), organizationId, interaction.contactEmail ? contactIds.get(interaction.contactEmail.trim().toLowerCase()) || null : null,
+        interaction.projectVcsId ? projectIds.get(interaction.projectVcsId.trim()) || null : null, interaction.channel || "EMAIL", interaction.direction || "INTERNAL",
+        interaction.interactionType || "MESSAGE", occurredAt, interaction.subject?.trim() || null, interaction.summary.trim(), interaction.outcomeCode?.trim() || null,
+        interaction.externalReference?.trim() || null];
+      if (hasThreadColumn) {
+        await client.query(
+          `INSERT INTO sales_interactions (id,organization_id,contact_id,project_id,channel,direction,interaction_type,occurred_at,subject,summary,outcome_code,external_reference,gmail_thread_id,created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`, [...values, interaction.gmailThreadId?.trim() || null, now]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO sales_interactions (id,organization_id,contact_id,project_id,channel,direction,interaction_type,occurred_at,subject,summary,outcome_code,external_reference,created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [...values, now]
+        );
+      }
     }
     if (candidate.proposed_status && isSalesOrganizationStatus(candidate.proposed_status)) {
       const objection = candidate.proposed_objection && isSalesObjectionCode(candidate.proposed_objection) ? candidate.proposed_objection : null;
