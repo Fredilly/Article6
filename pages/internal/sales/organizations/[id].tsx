@@ -7,8 +7,9 @@ import { listSalesOrganizations } from "../../../../lib/sales-store";
 import { getSalesOrganizationDetail, type SalesOrganizationDetail } from "../../../../lib/sales-store";
 import { SALES_EXPERIMENTS, SALES_OBJECTION_CODES, SALES_ORGANIZATION_STATUSES } from "../../../../lib/sales-memory";
 import { relationshipHistoryPresentation } from "../../../../lib/sales-interaction-display";
+import { groupSalesInteractions } from "../../../../lib/sales-conversations";
 
-interface Props { detail: SalesOrganizationDetail; duplicate: boolean; error?: string; searchEntries: ReturnType<typeof buildSalesMemorySearchEntries>; initialQuery: string; initialStatus: "ALL" | SalesOrganizationDetail["organization"]["status"]; }
+interface Props { detail: SalesOrganizationDetail; duplicate: boolean; error?: string; searchEntries: ReturnType<typeof buildSalesMemorySearchEntries>; initialQuery: string; initialStatus: "ALL" | SalesOrganizationDetail["organization"]["status"]; selectedContactId?: string; selectedConversationId?: string; }
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ params, query }) => {
   const id = typeof params?.id === "string" ? params.id : "";
@@ -18,7 +19,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ params, qu
   const details = (await Promise.all(organizations.map((organization) => getSalesOrganizationDetail(organization.id)))).filter((value): value is NonNullable<typeof value> => Boolean(value));
   const rawStatus = typeof query.status === "string" ? query.status : "ALL";
   const initialStatus = rawStatus === "ALL" || detail.organization.status === rawStatus ? rawStatus as Props["initialStatus"] : "ALL";
-  return { props: { detail, duplicate: query.duplicate === "1", error: typeof query.error === "string" ? query.error : undefined, searchEntries: buildSalesMemorySearchEntries(details), initialQuery: typeof query.q === "string" ? query.q : "", initialStatus } };
+  return { props: { detail, duplicate: query.duplicate === "1", error: typeof query.error === "string" ? query.error : undefined, searchEntries: buildSalesMemorySearchEntries(details), initialQuery: typeof query.q === "string" ? query.q : "", initialStatus, selectedContactId: typeof query.contactId === "string" ? query.contactId : undefined, selectedConversationId: typeof query.threadId === "string" ? query.threadId : undefined } };
 };
 
 const fieldClass = "rounded-md border border-gray-300 px-3 py-2 text-sm";
@@ -35,8 +36,10 @@ function experimentLabel(value: string) {
   return "Other";
 }
 
-export default function OrganizationPage({ detail, duplicate, error, searchEntries, initialQuery, initialStatus }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function OrganizationPage({ detail, duplicate, error, searchEntries, initialQuery, initialStatus, selectedContactId, selectedConversationId }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { organization, contacts, projects, interactions } = detail;
+  const allConversations = groupSalesInteractions(interactions);
+  const conversations = allConversations.filter((conversation) => (!selectedContactId || conversation.contactId === selectedContactId) && (!selectedConversationId || conversation.id === selectedConversationId));
   const website = websiteHref(organization.domain);
 
   return <>
@@ -71,16 +74,16 @@ export default function OrganizationPage({ detail, duplicate, error, searchEntri
         </div>
       </section>
 
-      <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Relationship history</h2><p className="mt-1 text-xs text-gray-500">Oldest interaction first.</p></div><div className="text-xs text-gray-500">{interactions.length} interactions</div></div>
-        <div className="mt-5 space-y-5">{interactions.length ? interactions.map((interaction) => {
+      <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Relationship history</h2><p className="mt-1 text-xs text-gray-500">{selectedContactId || selectedConversationId ? "Conversation view · oldest message first." : "Organization activity grouped by conversation."}</p></div><div className="text-xs text-gray-500">{conversations.reduce((count, conversation) => count + conversation.interactions.length, 0)} messages · {conversations.length} conversations</div></div>
+        <div className="mt-5 space-y-6">{conversations.length ? conversations.map((conversation) => <section key={conversation.id} className="rounded-lg border border-gray-100 bg-gray-50/50 p-4"><div className="flex flex-wrap items-start justify-between gap-2 border-b border-gray-100 pb-3"><div><div className="text-sm font-semibold text-gray-900">{conversation.contactName || "Conversation"}</div><div className="mt-1 text-xs text-gray-500">{conversation.subject || "No subject"} · {conversation.interactions.length} messages</div></div>{selectedConversationId === conversation.id ? <Link href={`/internal/sales/organizations/${organization.id}`} className="text-xs font-medium text-forest-700 hover:underline">All conversations</Link> : <Link href={`/internal/sales/organizations/${organization.id}?threadId=${encodeURIComponent(conversation.id)}`} className="text-xs font-medium text-forest-700 hover:underline">Open conversation</Link>}</div><div className="mt-4 space-y-5">{conversation.interactions.map((interaction) => {
           const presentation = relationshipHistoryPresentation(interaction.direction, interaction.contactName);
           return <article key={interaction.id} className={`flex ${presentation.alignment === "right" ? "justify-end" : "justify-start"}`}><div className={`w-full max-w-3xl rounded-lg border px-4 py-3 ${presentation.alignment === "right" ? "border-blue-100 bg-blue-50" : "border-gray-200 bg-gray-50"}`}><div className="flex flex-wrap items-center gap-2 text-xs text-gray-500"><span>{new Date(interaction.occurredAt).toLocaleString()}</span><span>{presentation.direction} · {interaction.channel} · {interaction.interactionType}</span>{interaction.outcomeCode ? <span className="rounded bg-gray-100 px-2 py-0.5 font-medium text-gray-700">{interaction.outcomeCode}</span> : null}</div><div className="mt-1 text-sm font-medium text-gray-900">{interaction.subject || "Interaction"}</div><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-gray-700">{interaction.summary}</p></div></article>;
-        }) : <p className="text-sm text-gray-500">No interactions yet.</p>}</div>
+        })}</div></section>) : <p className="text-sm text-gray-500">No conversations yet.</p>}</div>
       </section>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"><h2 className="font-semibold">Contacts <span className="ml-1 text-xs font-normal text-gray-500">({contacts.length})</span></h2>
-          <div className="mt-3 space-y-3">{contacts.length ? contacts.map((contact) => <div key={contact.id} className="rounded-md border border-gray-100 p-3 text-sm"><div className="font-medium">{contact.name}</div><div className="text-gray-600">{contact.title || "No title"}</div><div className="mt-1 text-xs text-gray-500">
+          <div className="mt-3 space-y-3">{contacts.length ? contacts.map((contact) => <div key={contact.id} className="rounded-md border border-gray-100 p-3 text-sm"><div className="flex items-start justify-between gap-2"><div className="font-medium">{contact.name}</div><Link href={`/internal/sales/organizations/${organization.id}?contactId=${encodeURIComponent(contact.id)}`} className="text-xs font-medium text-forest-700 hover:underline">View history</Link></div><div className="text-gray-600">{contact.title || "No title"}</div><div className="mt-1 text-xs text-gray-500">
             {contact.email ? <div>Email: {contact.email}</div> : null}
             {contact.phone ? <div>Phone: {contact.phone}</div> : null}
             {!contact.email && !contact.phone ? "No contact details" : null}
