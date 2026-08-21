@@ -5,9 +5,12 @@ import {
   addSalesInteraction,
   addSalesProject,
   createSalesOrganization,
+  deleteSalesContact,
+  deleteSalesInteraction,
   updateSalesOrganizationState,
 } from "../../../lib/sales-store";
 import { isSalesExperiment, isSalesObjectionCode, isSalesOrganizationStatus, normalizeOptional } from "../../../lib/sales-memory";
+import { hasDeleteConfirmation } from "../../../lib/sales-destructive-actions";
 
 function value(body: NextApiRequest["body"], key: string): string {
   const candidate = body?.[key];
@@ -45,6 +48,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return organizationRedirect(res, organizationId);
     }
 
+    if (action === "delete_contact") {
+      const contactId = value(req.body, "contactId");
+      if (!contactId) return res.status(400).json({ error: "Contact id is required." });
+      if (!hasDeleteConfirmation(value(req.body, "confirmation"))) return organizationRedirect(res, organizationId, { error: "Type delete to confirm contact deletion." });
+      await deleteSalesContact(organizationId, contactId);
+      return organizationRedirect(res, organizationId, { deleted: "1" });
+    }
+
     if (action === "add_project") {
       const name = value(req.body, "name");
       if (!name) return res.status(400).json({ error: "Project name is required." });
@@ -71,6 +82,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         outcomeCode: value(req.body, "outcomeCode"),
       });
       return organizationRedirect(res, organizationId);
+    }
+
+    if (action === "delete_interaction") {
+      const interactionId = value(req.body, "interactionId");
+      if (!interactionId) return res.status(400).json({ error: "Interaction id is required." });
+      if (!hasDeleteConfirmation(value(req.body, "confirmation"))) return organizationRedirect(res, organizationId, { error: "Type delete to confirm record deletion." });
+      await deleteSalesInteraction(organizationId, interactionId);
+      return organizationRedirect(res, organizationId, { deleted: "1" });
     }
 
     if (action === "update_status") {

@@ -185,6 +185,14 @@ export async function addSalesContact(input: { organizationId: string; name: str
   return { id: String(row.id), organizationId: String(row.organization_id), name: String(row.name), title: row.title || undefined, email: row.email || undefined, phone: row.phone || undefined, status: String(row.status), notes: String(row.notes || "") };
 }
 
+export async function deleteSalesContact(organizationId: string, contactId: string): Promise<void> {
+  const result = await getPool().query(
+    "DELETE FROM sales_contacts WHERE id = $1 AND organization_id = $2 RETURNING id",
+    [contactId, organizationId]
+  );
+  if (!result.rows[0]) throw new Error("Contact not found for this organization.");
+}
+
 export async function addSalesProject(input: { organizationId: string; vcsId?: string; name: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string }): Promise<SalesProject> {
   const now = new Date().toISOString();
   const vcsId = input.vcsId?.trim() || null;
@@ -227,6 +235,14 @@ export async function addSalesInteraction(input: { organizationId: string; conta
     );
   }
   await getPool().query("UPDATE sales_organizations SET updated_at = $2 WHERE id = $1", [input.organizationId, createdAt]);
+}
+
+export async function deleteSalesInteraction(organizationId: string, interactionId: string): Promise<void> {
+  const result = await getPool().query(
+    "DELETE FROM sales_interactions WHERE id = $1 AND organization_id = $2 RETURNING id",
+    [interactionId, organizationId]
+  );
+  if (!result.rows[0]) throw new Error("Interaction not found for this organization.");
 }
 
 export async function updateSalesOrganizationState(input: { organizationId: string; status: SalesOrganizationStatus; experiment?: SalesExperiment; objectionCode?: SalesObjectionCode; internalCertificationTeam?: boolean; doNotContact?: boolean; notes?: string }): Promise<void> {
