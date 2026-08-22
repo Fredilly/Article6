@@ -9,7 +9,7 @@ import {
 } from "./sales-memory";
 import { normalizeSalesInteractionTimestamp } from "./sales-timestamps";
 import { normalizeSalesDateTime } from "./sales-dates";
-import { canonicalSalesProjectName, normalizeSalesVcsId, type SalesProjectRollupStatus } from "./sales-projects";
+import { canonicalSalesProjectName, normalizeSalesProjectOrganizationRole, normalizeSalesVcsId, type SalesProjectRollupStatus } from "./sales-projects";
 
 export interface SalesOrganization {
   id: string;
@@ -63,6 +63,18 @@ export interface SalesProject {
   stakeholderNames?: string[];
   rolledUpStatus?: SalesProjectRollupStatus;
   blocked?: boolean;
+  contacts: SalesProjectContact[];
+}
+
+export interface SalesProjectContact {
+  id: string;
+  projectId: string;
+  contactId: string;
+  contactName: string;
+  contactTitle?: string;
+  organizationId: string;
+  organizationName: string;
+  role: string;
 }
 
 export interface SalesProjectDocument {
@@ -408,9 +420,9 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
   await getPool().query(
     `INSERT INTO sales_organization_projects (organization_id, project_id, role, created_at)
      VALUES ($1,$2,$3,$4) ON CONFLICT (organization_id, project_id) DO UPDATE SET role = EXCLUDED.role`,
-    [input.organizationId, projectRow.id, input.role?.trim() || "OTHER", now]
+    [input.organizationId, projectRow.id, normalizeSalesProjectOrganizationRole(input.role), now]
   );
-  return { id: String(projectRow.id), vcsId: projectRow.vcs_id || undefined, name: String(projectRow.name), methodology: projectRow.methodology || undefined, methodologyVersion: projectRow.methodology_version || undefined, stage: projectRow.stage || undefined, country: projectRow.country || undefined, vvb: projectRow.vvb || undefined, notes: String(projectRow.notes || ""), salesStatus: projectRow.sales_status || "NEW", assignedOwner: projectRow.assigned_owner || undefined, nextAction: projectRow.next_action || undefined, nextActionDate: projectRow.next_action_date ? iso(projectRow.next_action_date) : undefined, documents: [], role: input.role?.trim() || "OTHER" };
+  return { id: String(projectRow.id), vcsId: projectRow.vcs_id || undefined, name: String(projectRow.name), methodology: projectRow.methodology || undefined, methodologyVersion: projectRow.methodology_version || undefined, stage: projectRow.stage || undefined, country: projectRow.country || undefined, vvb: projectRow.vvb || undefined, notes: String(projectRow.notes || ""), salesStatus: projectRow.sales_status || "NEW", assignedOwner: projectRow.assigned_owner || undefined, nextAction: projectRow.next_action || undefined, nextActionDate: projectRow.next_action_date ? iso(projectRow.next_action_date) : undefined, documents: [], role: normalizeSalesProjectOrganizationRole(input.role), contacts: [] };
 }
 
 export async function updateSalesProject(input: { organizationId: string; projectId: string; name: string; vcsId?: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string; salesStatus?: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<void> {
@@ -431,7 +443,7 @@ export async function updateSalesProject(input: { organizationId: string; projec
     );
     await client.query(
       "UPDATE sales_organization_projects SET role=$3 WHERE organization_id=$1 AND project_id=$2",
-      [input.organizationId, input.projectId, input.role?.trim() || "OTHER"]
+      [input.organizationId, input.projectId, normalizeSalesProjectOrganizationRole(input.role)]
     );
     await client.query("COMMIT");
   } catch (error) {
@@ -440,6 +452,30 @@ export async function updateSalesProject(input: { organizationId: string; projec
   } finally {
     client.release();
   }
+}
+
+export async function addSalesProjectContact(input: { organizationId: string; projectId: string; contactId: string; role?: string }): Promise<void> {
+  const result = await getPool().query(
+    `INSERT INTO sales_project_contacts (id, project_id, contact_id, role, created_at, updated_at)
+     SELECT $1, $2, c.id, $4, $5, $5
+     FROM sales_contacts c
+     JOIN sales_organization_projects op ON op.organization_id = c.organization_id AND op.project_id = $2
+     WHERE c.id = $3
+     ON CONFLICT (project_id, contact_id) DO UPDATE SET role = EXCLUDED.role, updated_at = EXCLUDED.updated_at`,
+    [randomUUID(), input.projectId, input.contactId, input.role?.trim() || "OTHER", new Date().toISOString()]
+  );
+  if (!result.rowCount) throw new Error("Contact is not associated with this project’s organization.");
+}
+
+export async function deleteSalesProjectContact(input: { organizationId: string; projectId: string; contactId: string }): Promise<void> {
+  const result = await getPool().query(
+    `DELETE FROM sales_project_contacts pc
+     USING sales_organization_projects op
+     WHERE pc.project_id = op.project_id AND op.organization_id = $1 AND pc.project_id = $2 AND pc.contact_id = $3
+     RETURNING pc.id`,
+    [input.organizationId, input.projectId, input.contactId]
+  );
+  if (!result.rowCount) throw new Error("Project contact not found for this organization.");
 }
 
 export async function updateSalesProjectWorkflow(input: { organizationId: string; projectId: string; salesStatus: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<void> {
@@ -514,6 +550,13 @@ export async function updateSalesTenderDocument(input: { organizationId: string;
 export async function addSalesInteraction(input: { organizationId: string; contactId?: string; projectId?: string; tenderOpportunityId?: string; channel: string; direction: string; interactionType: string; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string; gmailThreadId?: string }): Promise<void> {
   const createdAt = new Date().toISOString();
   const occurredAt = normalizeSalesInteractionTimestamp(input.occurredAt);
+  if (input.projectId) {
+    const linked = await getPool().query(
+      "SELECT 1 FROM sales_organization_projects WHERE organization_id = $1 AND project_id = $2 LIMIT 1",
+      [input.organizationId, input.projectId]
+    );
+    if (!linked.rows[0]) throw new Error("Project is not linked to this organization.");
+  }
   if (input.projectId && input.direction === "OUTBOUND") {
     const blocked = await getPool().query(
       `SELECT EXISTS (
@@ -563,7 +606,7 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
   if (!organizationResult.rows[0]) return null;
   const hasThreadColumn = await hasGmailThreadColumn();
   const threadSelect = hasThreadColumn ? "i.gmail_thread_id" : "NULL::text AS gmail_thread_id";
-  const [contactsResult, projectsResult, tendersResult, interactionsResult] = await Promise.all([
+  const [contactsResult, projectsResult, tendersResult, interactionsResult, projectContactsResult] = await Promise.all([
     getPool().query("SELECT * FROM sales_contacts WHERE organization_id = $1 ORDER BY name ASC", [id]),
     getPool().query(`SELECT p.*, op.role,
          rollup.stakeholder_count, rollup.stakeholder_names, rollup.rolled_up_status, rollup.blocked
@@ -583,6 +626,13 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
        WHERE op.organization_id = $1 ORDER BY p.name ASC`, [id]),
     getPool().query("SELECT t.*, c.name AS contact_name FROM sales_tender_opportunities t LEFT JOIN sales_contacts c ON c.id = t.contact_id WHERE t.organization_id = $1 ORDER BY t.submission_deadline ASC NULLS LAST, t.name ASC", [id]),
     getPool().query(`SELECT i.*, c.name AS contact_name, p.name AS project_name, ${threadSelect} FROM sales_interactions i LEFT JOIN sales_contacts c ON c.id = i.contact_id LEFT JOIN sales_projects p ON p.id = i.project_id WHERE i.organization_id = $1 ORDER BY i.occurred_at ASC, i.created_at ASC`, [id]),
+    getPool().query(`SELECT pc.*, c.name AS contact_name, c.title AS contact_title, c.organization_id, o.name AS organization_name
+      FROM sales_project_contacts pc
+      JOIN sales_contacts c ON c.id = pc.contact_id
+      JOIN sales_organizations o ON o.id = c.organization_id
+      JOIN sales_organization_projects op ON op.project_id = pc.project_id AND op.organization_id = $1
+      WHERE pc.project_id = op.project_id
+      ORDER BY c.name ASC`, [id]),
   ]);
   const tenderIds = tendersResult.rows.map((row) => String(row.id));
   const documentsResult = tenderIds.length ? await getPool().query("SELECT * FROM sales_tender_documents WHERE tender_opportunity_id = ANY($1::uuid[]) ORDER BY name ASC", [tenderIds]) : { rows: [] as QueryResultRow[] };
@@ -598,11 +648,16 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
     const document = { id: String(row.id), projectId: String(row.project_id), name: String(row.name), documentType: String(row.document_type), requested: Boolean(row.requested), received: Boolean(row.received), receivedAt: row.received_at ? iso(row.received_at) : undefined, notes: String(row.notes || "") };
     projectDocumentsByProject.set(document.projectId, [...(projectDocumentsByProject.get(document.projectId) || []), document]);
   }
+  const projectContactsByProject = new Map<string, SalesProjectContact[]>();
+  for (const row of projectContactsResult.rows) {
+    const contact = { id: String(row.id), projectId: String(row.project_id), contactId: String(row.contact_id), contactName: String(row.contact_name), contactTitle: row.contact_title || undefined, organizationId: String(row.organization_id), organizationName: String(row.organization_name), role: String(row.role || "OTHER") };
+    projectContactsByProject.set(contact.projectId, [...(projectContactsByProject.get(contact.projectId) || []), contact]);
+  }
   const interactions = interactionsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, projectId: row.project_id || undefined, tenderOpportunityId: row.tender_opportunity_id || undefined, contactName: row.contact_name || undefined, projectName: row.project_name || undefined, channel: String(row.channel), direction: String(row.direction), interactionType: String(row.interaction_type), occurredAt: iso(row.occurred_at || row.created_at), subject: row.subject || undefined, summary: String(row.summary), outcomeCode: row.outcome_code || undefined, externalReference: row.external_reference || undefined, gmailThreadId: row.gmail_thread_id || undefined }));
   return {
     organization: toOrganization(organizationResult.rows[0]),
     contacts: contactsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), name: String(row.name), title: row.title || undefined, email: row.email || undefined, phone: row.phone || undefined, status: String(row.status), notes: String(row.notes || "") })),
-    projects: projectsResult.rows.map((row) => ({ id: String(row.id), vcsId: row.vcs_id || undefined, name: String(row.name), methodology: row.methodology || undefined, methodologyVersion: row.methodology_version || undefined, stage: row.stage || undefined, country: row.country || undefined, vvb: row.vvb || undefined, notes: String(row.notes || ""), role: String(row.role), salesStatus: row.sales_status as SalesOrganizationStatus, assignedOwner: row.assigned_owner || undefined, nextAction: row.next_action || undefined, nextActionDate: row.next_action_date ? iso(row.next_action_date) : undefined, documents: projectDocumentsByProject.get(String(row.id)) || [], stakeholderCount: Number(row.stakeholder_count || 0), stakeholderNames: Array.isArray(row.stakeholder_names) ? row.stakeholder_names.map(String) : undefined, rolledUpStatus: row.rolled_up_status || undefined, blocked: Boolean(row.blocked) })),
+    projects: projectsResult.rows.map((row) => ({ id: String(row.id), vcsId: row.vcs_id || undefined, name: String(row.name), methodology: row.methodology || undefined, methodologyVersion: row.methodology_version || undefined, stage: row.stage || undefined, country: row.country || undefined, vvb: row.vvb || undefined, notes: String(row.notes || ""), role: String(row.role), salesStatus: row.sales_status as SalesOrganizationStatus, assignedOwner: row.assigned_owner || undefined, nextAction: row.next_action || undefined, nextActionDate: row.next_action_date ? iso(row.next_action_date) : undefined, documents: projectDocumentsByProject.get(String(row.id)) || [], contacts: projectContactsByProject.get(String(row.id)) || [], stakeholderCount: Number(row.stakeholder_count || 0), stakeholderNames: Array.isArray(row.stakeholder_names) ? row.stakeholder_names.map(String) : undefined, rolledUpStatus: row.rolled_up_status || undefined, blocked: Boolean(row.blocked) })),
     tenderOpportunities: tendersResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, contactName: row.contact_name || undefined, name: String(row.name), buyer: row.buyer || undefined, referenceNumber: row.reference_number || undefined, submissionDeadline: row.submission_deadline ? iso(row.submission_deadline) : undefined, contractValue: row.contract_value == null ? undefined : Number(row.contract_value), sector: row.sector || undefined, status: row.status as SalesTenderStatus, notes: String(row.notes || ""), buyerRequirements: String(row.buyer_requirements || ""), salesStatus: row.sales_status as SalesOrganizationStatus, assignedOwner: row.assigned_owner || undefined, nextAction: row.next_action || undefined, nextActionDate: row.next_action_date ? iso(row.next_action_date) : undefined, documentsRequested: Number(row.documents_requested || 0), documentsReceived: Number(row.documents_received || 0), documents: documentsByTender.get(String(row.id)) || [], interactions: interactions.filter((interaction) => interaction.tenderOpportunityId === String(row.id)) })),
     interactions,
   };

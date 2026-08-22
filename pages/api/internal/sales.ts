@@ -4,12 +4,14 @@ import {
   addSalesContact,
   addSalesInteraction,
   addSalesProject,
+  addSalesProjectContact,
   createSalesTenderOpportunity,
   addSalesTenderDocument,
   createSalesOrganization,
   deleteSalesContact,
   deleteSalesOrganization,
   deleteSalesInteraction,
+  deleteSalesProjectContact,
   updateSalesContact,
   updateSalesProject,
   updateSalesProjectWorkflow,
@@ -111,6 +113,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const salesStatus = value(req.body, "salesStatus");
       if (!projectId || !isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Project and valid sales status are required." });
       await updateSalesProjectWorkflow({ organizationId, projectId, salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
+      return organizationRedirect(res, organizationId, { updated: "1" });
+    }
+
+    if (action === "add_project_contact") {
+      const projectId = value(req.body, "projectId");
+      const contactId = value(req.body, "contactId");
+      if (!projectId || !contactId) return res.status(400).json({ error: "Project and contact are required." });
+      await addSalesProjectContact({ organizationId, projectId, contactId, role: value(req.body, "role") });
+      return organizationRedirect(res, organizationId, { updated: "1" });
+    }
+
+    if (action === "delete_project_contact") {
+      const projectId = value(req.body, "projectId");
+      const contactId = value(req.body, "contactId");
+      if (!projectId || !contactId) return res.status(400).json({ error: "Project and contact are required." });
+      await deleteSalesProjectContact({ organizationId, projectId, contactId });
       return organizationRedirect(res, organizationId, { updated: "1" });
     }
 
