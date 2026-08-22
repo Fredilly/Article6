@@ -4,7 +4,9 @@ Status: proposal only. This audit does not add or apply a migration.
 
 ## Scope and evidence
 
-The repository migrations and sales store were audited on `main` as of 2026-08-23. No live database connection was configured in the workspace, so the findings below describe the committed schema and application queries. Before implementation, run the proposed inventory queries against the target database and compare the result with the migration history.
+The repository migrations and sales store were audited on `main` as of 2026-08-23. No live database connection was configured in the workspace, so the findings below describe the committed carbon schema and application queries. Before implementation, run the proposed inventory queries against the target database and compare the result with the migration history.
+
+Tender models are explicitly out of scope. This document does not recommend changing tender tables, tender foreign keys, or tender workflow behavior. Tender workflow and the operational impact of organization-only tender opportunities require a separate usage audit before any tender schema decision.
 
 ## 1. Current schema findings
 
@@ -13,10 +15,9 @@ The repository migrations and sales store were audited on `main` as of 2026-08-2
 `sales_organizations` is the account-level entity. It has one row per normalized organization name and a partial unique index on domain. It owns:
 
 - `sales_contacts` through `sales_contacts.organization_id` (one organization to many contacts).
-- `sales_tender_opportunities` through `sales_tender_opportunities.organization_id` (one organization to many tender opportunities).
 - `sales_interactions` through the required `sales_interactions.organization_id`.
 
-Organization identity is protected by unique normalized name and domain indexes. The current merge flow moves contacts, interactions, tenders, and project links without creating a duplicate organization.
+Organization identity is protected by unique normalized name and domain indexes. The current merge flow moves contacts, interactions, and project links without creating a duplicate organization.
 
 ### Carbon projects
 
@@ -36,13 +37,7 @@ This is a real many-to-many model. A project can link to many organizations, and
 
 ### Contacts and project relationships
 
-Contacts belong to exactly one organization. There is no direct contact↔project table. A contact can be associated with a project only indirectly through `sales_interactions.project_id` (and similarly a tender contact through a tender opportunity). This is adequate for communication history but cannot represent a contact's standing project role or project membership without an interaction.
-
-### Sales opportunities
-
-`sales_tender_opportunities` is organization-owned and supports one organization to many tender opportunities. It is not related to `sales_projects`; this is appropriate for Tender Readiness records but means it is not a generic opportunity model for carbon project sales.
-
-`sales_interactions` can reference an organization, contact, carbon project, or tender opportunity. Carbon interactions use `project_id`; tender interactions use `tender_opportunity_id`.
+Contacts belong to exactly one organization. There is no direct contact↔carbon-project table. A contact can be associated with a carbon project only indirectly through `sales_interactions.project_id`. This is adequate for communication history but cannot represent a contact's standing project role or project membership without an interaction.
 
 ## 2. Relationship classification
 
@@ -50,7 +45,6 @@ Contacts belong to exactly one organization. There is no direct contact↔projec
 | --- | --- | --- |
 | Organization → contacts | `sales_contacts.organization_id` | One-to-many |
 | Organization ↔ carbon project | `sales_organization_projects` | Full many-to-many |
-| Organization → tender opportunity | `sales_tender_opportunities.organization_id` | One-to-many |
 | Contact → carbon project | No direct table; inferred from interactions | Partial / history-only |
 | Carbon project → interactions | Nullable `sales_interactions.project_id` | Partial, with weak cross-entity integrity |
 
@@ -100,9 +94,9 @@ Retain `sales_projects` and `sales_organization_projects` to preserve IDs and hi
 
 Keep project-level fields for project lifecycle facts that are genuinely shared across all organizations. Move or deprecate relationship-specific workflow writes only after backfilling and updating the store/UI.
 
-### Phase 2: enforce relationship integrity
+### Phase 2: enforce carbon relationship integrity
 
-After resolving existing exceptions, add a composite foreign key from `(sales_interactions.organization_id, sales_interactions.project_id)` to the project relationship primary key for carbon interactions. Add equivalent organization/contact integrity if the product continues to allow contact IDs on organization-scoped interactions. Preserve nullable fields for organization-only interactions.
+After resolving existing exceptions, add a composite foreign key from `(sales_interactions.organization_id, sales_interactions.project_id)` to the project relationship primary key for carbon interactions. Add equivalent organization/contact integrity for carbon interactions if the product continues to allow contact IDs on organization-scoped interactions. Preserve nullable fields for organization-only carbon interactions.
 
 If project contacts need to exist before an interaction, add a separate `sales_project_contacts` table rather than overloading interaction history. Give it a composite relationship to the organization/project link so a contact cannot be assigned across unrelated accounts.
 
@@ -129,8 +123,8 @@ No UI changes are required for this audit PR. When the schema work is implemente
 - **Shared workflow data may be ambiguous.** A project-level owner/status cannot be safely copied to every organization/project relationship without deciding whether it represents project lifecycle or account sales state.
 - **Role conflicts during merges need a policy.** If both source and target organizations have different roles on the same project, retain both only if the model allows multiple role rows; otherwise choose and record the winning role rather than silently dropping one.
 - **Constraint addition can fail on old data.** Run the Phase 0 exception queries first and apply constraints only after all violations are resolved.
-- **Tender records are separate.** Do not attach tender opportunities to carbon projects as part of this change; preserve their existing organization/contact relationships.
+- **Tender records are untouched.** Do not apply these carbon relationship changes to tender opportunities. Audit tender workflow and organization-only tender usage separately before proposing any tender change.
 
 ## Recommendation
 
-The core organization/project relationship does not need to be replaced: it already supports full many-to-many cardinality and stores role on the link. Schema changes are nevertheless required to make project relationships safe as first-class sales entities: relationship-level workflow fields, composite integrity for project interactions, and controlled roles should be added in a follow-up implementation PR after data inventory.
+The core carbon organization/project relationship does not need to be replaced: it already supports full many-to-many cardinality and stores role on the link. Carbon-only schema changes are nevertheless required to make project relationships safe as first-class sales entities: relationship-level workflow fields, composite integrity for carbon project interactions, and controlled roles should be added in a follow-up implementation PR after data inventory. No conclusion is made here about whether organization-only tender opportunities create operational problems.
