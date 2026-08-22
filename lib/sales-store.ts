@@ -21,6 +21,9 @@ export interface SalesOrganization {
   internalCertificationTeam?: boolean;
   notes: string;
   doNotContact: boolean;
+  assignedOwner?: string;
+  nextAction?: string;
+  nextActionDate?: string;
   createdAt: string;
   updatedAt: string;
   contactCount?: number;
@@ -49,10 +52,26 @@ export interface SalesProject {
   country?: string;
   vvb?: string;
   notes: string;
+  salesStatus: SalesOrganizationStatus;
+  assignedOwner?: string;
+  nextAction?: string;
+  nextActionDate?: string;
+  documents: SalesProjectDocument[];
   role?: string;
   stakeholderCount?: number;
   rolledUpStatus?: SalesProjectRollupStatus;
   blocked?: boolean;
+}
+
+export interface SalesProjectDocument {
+  id: string;
+  projectId: string;
+  name: string;
+  documentType: string;
+  requested: boolean;
+  received: boolean;
+  receivedAt?: string;
+  notes: string;
 }
 
 export type SalesTenderStatus = "NEW" | "DOCUMENTS_REQUESTED" | "DOCUMENTS_RECEIVED" | "SUBMITTED" | "AWARDED" | "NOT_AWARDED";
@@ -80,6 +99,11 @@ export interface SalesTenderOpportunity {
   sector?: string;
   status: SalesTenderStatus;
   notes: string;
+  buyerRequirements: string;
+  salesStatus: SalesOrganizationStatus;
+  assignedOwner?: string;
+  nextAction?: string;
+  nextActionDate?: string;
   documentsRequested: number;
   documentsReceived: number;
   documents: SalesTenderDocument[];
@@ -161,6 +185,9 @@ function toOrganization(row: QueryResultRow): SalesOrganization {
     internalCertificationTeam: row.internal_certification_team == null ? undefined : Boolean(row.internal_certification_team),
     notes: String(row.notes || ""),
     doNotContact: Boolean(row.do_not_contact),
+    assignedOwner: row.assigned_owner || undefined,
+    nextAction: row.next_action || undefined,
+    nextActionDate: row.next_action_date ? iso(row.next_action_date) : undefined,
     createdAt: iso(row.created_at),
     updatedAt: iso(row.updated_at),
     contactCount: row.contact_count == null ? undefined : Number(row.contact_count),
@@ -248,7 +275,43 @@ export async function deleteSalesContact(organizationId: string, contactId: stri
   if (!result.rows[0]) throw new Error("Contact not found for this organization.");
 }
 
-export async function addSalesProject(input: { organizationId: string; vcsId?: string; name: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string }): Promise<SalesProject> {
+export async function deleteSalesOrganization(organizationId: string): Promise<void> {
+  const result = await getPool().query("DELETE FROM sales_organizations WHERE id = $1 RETURNING id", [organizationId]);
+  if (!result.rows[0]) throw new Error("Organization not found.");
+}
+
+export async function mergeSalesOrganizations(sourceId: string, targetId: string): Promise<void> {
+  if (!sourceId || !targetId || sourceId === targetId) throw new Error("Choose two different organizations to merge.");
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const organizations = await client.query("SELECT id FROM sales_organizations WHERE id = ANY($1::uuid[])", [[sourceId, targetId]]);
+    if (organizations.rowCount !== 2) throw new Error("Both organizations must exist before merging.");
+    const contacts = await client.query("SELECT id, email FROM sales_contacts WHERE organization_id = $1", [sourceId]);
+    for (const contact of contacts.rows) {
+      const existing = contact.email ? await client.query("SELECT id FROM sales_contacts WHERE organization_id = $1 AND LOWER(email) = LOWER($2) LIMIT 1", [targetId, contact.email]) : { rows: [] };
+      if (existing.rows[0]) {
+        await client.query("UPDATE sales_interactions SET contact_id = $2 WHERE contact_id = $1", [contact.id, existing.rows[0].id]);
+        await client.query("DELETE FROM sales_contacts WHERE id = $1", [contact.id]);
+      } else {
+        await client.query("UPDATE sales_contacts SET organization_id = $2, updated_at = NOW() WHERE id = $1", [contact.id, targetId]);
+      }
+    }
+    await client.query("UPDATE sales_interactions SET organization_id = $2 WHERE organization_id = $1", [sourceId, targetId]);
+    await client.query("UPDATE sales_tender_opportunities SET organization_id = $2, updated_at = NOW() WHERE organization_id = $1", [sourceId, targetId]);
+    await client.query("INSERT INTO sales_organization_projects (organization_id, project_id, role, created_at) SELECT $2, project_id, role, created_at FROM sales_organization_projects WHERE organization_id = $1 ON CONFLICT (organization_id, project_id) DO NOTHING", [sourceId, targetId]);
+    await client.query("DELETE FROM sales_organization_projects WHERE organization_id = $1", [sourceId]);
+    await client.query("DELETE FROM sales_organizations WHERE id = $1", [sourceId]);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function addSalesProject(input: { organizationId: string; vcsId?: string; name: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string; salesStatus?: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<SalesProject> {
   const now = new Date().toISOString();
   const vcsId = normalizeSalesVcsId(input.vcsId) || null;
   let projectRow: QueryResultRow | undefined;
@@ -257,9 +320,9 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
   }
   if (!projectRow) {
     projectRow = (await getPool().query(
-      `INSERT INTO sales_projects (id, vcs_id, name, methodology, methodology_version, stage, country, vvb, notes, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10) RETURNING *`,
-      [randomUUID(), vcsId, canonicalSalesProjectName(vcsId || undefined, input.name), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.notes?.trim() || "", now]
+      `INSERT INTO sales_projects (id, vcs_id, name, methodology, methodology_version, stage, country, vvb, sales_status, assigned_owner, next_action, next_action_date, notes, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14) RETURNING *`,
+      [randomUUID(), vcsId, canonicalSalesProjectName(vcsId || undefined, input.name), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.salesStatus || "NEW", input.assignedOwner?.trim() || null, input.nextAction?.trim() || null, input.nextActionDate || null, input.notes?.trim() || "", now]
     )).rows[0];
   }
   if (!projectRow) throw new Error("Project could not be created or resolved.");
@@ -268,10 +331,10 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
      VALUES ($1,$2,$3,$4) ON CONFLICT (organization_id, project_id) DO UPDATE SET role = EXCLUDED.role`,
     [input.organizationId, projectRow.id, input.role?.trim() || "OTHER", now]
   );
-  return { id: String(projectRow.id), vcsId: projectRow.vcs_id || undefined, name: String(projectRow.name), methodology: projectRow.methodology || undefined, methodologyVersion: projectRow.methodology_version || undefined, stage: projectRow.stage || undefined, country: projectRow.country || undefined, vvb: projectRow.vvb || undefined, notes: String(projectRow.notes || ""), role: input.role?.trim() || "OTHER" };
+  return { id: String(projectRow.id), vcsId: projectRow.vcs_id || undefined, name: String(projectRow.name), methodology: projectRow.methodology || undefined, methodologyVersion: projectRow.methodology_version || undefined, stage: projectRow.stage || undefined, country: projectRow.country || undefined, vvb: projectRow.vvb || undefined, notes: String(projectRow.notes || ""), salesStatus: projectRow.sales_status || "NEW", assignedOwner: projectRow.assigned_owner || undefined, nextAction: projectRow.next_action || undefined, nextActionDate: projectRow.next_action_date ? iso(projectRow.next_action_date) : undefined, documents: [], role: input.role?.trim() || "OTHER" };
 }
 
-export async function updateSalesProject(input: { organizationId: string; projectId: string; name: string; vcsId?: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string }): Promise<void> {
+export async function updateSalesProject(input: { organizationId: string; projectId: string; name: string; vcsId?: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string; salesStatus?: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<void> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
@@ -283,9 +346,9 @@ export async function updateSalesProject(input: { organizationId: string; projec
     const vcsId = normalizeSalesVcsId(input.vcsId) || null;
     await client.query(
       `UPDATE sales_projects
-       SET vcs_id=$2, name=$3, methodology=$4, methodology_version=$5, stage=$6, country=$7, vvb=$8, notes=$9, updated_at=$10
+       SET vcs_id=$2, name=$3, methodology=$4, methodology_version=$5, stage=$6, country=$7, vvb=$8, sales_status=$9, assigned_owner=$10, next_action=$11, next_action_date=$12, notes=$13, updated_at=$14
        WHERE id=$1`,
-      [input.projectId, vcsId, canonicalSalesProjectName(vcsId || undefined, input.name), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.notes?.trim() || "", new Date().toISOString()]
+      [input.projectId, vcsId, canonicalSalesProjectName(vcsId || undefined, input.name), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.salesStatus || "NEW", input.assignedOwner?.trim() || null, input.nextAction?.trim() || null, input.nextActionDate || null, input.notes?.trim() || "", new Date().toISOString()]
     );
     await client.query(
       "UPDATE sales_organization_projects SET role=$3 WHERE organization_id=$1 AND project_id=$2",
@@ -300,20 +363,28 @@ export async function updateSalesProject(input: { organizationId: string; projec
   }
 }
 
-export async function createSalesTenderOpportunity(input: { organizationId: string; contactId?: string; name: string; buyer?: string; referenceNumber?: string; submissionDeadline?: string; contractValue?: string; sector?: string; status?: SalesTenderStatus; notes?: string; documentsRequested?: number; documentsReceived?: number }): Promise<string> {
+export async function updateSalesProjectWorkflow(input: { organizationId: string; projectId: string; salesStatus: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<void> {
+  const result = await getPool().query(
+    "UPDATE sales_projects p SET sales_status=$3, assigned_owner=$4, next_action=$5, next_action_date=$6, updated_at=$7 FROM sales_organization_projects op WHERE p.id=$1 AND op.project_id=p.id AND op.organization_id=$2",
+    [input.projectId, input.organizationId, input.salesStatus, input.assignedOwner?.trim() || null, input.nextAction?.trim() || null, input.nextActionDate || null, new Date().toISOString()]
+  );
+  if (!result.rowCount) throw new Error("Project not found for this organization.");
+}
+
+export async function createSalesTenderOpportunity(input: { organizationId: string; contactId?: string; name: string; buyer?: string; referenceNumber?: string; submissionDeadline?: string; contractValue?: string; sector?: string; status?: SalesTenderStatus; notes?: string; documentsRequested?: number; documentsReceived?: number; buyerRequirements?: string; salesStatus?: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<string> {
   const now = new Date().toISOString();
   const result = await getPool().query(
-    `INSERT INTO sales_tender_opportunities (id, organization_id, contact_id, name, buyer, reference_number, submission_deadline, contract_value, sector, status, notes, documents_requested, documents_received, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14) RETURNING id`,
-    [randomUUID(), input.organizationId, input.contactId || null, input.name.trim(), input.buyer?.trim() || null, input.referenceNumber?.trim() || null, input.submissionDeadline || null, input.contractValue?.trim() || null, input.sector?.trim() || null, input.status || "NEW", input.notes?.trim() || "", input.documentsRequested || 0, input.documentsReceived || 0, now]
+    `INSERT INTO sales_tender_opportunities (id, organization_id, contact_id, name, buyer, reference_number, submission_deadline, contract_value, sector, status, notes, documents_requested, documents_received, buyer_requirements, sales_status, assigned_owner, next_action, next_action_date, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$19) RETURNING id`,
+    [randomUUID(), input.organizationId, input.contactId || null, input.name.trim(), input.buyer?.trim() || null, input.referenceNumber?.trim() || null, input.submissionDeadline || null, input.contractValue?.trim() || null, input.sector?.trim() || null, input.status || "NEW", input.notes?.trim() || "", input.documentsRequested || 0, input.documentsReceived || 0, input.buyerRequirements?.trim() || "", input.salesStatus || "NEW", input.assignedOwner?.trim() || null, input.nextAction?.trim() || null, input.nextActionDate || null, now]
   );
   return String(result.rows[0].id);
 }
 
-export async function updateSalesTenderOpportunity(input: { id: string; organizationId: string; contactId?: string; name: string; buyer?: string; referenceNumber?: string; submissionDeadline?: string; contractValue?: string; sector?: string; status: SalesTenderStatus; notes?: string; documentsRequested: number; documentsReceived: number }): Promise<void> {
+export async function updateSalesTenderOpportunity(input: { id: string; organizationId: string; contactId?: string; name: string; buyer?: string; referenceNumber?: string; submissionDeadline?: string; contractValue?: string; sector?: string; status: SalesTenderStatus; notes?: string; documentsRequested: number; documentsReceived: number; buyerRequirements?: string; salesStatus?: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<void> {
   const result = await getPool().query(
-    `UPDATE sales_tender_opportunities SET contact_id=$3, name=$4, buyer=$5, reference_number=$6, submission_deadline=$7, contract_value=$8, sector=$9, status=$10, notes=$11, documents_requested=$12, documents_received=$13, updated_at=$14 WHERE id=$1 AND organization_id=$2`,
-    [input.id, input.organizationId, input.contactId || null, input.name.trim(), input.buyer?.trim() || null, input.referenceNumber?.trim() || null, input.submissionDeadline || null, input.contractValue?.trim() || null, input.sector?.trim() || null, input.status, input.notes?.trim() || "", input.documentsRequested, input.documentsReceived, new Date().toISOString()]
+    `UPDATE sales_tender_opportunities SET contact_id=$3, name=$4, buyer=$5, reference_number=$6, submission_deadline=$7, contract_value=$8, sector=$9, status=$10, notes=$11, documents_requested=$12, documents_received=$13, buyer_requirements=$14, sales_status=$15, assigned_owner=$16, next_action=$17, next_action_date=$18, updated_at=$19 WHERE id=$1 AND organization_id=$2`,
+    [input.id, input.organizationId, input.contactId || null, input.name.trim(), input.buyer?.trim() || null, input.referenceNumber?.trim() || null, input.submissionDeadline || null, input.contractValue?.trim() || null, input.sector?.trim() || null, input.status, input.notes?.trim() || "", input.documentsRequested, input.documentsReceived, input.buyerRequirements?.trim() || "", input.salesStatus || "NEW", input.assignedOwner?.trim() || null, input.nextAction?.trim() || null, input.nextActionDate || null, new Date().toISOString()]
   );
   if (!result.rowCount) throw new Error("Tender opportunity not found for this organization.");
 }
@@ -389,10 +460,10 @@ export async function deleteSalesInteraction(organizationId: string, interaction
   if (!result.rows[0]) throw new Error("Interaction not found for this organization.");
 }
 
-export async function updateSalesOrganizationState(input: { organizationId: string; status: SalesOrganizationStatus; experiment?: SalesExperiment; objectionCode?: SalesObjectionCode; internalCertificationTeam?: boolean; doNotContact?: boolean; notes?: string }): Promise<void> {
+export async function updateSalesOrganizationState(input: { organizationId: string; status: SalesOrganizationStatus; experiment?: SalesExperiment; objectionCode?: SalesObjectionCode; internalCertificationTeam?: boolean; doNotContact?: boolean; notes?: string; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<void> {
   await getPool().query(
-    `UPDATE sales_organizations SET status=$2, experiment=$3, objection_code=$4, internal_certification_team=$5, do_not_contact=$6, notes=$7, updated_at=$8 WHERE id=$1`,
-    [input.organizationId, input.status, input.experiment || "ARTICLE6_CARBON", input.objectionCode || null, input.internalCertificationTeam ?? null, Boolean(input.doNotContact), input.notes?.trim() || "", new Date().toISOString()]
+    `UPDATE sales_organizations SET status=$2, experiment=$3, objection_code=$4, internal_certification_team=$5, do_not_contact=$6, notes=$7, assigned_owner=$8, next_action=$9, next_action_date=$10, updated_at=$11 WHERE id=$1`,
+    [input.organizationId, input.status, input.experiment || "ARTICLE6_CARBON", input.objectionCode || null, input.internalCertificationTeam ?? null, Boolean(input.doNotContact), input.notes?.trim() || "", input.assignedOwner?.trim() || null, input.nextAction?.trim() || null, input.nextActionDate || null, new Date().toISOString()]
   );
 }
 
@@ -429,12 +500,19 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
     const document = { id: String(row.id), tenderOpportunityId: String(row.tender_opportunity_id), name: String(row.name), requested: Boolean(row.requested), received: Boolean(row.received), receivedAt: row.received_at ? iso(row.received_at) : undefined, notes: String(row.notes || "") };
     documentsByTender.set(document.tenderOpportunityId, [...(documentsByTender.get(document.tenderOpportunityId) || []), document]);
   }
+  const projectIds = projectsResult.rows.map((row) => String(row.id));
+  const projectDocumentsResult = projectIds.length ? await getPool().query("SELECT * FROM sales_project_documents WHERE project_id = ANY($1::uuid[]) ORDER BY name ASC", [projectIds]) : { rows: [] as QueryResultRow[] };
+  const projectDocumentsByProject = new Map<string, SalesProjectDocument[]>();
+  for (const row of projectDocumentsResult.rows) {
+    const document = { id: String(row.id), projectId: String(row.project_id), name: String(row.name), documentType: String(row.document_type), requested: Boolean(row.requested), received: Boolean(row.received), receivedAt: row.received_at ? iso(row.received_at) : undefined, notes: String(row.notes || "") };
+    projectDocumentsByProject.set(document.projectId, [...(projectDocumentsByProject.get(document.projectId) || []), document]);
+  }
   const interactions = interactionsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, projectId: row.project_id || undefined, tenderOpportunityId: row.tender_opportunity_id || undefined, contactName: row.contact_name || undefined, projectName: row.project_name || undefined, channel: String(row.channel), direction: String(row.direction), interactionType: String(row.interaction_type), occurredAt: iso(row.occurred_at || row.created_at), subject: row.subject || undefined, summary: String(row.summary), outcomeCode: row.outcome_code || undefined, externalReference: row.external_reference || undefined, gmailThreadId: row.gmail_thread_id || undefined }));
   return {
     organization: toOrganization(organizationResult.rows[0]),
     contacts: contactsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), name: String(row.name), title: row.title || undefined, email: row.email || undefined, phone: row.phone || undefined, status: String(row.status), notes: String(row.notes || "") })),
-    projects: projectsResult.rows.map((row) => ({ id: String(row.id), vcsId: row.vcs_id || undefined, name: String(row.name), methodology: row.methodology || undefined, methodologyVersion: row.methodology_version || undefined, stage: row.stage || undefined, country: row.country || undefined, vvb: row.vvb || undefined, notes: String(row.notes || ""), role: String(row.role), stakeholderCount: Number(row.stakeholder_count || 0), rolledUpStatus: row.rolled_up_status || undefined, blocked: Boolean(row.blocked) })),
-    tenderOpportunities: tendersResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, contactName: row.contact_name || undefined, name: String(row.name), buyer: row.buyer || undefined, referenceNumber: row.reference_number || undefined, submissionDeadline: row.submission_deadline ? iso(row.submission_deadline) : undefined, contractValue: row.contract_value == null ? undefined : Number(row.contract_value), sector: row.sector || undefined, status: row.status as SalesTenderStatus, notes: String(row.notes || ""), documentsRequested: Number(row.documents_requested || 0), documentsReceived: Number(row.documents_received || 0), documents: documentsByTender.get(String(row.id)) || [], interactions: interactions.filter((interaction) => interaction.tenderOpportunityId === String(row.id)) })),
+    projects: projectsResult.rows.map((row) => ({ id: String(row.id), vcsId: row.vcs_id || undefined, name: String(row.name), methodology: row.methodology || undefined, methodologyVersion: row.methodology_version || undefined, stage: row.stage || undefined, country: row.country || undefined, vvb: row.vvb || undefined, notes: String(row.notes || ""), role: String(row.role), salesStatus: row.sales_status as SalesOrganizationStatus, assignedOwner: row.assigned_owner || undefined, nextAction: row.next_action || undefined, nextActionDate: row.next_action_date ? iso(row.next_action_date) : undefined, documents: projectDocumentsByProject.get(String(row.id)) || [], stakeholderCount: Number(row.stakeholder_count || 0), rolledUpStatus: row.rolled_up_status || undefined, blocked: Boolean(row.blocked) })),
+    tenderOpportunities: tendersResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, contactName: row.contact_name || undefined, name: String(row.name), buyer: row.buyer || undefined, referenceNumber: row.reference_number || undefined, submissionDeadline: row.submission_deadline ? iso(row.submission_deadline) : undefined, contractValue: row.contract_value == null ? undefined : Number(row.contract_value), sector: row.sector || undefined, status: row.status as SalesTenderStatus, notes: String(row.notes || ""), buyerRequirements: String(row.buyer_requirements || ""), salesStatus: row.sales_status as SalesOrganizationStatus, assignedOwner: row.assigned_owner || undefined, nextAction: row.next_action || undefined, nextActionDate: row.next_action_date ? iso(row.next_action_date) : undefined, documentsRequested: Number(row.documents_requested || 0), documentsReceived: Number(row.documents_received || 0), documents: documentsByTender.get(String(row.id)) || [], interactions: interactions.filter((interaction) => interaction.tenderOpportunityId === String(row.id)) })),
     interactions,
   };
 }

@@ -6,6 +6,8 @@ export const SALES_ORGANIZATION_STATUSES = [
   "NURTURE",
   "CLOSED_NO",
   "CLOSED_WON",
+  "PARKED",
+  "DO_NOT_CONTACT",
 ] as const;
 
 export type SalesOrganizationStatus = (typeof SALES_ORGANIZATION_STATUSES)[number];

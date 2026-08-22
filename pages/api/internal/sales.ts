@@ -8,12 +8,15 @@ import {
   addSalesTenderDocument,
   createSalesOrganization,
   deleteSalesContact,
+  deleteSalesOrganization,
   deleteSalesInteraction,
   updateSalesContact,
   updateSalesProject,
+  updateSalesProjectWorkflow,
   updateSalesTenderOpportunity,
   updateSalesTenderDocument,
   updateSalesOrganizationState,
+  mergeSalesOrganizations,
 } from "../../../lib/sales-store";
 import { isSalesExperiment, isSalesObjectionCode, isSalesOrganizationStatus, isSalesTenderStatus, normalizeOptional } from "../../../lib/sales-memory";
 import { hasDeleteConfirmation } from "../../../lib/sales-destructive-actions";
@@ -62,6 +65,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return organizationRedirect(res, organizationId, { deleted: "1" });
     }
 
+    if (action === "delete_organization") {
+      if (!hasDeleteConfirmation(value(req.body, "confirmation"))) return organizationRedirect(res, organizationId, { error: "Type delete to confirm organization deletion." });
+      await deleteSalesOrganization(organizationId);
+      return res.redirect(303, "/internal/sales");
+    }
+
+    if (action === "merge_organization") {
+      const targetOrganizationId = value(req.body, "targetOrganizationId");
+      if (!targetOrganizationId) return organizationRedirect(res, organizationId, { error: "Target organization id is required." });
+      if (!hasDeleteConfirmation(value(req.body, "confirmation"))) return organizationRedirect(res, organizationId, { error: "Type delete to confirm organization merge." });
+      await mergeSalesOrganizations(organizationId, targetOrganizationId);
+      return res.redirect(303, `/internal/sales/organizations/${encodeURIComponent(targetOrganizationId)}`);
+    }
+
     if (action === "update_contact") {
       const contactId = value(req.body, "contactId");
       const name = value(req.body, "name");
@@ -73,7 +90,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (action === "add_project") {
       const name = value(req.body, "name");
       if (!name) return res.status(400).json({ error: "Project name is required." });
-      await addSalesProject({ organizationId, name, vcsId: value(req.body, "vcsId"), methodology: value(req.body, "methodology"), methodologyVersion: value(req.body, "methodologyVersion"), stage: value(req.body, "stage"), country: value(req.body, "country"), vvb: value(req.body, "vvb"), role: value(req.body, "role"), notes: value(req.body, "notes") });
+      const salesStatus = value(req.body, "salesStatus") || "NEW";
+      if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
+      await addSalesProject({ organizationId, name, vcsId: value(req.body, "vcsId"), methodology: value(req.body, "methodology"), methodologyVersion: value(req.body, "methodologyVersion"), stage: value(req.body, "stage"), country: value(req.body, "country"), vvb: value(req.body, "vvb"), role: value(req.body, "role"), notes: value(req.body, "notes"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
       return organizationRedirect(res, organizationId);
     }
 
@@ -81,7 +100,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const projectId = value(req.body, "projectId");
       const name = value(req.body, "name");
       if (!projectId || !name) return res.status(400).json({ error: "Project id and name are required." });
-      await updateSalesProject({ organizationId, projectId, name, vcsId: value(req.body, "vcsId"), methodology: value(req.body, "methodology"), methodologyVersion: value(req.body, "methodologyVersion"), stage: value(req.body, "stage"), country: value(req.body, "country"), vvb: value(req.body, "vvb"), role: value(req.body, "role"), notes: value(req.body, "notes") });
+      const salesStatus = value(req.body, "salesStatus") || "NEW";
+      if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
+      await updateSalesProject({ organizationId, projectId, name, vcsId: value(req.body, "vcsId"), methodology: value(req.body, "methodology"), methodologyVersion: value(req.body, "methodologyVersion"), stage: value(req.body, "stage"), country: value(req.body, "country"), vvb: value(req.body, "vvb"), role: value(req.body, "role"), notes: value(req.body, "notes"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
+      return organizationRedirect(res, organizationId, { updated: "1" });
+    }
+
+    if (action === "update_project_workflow") {
+      const projectId = value(req.body, "projectId");
+      const salesStatus = value(req.body, "salesStatus");
+      if (!projectId || !isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Project and valid sales status are required." });
+      await updateSalesProjectWorkflow({ organizationId, projectId, salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
       return organizationRedirect(res, organizationId, { updated: "1" });
     }
 
@@ -90,7 +119,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!name) return res.status(400).json({ error: "Tender name is required." });
       const tenderStatus = value(req.body, "status") || "NEW";
       if (!isSalesTenderStatus(tenderStatus)) return res.status(400).json({ error: "Invalid tender status." });
-      const tenderId = await createSalesTenderOpportunity({ organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0) });
+      const salesStatus = value(req.body, "salesStatus") || "NEW";
+      if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
+      const tenderId = await createSalesTenderOpportunity({ organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
       return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
     }
 
@@ -100,7 +131,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!tenderId || !name) return res.status(400).json({ error: "Tender id and name are required." });
       const tenderStatus = value(req.body, "status");
       if (!isSalesTenderStatus(tenderStatus)) return res.status(400).json({ error: "Invalid tender status." });
-      await updateSalesTenderOpportunity({ id: tenderId, organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0) });
+      const salesStatus = value(req.body, "salesStatus") || "NEW";
+      if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
+      await updateSalesTenderOpportunity({ id: tenderId, organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
       return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
     }
 
@@ -168,6 +201,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         internalCertificationTeam: internalTeamValue === "" ? undefined : internalTeamValue === "true",
         doNotContact: req.body?.doNotContact === "on",
         notes: value(req.body, "notes"),
+        assignedOwner: value(req.body, "assignedOwner"),
+        nextAction: value(req.body, "nextAction"),
+        nextActionDate: value(req.body, "nextActionDate") || undefined,
       });
       return organizationRedirect(res, organizationId);
     }
