@@ -10,6 +10,8 @@ const STATUS_RANK: Record<SalesOrganizationStatus, number> = {
   OPPORTUNITY: 40,
   CLOSED_WON: 50,
   CLOSED_NO: -1,
+  PARKED: -2,
+  DO_NOT_CONTACT: -3,
 };
 
 export function normalizeSalesVcsId(value?: string): string | undefined {

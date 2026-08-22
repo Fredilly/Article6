@@ -14,6 +14,9 @@ export default function InternalHeader() {
           <Link href="/internal/sales" className="text-gray-600 hover:text-gray-900">
             Sales
           </Link>
+          <Link href="/internal/sales/queue" className="text-gray-600 hover:text-gray-900">
+            Action queue
+          </Link>
           <Link href="/internal/submissions" className="text-gray-600 hover:text-gray-900">
             Submissions
           </Link>

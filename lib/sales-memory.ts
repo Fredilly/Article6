@@ -6,6 +6,8 @@ export const SALES_ORGANIZATION_STATUSES = [
   "NURTURE",
   "CLOSED_NO",
   "CLOSED_WON",
+  "PARKED",
+  "DO_NOT_CONTACT",
 ] as const;
 
 export type SalesOrganizationStatus = (typeof SALES_ORGANIZATION_STATUSES)[number];
@@ -18,6 +20,21 @@ export const SALES_EXPERIMENTS = [
 ] as const;
 
 export type SalesExperiment = (typeof SALES_EXPERIMENTS)[number];
+
+export const SALES_TENDER_STATUSES = [
+  "NEW",
+  "DOCUMENTS_REQUESTED",
+  "DOCUMENTS_RECEIVED",
+  "SUBMITTED",
+  "AWARDED",
+  "NOT_AWARDED",
+] as const;
+
+export type SalesTenderStatus = (typeof SALES_TENDER_STATUSES)[number];
+
+export function isSalesTenderStatus(value: unknown): value is SalesTenderStatus {
+  return typeof value === "string" && SALES_TENDER_STATUSES.includes(value as SalesTenderStatus);
+}
 
 export const SALES_OBJECTION_CODES = [
   "INTERNAL_TEAM",
