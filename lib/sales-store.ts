@@ -8,6 +8,7 @@ import {
   type SalesOrganizationStatus,
 } from "./sales-memory";
 import { normalizeSalesInteractionTimestamp } from "./sales-timestamps";
+import { canonicalSalesProjectName, normalizeSalesVcsId, type SalesProjectRollupStatus } from "./sales-projects";
 
 export interface SalesOrganization {
   id: string;
@@ -49,6 +50,9 @@ export interface SalesProject {
   vvb?: string;
   notes: string;
   role?: string;
+  stakeholderCount?: number;
+  rolledUpStatus?: SalesProjectRollupStatus;
+  blocked?: boolean;
 }
 
 export interface SalesInteraction {
@@ -213,7 +217,7 @@ export async function deleteSalesContact(organizationId: string, contactId: stri
 
 export async function addSalesProject(input: { organizationId: string; vcsId?: string; name: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string }): Promise<SalesProject> {
   const now = new Date().toISOString();
-  const vcsId = input.vcsId?.trim() || null;
+  const vcsId = normalizeSalesVcsId(input.vcsId) || null;
   let projectRow: QueryResultRow | undefined;
   if (vcsId) {
     projectRow = (await getPool().query("SELECT * FROM sales_projects WHERE vcs_id = $1 LIMIT 1", [vcsId])).rows[0];
@@ -222,7 +226,7 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
     projectRow = (await getPool().query(
       `INSERT INTO sales_projects (id, vcs_id, name, methodology, methodology_version, stage, country, vvb, notes, created_at, updated_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10) RETURNING *`,
-      [randomUUID(), vcsId, input.name.trim(), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.notes?.trim() || "", now]
+      [randomUUID(), vcsId, canonicalSalesProjectName(vcsId || undefined, input.name), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.notes?.trim() || "", now]
     )).rows[0];
   }
   if (!projectRow) throw new Error("Project could not be created or resolved.");
@@ -243,11 +247,12 @@ export async function updateSalesProject(input: { organizationId: string; projec
       [input.organizationId, input.projectId]
     );
     if (!linked.rows[0]) throw new Error("Project not found for this organization.");
+    const vcsId = normalizeSalesVcsId(input.vcsId) || null;
     await client.query(
       `UPDATE sales_projects
        SET vcs_id=$2, name=$3, methodology=$4, methodology_version=$5, stage=$6, country=$7, vvb=$8, notes=$9, updated_at=$10
        WHERE id=$1`,
-      [input.projectId, input.vcsId?.trim() || null, input.name.trim(), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.notes?.trim() || "", new Date().toISOString()]
+      [input.projectId, vcsId, canonicalSalesProjectName(vcsId || undefined, input.name), input.methodology?.trim() || null, input.methodologyVersion?.trim() || null, input.stage?.trim() || null, input.country?.trim() || null, input.vvb?.trim() || null, input.notes?.trim() || "", new Date().toISOString()]
     );
     await client.query(
       "UPDATE sales_organization_projects SET role=$3 WHERE organization_id=$1 AND project_id=$2",
@@ -265,6 +270,17 @@ export async function updateSalesProject(input: { organizationId: string; projec
 export async function addSalesInteraction(input: { organizationId: string; contactId?: string; projectId?: string; channel: string; direction: string; interactionType: string; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string; gmailThreadId?: string }): Promise<void> {
   const createdAt = new Date().toISOString();
   const occurredAt = normalizeSalesInteractionTimestamp(input.occurredAt);
+  if (input.projectId && input.direction === "OUTBOUND") {
+    const blocked = await getPool().query(
+      `SELECT EXISTS (
+         SELECT 1
+         FROM sales_organization_projects op
+         JOIN sales_organizations o ON o.id = op.organization_id
+         WHERE op.project_id = $1 AND (o.do_not_contact OR o.status = 'CLOSED_NO')
+       ) AS blocked`, [input.projectId]
+    );
+    if (blocked.rows[0]?.blocked) throw new Error("Outbound outreach is blocked because this project is closed or marked do not contact by a stakeholder.");
+  }
   const hasThreadColumn = await hasGmailThreadColumn();
   const values = [randomUUID(), input.organizationId, input.contactId || null, input.projectId || null, input.channel, input.direction, input.interactionType, occurredAt, input.subject?.trim() || null, input.summary.trim(), input.outcomeCode?.trim() || null, input.externalReference?.trim() || null];
   if (hasThreadColumn) {
@@ -305,13 +321,28 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
   const threadSelect = hasThreadColumn ? "i.gmail_thread_id" : "NULL::text AS gmail_thread_id";
   const [contactsResult, projectsResult, interactionsResult] = await Promise.all([
     getPool().query("SELECT * FROM sales_contacts WHERE organization_id = $1 ORDER BY name ASC", [id]),
-    getPool().query(`SELECT p.*, op.role FROM sales_organization_projects op JOIN sales_projects p ON p.id = op.project_id WHERE op.organization_id = $1 ORDER BY p.name ASC`, [id]),
+    getPool().query(`SELECT p.*, op.role,
+       rollup.stakeholder_count, rollup.rolled_up_status, rollup.blocked
+       FROM sales_organization_projects op
+       JOIN sales_projects p ON p.id = op.project_id
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*)::int AS stakeholder_count,
+           CASE WHEN BOOL_OR(o.do_not_contact) THEN 'DO_NOT_CONTACT'
+                WHEN BOOL_OR(o.status = 'CLOSED_NO') THEN 'CLOSED_NO'
+                ELSE (ARRAY_AGG(o.status ORDER BY CASE o.status WHEN 'CLOSED_WON' THEN 50 WHEN 'OPPORTUNITY' THEN 40 WHEN 'ENGAGED' THEN 30 WHEN 'NURTURE' THEN 20 WHEN 'CONTACTED' THEN 10 ELSE 0 END DESC))[1]
+           END AS rolled_up_status,
+           BOOL_OR(o.do_not_contact OR o.status = 'CLOSED_NO') AS blocked
+         FROM sales_organization_projects all_op
+         JOIN sales_organizations o ON o.id = all_op.organization_id
+         WHERE all_op.project_id = p.id
+       ) rollup ON TRUE
+       WHERE op.organization_id = $1 ORDER BY p.name ASC`, [id]),
     getPool().query(`SELECT i.*, c.name AS contact_name, p.name AS project_name, ${threadSelect} FROM sales_interactions i LEFT JOIN sales_contacts c ON c.id = i.contact_id LEFT JOIN sales_projects p ON p.id = i.project_id WHERE i.organization_id = $1 ORDER BY i.occurred_at ASC, i.created_at ASC`, [id]),
   ]);
   return {
     organization: toOrganization(organizationResult.rows[0]),
     contacts: contactsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), name: String(row.name), title: row.title || undefined, email: row.email || undefined, phone: row.phone || undefined, status: String(row.status), notes: String(row.notes || "") })),
-    projects: projectsResult.rows.map((row) => ({ id: String(row.id), vcsId: row.vcs_id || undefined, name: String(row.name), methodology: row.methodology || undefined, methodologyVersion: row.methodology_version || undefined, stage: row.stage || undefined, country: row.country || undefined, vvb: row.vvb || undefined, notes: String(row.notes || ""), role: String(row.role) })),
+    projects: projectsResult.rows.map((row) => ({ id: String(row.id), vcsId: row.vcs_id || undefined, name: String(row.name), methodology: row.methodology || undefined, methodologyVersion: row.methodology_version || undefined, stage: row.stage || undefined, country: row.country || undefined, vvb: row.vvb || undefined, notes: String(row.notes || ""), role: String(row.role), stakeholderCount: Number(row.stakeholder_count || 0), rolledUpStatus: row.rolled_up_status || undefined, blocked: Boolean(row.blocked) })),
     interactions: interactionsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, projectId: row.project_id || undefined, contactName: row.contact_name || undefined, projectName: row.project_name || undefined, channel: String(row.channel), direction: String(row.direction), interactionType: String(row.interaction_type), occurredAt: iso(row.occurred_at || row.created_at), subject: row.subject || undefined, summary: String(row.summary), outcomeCode: row.outcome_code || undefined, externalReference: row.external_reference || undefined, gmailThreadId: row.gmail_thread_id || undefined })),
   };
 }

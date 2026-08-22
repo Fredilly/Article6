@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 import { normalizeDomain, normalizeOrganizationName, isSalesObjectionCode, isSalesOrganizationStatus } from "./sales-memory";
+import { canonicalSalesProjectName, normalizeSalesVcsId } from "./sales-projects";
 import { normalizeSalesInteractionTimestamp } from "./sales-timestamps";
 
 export interface SalesImportContact { name: string; title?: string; email?: string; phone?: string; notes?: string; }
@@ -154,14 +155,14 @@ export async function approveSalesImportCandidate(id: string, explicitOrganizati
     }
     const projectIds = new Map<string, string>();
     for (const project of (candidate.projects_json || []) as SalesImportProject[]) {
-      const vcsId = project.vcsId?.trim() || null;
+      const vcsId = normalizeSalesVcsId(project.vcsId) || null;
       let row = vcsId ? (await client.query("SELECT * FROM sales_projects WHERE vcs_id=$1 LIMIT 1", [vcsId])).rows[0] : undefined;
       if (!row) {
         const projectId = randomUUID();
         row = (await client.query(
           `INSERT INTO sales_projects (id,vcs_id,name,methodology,methodology_version,stage,country,vvb,notes,created_at,updated_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10) RETURNING *`,
-          [projectId, vcsId, project.name.trim(), project.methodology?.trim() || null, project.methodologyVersion?.trim() || null, project.stage?.trim() || null,
+          [projectId, vcsId, canonicalSalesProjectName(vcsId || undefined, project.name), project.methodology?.trim() || null, project.methodologyVersion?.trim() || null, project.stage?.trim() || null,
             project.country?.trim() || null, project.vvb?.trim() || null, project.notes?.trim() || "", now]
         )).rows[0];
       }

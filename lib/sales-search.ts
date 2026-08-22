@@ -21,14 +21,18 @@ export function buildSalesMemorySearchEntries(details: SalesOrganizationDetail[]
       searchText: [organization.name, organization.domain, organization.experiment].filter(Boolean).join(" ").toLowerCase(),
     });
 
+    const seenProjectIds = new Set<string>();
     for (const project of projects) {
+      if (seenProjectIds.has(project.id)) continue;
+      seenProjectIds.add(project.id);
       entries.push({
-        ...common,
+        status: project.rolledUpStatus || organization.status,
+        doNotContact: Boolean(project.blocked || organization.doNotContact),
         key: `project-${organization.id}-${project.id}`,
         kind: "project",
         organizationId: organization.id,
-        title: project.vcsId ? `VCS ${project.vcsId} · ${project.name}` : project.name,
-        subtitle: [organization.name, project.methodology && `${project.methodology}${project.methodologyVersion ? ` ${project.methodologyVersion}` : ""}`].filter(Boolean).join(" · "),
+        title: project.name,
+        subtitle: [organization.name, project.stakeholderCount && project.stakeholderCount > 1 ? `${project.stakeholderCount} stakeholders` : undefined, project.methodology && `${project.methodology}${project.methodologyVersion ? ` ${project.methodologyVersion}` : ""}`].filter(Boolean).join(" · "),
         searchText: [project.vcsId, project.name, project.methodology, project.methodologyVersion, organization.name, organization.experiment].filter(Boolean).join(" ").toLowerCase(),
       });
     }
