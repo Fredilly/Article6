@@ -137,6 +137,21 @@ export interface SalesOrganizationDetail {
   interactions: SalesInteraction[];
 }
 
+export type SalesActionQueueKind = "CARBON" | "TENDER";
+
+export interface SalesActionQueueItem {
+  id: string;
+  kind: SalesActionQueueKind;
+  organizationId: string;
+  organizationName: string;
+  title: string;
+  status: SalesOrganizationStatus;
+  assignedOwner?: string;
+  nextAction?: string;
+  nextActionDate?: string;
+  hasOutreach: boolean;
+}
+
 let pool: Pool | undefined;
 let gmailThreadColumnAvailable: Promise<boolean> | undefined;
 function getPool(): Pool {
@@ -214,6 +229,43 @@ export async function listSalesOrganizations(search = ""): Promise<SalesOrganiza
     [q]
   );
   return result.rows.map(toOrganization);
+}
+
+export async function listSalesActionQueue(kind: SalesActionQueueKind): Promise<SalesActionQueueItem[]> {
+  const result = await getPool().query(
+    `SELECT id, kind, organization_id, organization_name, title, status, assigned_owner, next_action, next_action_date, has_outreach
+     FROM (
+       SELECT p.id, 'CARBON'::text AS kind, o.id AS organization_id, o.name AS organization_name, p.name AS title,
+         p.sales_status AS status, p.assigned_owner, p.next_action, p.next_action_date,
+         EXISTS (SELECT 1 FROM sales_interactions i WHERE i.project_id = p.id) AS has_outreach
+       FROM sales_projects p
+       JOIN sales_organization_projects op ON op.project_id = p.id
+       JOIN sales_organizations o ON o.id = op.organization_id
+       WHERE p.sales_status NOT IN ('CLOSED_WON', 'CLOSED_NO', 'DO_NOT_CONTACT', 'PARKED')
+       UNION ALL
+       SELECT t.id, 'TENDER'::text AS kind, o.id AS organization_id, o.name AS organization_name, t.name AS title,
+         t.sales_status AS status, t.assigned_owner, t.next_action, t.next_action_date,
+         EXISTS (SELECT 1 FROM sales_interactions i WHERE i.tender_opportunity_id = t.id) AS has_outreach
+       FROM sales_tender_opportunities t
+       JOIN sales_organizations o ON o.id = t.organization_id
+       WHERE t.sales_status NOT IN ('CLOSED_WON', 'CLOSED_NO', 'DO_NOT_CONTACT', 'PARKED')
+     ) queue
+     WHERE kind = $1
+     ORDER BY (next_action_date IS NULL) ASC, next_action_date ASC NULLS LAST, title ASC`,
+    [kind]
+  );
+  return result.rows.map((row) => ({
+    id: String(row.id),
+    kind: row.kind as SalesActionQueueKind,
+    organizationId: String(row.organization_id),
+    organizationName: String(row.organization_name),
+    title: String(row.title),
+    status: row.status as SalesOrganizationStatus,
+    assignedOwner: row.assigned_owner || undefined,
+    nextAction: row.next_action || undefined,
+    nextActionDate: row.next_action_date ? iso(row.next_action_date) : undefined,
+    hasOutreach: Boolean(row.has_outreach),
+  }));
 }
 
 export async function createSalesOrganization(input: { name: string; domain?: string; country?: string; experiment?: SalesExperiment; notes?: string }): Promise<{ organization: SalesOrganization; created: boolean }> {
