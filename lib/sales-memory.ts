@@ -19,6 +19,21 @@ export const SALES_EXPERIMENTS = [
 
 export type SalesExperiment = (typeof SALES_EXPERIMENTS)[number];
 
+export const SALES_TENDER_STATUSES = [
+  "NEW",
+  "DOCUMENTS_REQUESTED",
+  "DOCUMENTS_RECEIVED",
+  "SUBMITTED",
+  "AWARDED",
+  "NOT_AWARDED",
+] as const;
+
+export type SalesTenderStatus = (typeof SALES_TENDER_STATUSES)[number];
+
+export function isSalesTenderStatus(value: unknown): value is SalesTenderStatus {
+  return typeof value === "string" && SALES_TENDER_STATUSES.includes(value as SalesTenderStatus);
+}
+
 export const SALES_OBJECTION_CODES = [
   "INTERNAL_TEAM",
   "ALREADY_COVERED",

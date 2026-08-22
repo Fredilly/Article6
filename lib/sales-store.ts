@@ -55,11 +55,43 @@ export interface SalesProject {
   blocked?: boolean;
 }
 
+export type SalesTenderStatus = "NEW" | "DOCUMENTS_REQUESTED" | "DOCUMENTS_RECEIVED" | "SUBMITTED" | "AWARDED" | "NOT_AWARDED";
+
+export interface SalesTenderDocument {
+  id: string;
+  tenderOpportunityId: string;
+  name: string;
+  requested: boolean;
+  received: boolean;
+  receivedAt?: string;
+  notes: string;
+}
+
+export interface SalesTenderOpportunity {
+  id: string;
+  organizationId: string;
+  contactId?: string;
+  contactName?: string;
+  name: string;
+  buyer?: string;
+  referenceNumber?: string;
+  submissionDeadline?: string;
+  contractValue?: number;
+  sector?: string;
+  status: SalesTenderStatus;
+  notes: string;
+  documentsRequested: number;
+  documentsReceived: number;
+  documents: SalesTenderDocument[];
+  interactions: SalesInteraction[];
+}
+
 export interface SalesInteraction {
   id: string;
   organizationId: string;
   contactId?: string;
   projectId?: string;
+  tenderOpportunityId?: string;
   contactName?: string;
   projectName?: string;
   channel: string;
@@ -77,6 +109,7 @@ export interface SalesOrganizationDetail {
   organization: SalesOrganization;
   contacts: SalesContact[];
   projects: SalesProject[];
+  tenderOpportunities: SalesTenderOpportunity[];
   interactions: SalesInteraction[];
 }
 
@@ -267,7 +300,56 @@ export async function updateSalesProject(input: { organizationId: string; projec
   }
 }
 
-export async function addSalesInteraction(input: { organizationId: string; contactId?: string; projectId?: string; channel: string; direction: string; interactionType: string; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string; gmailThreadId?: string }): Promise<void> {
+export async function createSalesTenderOpportunity(input: { organizationId: string; contactId?: string; name: string; buyer?: string; referenceNumber?: string; submissionDeadline?: string; contractValue?: string; sector?: string; status?: SalesTenderStatus; notes?: string; documentsRequested?: number; documentsReceived?: number }): Promise<string> {
+  const now = new Date().toISOString();
+  const result = await getPool().query(
+    `INSERT INTO sales_tender_opportunities (id, organization_id, contact_id, name, buyer, reference_number, submission_deadline, contract_value, sector, status, notes, documents_requested, documents_received, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14) RETURNING id`,
+    [randomUUID(), input.organizationId, input.contactId || null, input.name.trim(), input.buyer?.trim() || null, input.referenceNumber?.trim() || null, input.submissionDeadline || null, input.contractValue?.trim() || null, input.sector?.trim() || null, input.status || "NEW", input.notes?.trim() || "", input.documentsRequested || 0, input.documentsReceived || 0, now]
+  );
+  return String(result.rows[0].id);
+}
+
+export async function updateSalesTenderOpportunity(input: { id: string; organizationId: string; contactId?: string; name: string; buyer?: string; referenceNumber?: string; submissionDeadline?: string; contractValue?: string; sector?: string; status: SalesTenderStatus; notes?: string; documentsRequested: number; documentsReceived: number }): Promise<void> {
+  const result = await getPool().query(
+    `UPDATE sales_tender_opportunities SET contact_id=$3, name=$4, buyer=$5, reference_number=$6, submission_deadline=$7, contract_value=$8, sector=$9, status=$10, notes=$11, documents_requested=$12, documents_received=$13, updated_at=$14 WHERE id=$1 AND organization_id=$2`,
+    [input.id, input.organizationId, input.contactId || null, input.name.trim(), input.buyer?.trim() || null, input.referenceNumber?.trim() || null, input.submissionDeadline || null, input.contractValue?.trim() || null, input.sector?.trim() || null, input.status, input.notes?.trim() || "", input.documentsRequested, input.documentsReceived, new Date().toISOString()]
+  );
+  if (!result.rowCount) throw new Error("Tender opportunity not found for this organization.");
+}
+
+export async function addSalesTenderDocument(input: { organizationId: string; tenderOpportunityId: string; name: string; requested?: boolean; received?: boolean; notes?: string }): Promise<void> {
+  const now = new Date().toISOString();
+  const result = await getPool().query(
+    `INSERT INTO sales_tender_documents (id, tender_opportunity_id, name, requested, received, received_at, notes, created_at, updated_at)
+     SELECT $1,$2,$3,$4,$5,CASE WHEN $5 THEN $6::timestamptz ELSE NULL END,$7,$6,$6
+     WHERE EXISTS (SELECT 1 FROM sales_tender_opportunities WHERE id=$2 AND organization_id=$8)`,
+    [randomUUID(), input.tenderOpportunityId, input.name.trim(), input.requested !== false, Boolean(input.received), now, input.notes?.trim() || "", input.organizationId]
+  );
+  if (!result.rowCount) throw new Error("Tender opportunity not found for this organization.");
+  await getPool().query(
+    `UPDATE sales_tender_opportunities t SET documents_requested = counts.requested, documents_received = counts.received, updated_at = $3
+     FROM (SELECT COUNT(*) FILTER (WHERE requested)::int AS requested, COUNT(*) FILTER (WHERE received)::int AS received FROM sales_tender_documents WHERE tender_opportunity_id = $1) counts
+     WHERE t.id = $1 AND t.organization_id = $2`,
+    [input.tenderOpportunityId, input.organizationId, now]
+  );
+}
+
+export async function updateSalesTenderDocument(input: { organizationId: string; id: string; name: string; requested: boolean; received: boolean; notes?: string }): Promise<void> {
+  const result = await getPool().query(
+    `UPDATE sales_tender_documents d SET name=$3, requested=$4, received=$5, received_at=CASE WHEN $5 THEN COALESCE(d.received_at, $6::timestamptz) ELSE NULL END, notes=$7, updated_at=$6
+     FROM sales_tender_opportunities t WHERE d.id=$1 AND d.tender_opportunity_id=t.id AND t.organization_id=$2`,
+    [input.id, input.organizationId, input.name.trim(), input.requested, input.received, new Date().toISOString(), input.notes?.trim() || ""]
+  );
+  if (!result.rowCount) throw new Error("Tender document not found for this organization.");
+  await getPool().query(
+    `UPDATE sales_tender_opportunities t SET documents_requested = (SELECT COUNT(*) FILTER (WHERE requested)::int FROM sales_tender_documents WHERE tender_opportunity_id = t.id), documents_received = (SELECT COUNT(*) FILTER (WHERE received)::int FROM sales_tender_documents WHERE tender_opportunity_id = t.id), updated_at = $3
+     WHERE t.id = (SELECT tender_opportunity_id FROM sales_tender_documents WHERE id = $1) AND t.organization_id = $2`,
+    [input.id, input.organizationId, new Date().toISOString()]
+  );
+}
+
+export async function addSalesInteraction(input: { organizationId: string; contactId?: string; projectId?: string; tenderOpportunityId?: string; channel: string; direction: string; interactionType: string; occurredAt: string; subject?: string; summary: string; outcomeCode?: string; externalReference?: string; gmailThreadId?: string }): Promise<void> {
   const createdAt = new Date().toISOString();
   const occurredAt = normalizeSalesInteractionTimestamp(input.occurredAt);
   if (input.projectId && input.direction === "OUTBOUND") {
@@ -282,17 +364,17 @@ export async function addSalesInteraction(input: { organizationId: string; conta
     if (blocked.rows[0]?.blocked) throw new Error("Outbound outreach is blocked because this project is closed or marked do not contact by a stakeholder.");
   }
   const hasThreadColumn = await hasGmailThreadColumn();
-  const values = [randomUUID(), input.organizationId, input.contactId || null, input.projectId || null, input.channel, input.direction, input.interactionType, occurredAt, input.subject?.trim() || null, input.summary.trim(), input.outcomeCode?.trim() || null, input.externalReference?.trim() || null];
+  const values = [randomUUID(), input.organizationId, input.contactId || null, input.projectId || null, input.tenderOpportunityId || null, input.channel, input.direction, input.interactionType, occurredAt, input.subject?.trim() || null, input.summary.trim(), input.outcomeCode?.trim() || null, input.externalReference?.trim() || null];
   if (hasThreadColumn) {
     await getPool().query(
-      `INSERT INTO sales_interactions (id, organization_id, contact_id, project_id, channel, direction, interaction_type, occurred_at, subject, summary, outcome_code, external_reference, gmail_thread_id, created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      `INSERT INTO sales_interactions (id, organization_id, contact_id, project_id, tender_opportunity_id, channel, direction, interaction_type, occurred_at, subject, summary, outcome_code, external_reference, gmail_thread_id, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
       [...values, input.gmailThreadId?.trim() || null, createdAt]
     );
   } else {
     await getPool().query(
-      `INSERT INTO sales_interactions (id, organization_id, contact_id, project_id, channel, direction, interaction_type, occurred_at, subject, summary, outcome_code, external_reference, created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      `INSERT INTO sales_interactions (id, organization_id, contact_id, project_id, tender_opportunity_id, channel, direction, interaction_type, occurred_at, subject, summary, outcome_code, external_reference, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
       [...values, createdAt]
     );
   }
@@ -319,7 +401,7 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
   if (!organizationResult.rows[0]) return null;
   const hasThreadColumn = await hasGmailThreadColumn();
   const threadSelect = hasThreadColumn ? "i.gmail_thread_id" : "NULL::text AS gmail_thread_id";
-  const [contactsResult, projectsResult, interactionsResult] = await Promise.all([
+  const [contactsResult, projectsResult, tendersResult, interactionsResult] = await Promise.all([
     getPool().query("SELECT * FROM sales_contacts WHERE organization_id = $1 ORDER BY name ASC", [id]),
     getPool().query(`SELECT p.*, op.role,
        rollup.stakeholder_count, rollup.rolled_up_status, rollup.blocked
@@ -337,12 +419,30 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
          WHERE all_op.project_id = p.id
        ) rollup ON TRUE
        WHERE op.organization_id = $1 ORDER BY p.name ASC`, [id]),
+    getPool().query("SELECT t.*, c.name AS contact_name FROM sales_tender_opportunities t LEFT JOIN sales_contacts c ON c.id = t.contact_id WHERE t.organization_id = $1 ORDER BY t.submission_deadline ASC NULLS LAST, t.name ASC", [id]),
     getPool().query(`SELECT i.*, c.name AS contact_name, p.name AS project_name, ${threadSelect} FROM sales_interactions i LEFT JOIN sales_contacts c ON c.id = i.contact_id LEFT JOIN sales_projects p ON p.id = i.project_id WHERE i.organization_id = $1 ORDER BY i.occurred_at ASC, i.created_at ASC`, [id]),
   ]);
+  const tenderIds = tendersResult.rows.map((row) => String(row.id));
+  const documentsResult = tenderIds.length ? await getPool().query("SELECT * FROM sales_tender_documents WHERE tender_opportunity_id = ANY($1::uuid[]) ORDER BY name ASC", [tenderIds]) : { rows: [] as QueryResultRow[] };
+  const documentsByTender = new Map<string, SalesTenderDocument[]>();
+  for (const row of documentsResult.rows) {
+    const document = { id: String(row.id), tenderOpportunityId: String(row.tender_opportunity_id), name: String(row.name), requested: Boolean(row.requested), received: Boolean(row.received), receivedAt: row.received_at ? iso(row.received_at) : undefined, notes: String(row.notes || "") };
+    documentsByTender.set(document.tenderOpportunityId, [...(documentsByTender.get(document.tenderOpportunityId) || []), document]);
+  }
+  const interactions = interactionsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, projectId: row.project_id || undefined, tenderOpportunityId: row.tender_opportunity_id || undefined, contactName: row.contact_name || undefined, projectName: row.project_name || undefined, channel: String(row.channel), direction: String(row.direction), interactionType: String(row.interaction_type), occurredAt: iso(row.occurred_at || row.created_at), subject: row.subject || undefined, summary: String(row.summary), outcomeCode: row.outcome_code || undefined, externalReference: row.external_reference || undefined, gmailThreadId: row.gmail_thread_id || undefined }));
   return {
     organization: toOrganization(organizationResult.rows[0]),
     contacts: contactsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), name: String(row.name), title: row.title || undefined, email: row.email || undefined, phone: row.phone || undefined, status: String(row.status), notes: String(row.notes || "") })),
     projects: projectsResult.rows.map((row) => ({ id: String(row.id), vcsId: row.vcs_id || undefined, name: String(row.name), methodology: row.methodology || undefined, methodologyVersion: row.methodology_version || undefined, stage: row.stage || undefined, country: row.country || undefined, vvb: row.vvb || undefined, notes: String(row.notes || ""), role: String(row.role), stakeholderCount: Number(row.stakeholder_count || 0), rolledUpStatus: row.rolled_up_status || undefined, blocked: Boolean(row.blocked) })),
-    interactions: interactionsResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, projectId: row.project_id || undefined, contactName: row.contact_name || undefined, projectName: row.project_name || undefined, channel: String(row.channel), direction: String(row.direction), interactionType: String(row.interaction_type), occurredAt: iso(row.occurred_at || row.created_at), subject: row.subject || undefined, summary: String(row.summary), outcomeCode: row.outcome_code || undefined, externalReference: row.external_reference || undefined, gmailThreadId: row.gmail_thread_id || undefined })),
+    tenderOpportunities: tendersResult.rows.map((row) => ({ id: String(row.id), organizationId: String(row.organization_id), contactId: row.contact_id || undefined, contactName: row.contact_name || undefined, name: String(row.name), buyer: row.buyer || undefined, referenceNumber: row.reference_number || undefined, submissionDeadline: row.submission_deadline ? iso(row.submission_deadline) : undefined, contractValue: row.contract_value == null ? undefined : Number(row.contract_value), sector: row.sector || undefined, status: row.status as SalesTenderStatus, notes: String(row.notes || ""), documentsRequested: Number(row.documents_requested || 0), documentsReceived: Number(row.documents_received || 0), documents: documentsByTender.get(String(row.id)) || [], interactions: interactions.filter((interaction) => interaction.tenderOpportunityId === String(row.id)) })),
+    interactions,
   };
+}
+
+export async function getSalesTenderOpportunity(id: string): Promise<{ tender: SalesTenderOpportunity; organization: SalesOrganization; contacts: SalesContact[] } | null> {
+  const result = await getPool().query("SELECT organization_id FROM sales_tender_opportunities WHERE id = $1 LIMIT 1", [id]);
+  if (!result.rows[0]) return null;
+  const detail = await getSalesOrganizationDetail(String(result.rows[0].organization_id));
+  const tender = detail?.tenderOpportunities.find((value) => value.id === id);
+  return detail && tender ? { tender, organization: detail.organization, contacts: detail.contacts } : null;
 }

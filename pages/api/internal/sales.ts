@@ -4,14 +4,18 @@ import {
   addSalesContact,
   addSalesInteraction,
   addSalesProject,
+  createSalesTenderOpportunity,
+  addSalesTenderDocument,
   createSalesOrganization,
   deleteSalesContact,
   deleteSalesInteraction,
   updateSalesContact,
   updateSalesProject,
+  updateSalesTenderOpportunity,
+  updateSalesTenderDocument,
   updateSalesOrganizationState,
 } from "../../../lib/sales-store";
-import { isSalesExperiment, isSalesObjectionCode, isSalesOrganizationStatus, normalizeOptional } from "../../../lib/sales-memory";
+import { isSalesExperiment, isSalesObjectionCode, isSalesOrganizationStatus, isSalesTenderStatus, normalizeOptional } from "../../../lib/sales-memory";
 import { hasDeleteConfirmation } from "../../../lib/sales-destructive-actions";
 
 function value(body: NextApiRequest["body"], key: string): string {
@@ -81,6 +85,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return organizationRedirect(res, organizationId, { updated: "1" });
     }
 
+    if (action === "add_tender") {
+      const name = value(req.body, "name");
+      if (!name) return res.status(400).json({ error: "Tender name is required." });
+      const tenderStatus = value(req.body, "status") || "NEW";
+      if (!isSalesTenderStatus(tenderStatus)) return res.status(400).json({ error: "Invalid tender status." });
+      const tenderId = await createSalesTenderOpportunity({ organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0) });
+      return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
+    }
+
+    if (action === "update_tender") {
+      const tenderId = value(req.body, "tenderId");
+      const name = value(req.body, "name");
+      if (!tenderId || !name) return res.status(400).json({ error: "Tender id and name are required." });
+      const tenderStatus = value(req.body, "status");
+      if (!isSalesTenderStatus(tenderStatus)) return res.status(400).json({ error: "Invalid tender status." });
+      await updateSalesTenderOpportunity({ id: tenderId, organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0) });
+      return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
+    }
+
+    if (action === "add_tender_document") {
+      const tenderId = value(req.body, "tenderId");
+      const name = value(req.body, "name");
+      if (!tenderId || !name) return res.status(400).json({ error: "Tender id and document name are required." });
+      await addSalesTenderDocument({ organizationId, tenderOpportunityId: tenderId, name, requested: req.body?.requested === "on", received: req.body?.received === "on", notes: value(req.body, "notes") });
+      return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
+    }
+
+    if (action === "update_tender_document") {
+      const documentId = value(req.body, "documentId");
+      const tenderId = value(req.body, "tenderId");
+      const name = value(req.body, "name");
+      if (!documentId || !tenderId || !name) return res.status(400).json({ error: "Tender document details are required." });
+      await updateSalesTenderDocument({ organizationId, id: documentId, name, requested: req.body?.requested === "on", received: req.body?.received === "on", notes: value(req.body, "notes") });
+      return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
+    }
+
     if (action === "add_interaction") {
       const summary = value(req.body, "summary");
       const occurredAt = value(req.body, "occurredAt");
@@ -91,6 +131,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         organizationId,
         contactId: normalizeOptional(req.body?.contactId) || undefined,
         projectId: normalizeOptional(req.body?.projectId) || undefined,
+        tenderOpportunityId: normalizeOptional(req.body?.tenderOpportunityId) || undefined,
         channel: value(req.body, "channel") || "OTHER",
         direction: value(req.body, "direction") || "INTERNAL",
         interactionType: value(req.body, "interactionType") || "NOTE",
