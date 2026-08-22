@@ -156,7 +156,14 @@ export async function approveSalesImportCandidate(id: string, explicitOrganizati
     const projectIds = new Map<string, string>();
     for (const project of (candidate.projects_json || []) as SalesImportProject[]) {
       const vcsId = normalizeSalesVcsId(project.vcsId) || null;
-      let row = vcsId ? (await client.query("SELECT * FROM sales_projects WHERE vcs_id=$1 LIMIT 1", [vcsId])).rows[0] : undefined;
+      let row = vcsId
+        ? (await client.query("SELECT * FROM sales_projects WHERE vcs_id=$1 LIMIT 1", [vcsId])).rows[0]
+        : (await client.query(
+          `SELECT p.* FROM sales_projects p
+           JOIN sales_organization_projects op ON op.project_id = p.id
+           WHERE op.organization_id = $1 AND LOWER(TRIM(p.name)) = LOWER(TRIM($2)) LIMIT 1`,
+          [organizationId, project.name]
+        )).rows[0];
       if (!row) {
         const projectId = randomUUID();
         row = (await client.query(
@@ -175,19 +182,26 @@ export async function approveSalesImportCandidate(id: string, explicitOrganizati
     }
     for (const interaction of (candidate.interactions_json || []) as SalesImportInteraction[]) {
       const occurredAt = normalizeSalesInteractionTimestamp(interaction.gmailTimestamp ?? interaction.occurredAt);
+      const externalReference = interaction.externalReference?.trim() || null;
+      if (externalReference) {
+        const existingInteraction = await client.query("SELECT id FROM sales_interactions WHERE external_reference = $1 LIMIT 1", [externalReference]);
+        if (existingInteraction.rows[0]) continue;
+      }
       const values = [randomUUID(), organizationId, interaction.contactEmail ? contactIds.get(interaction.contactEmail.trim().toLowerCase()) || null : null,
         interaction.projectVcsId ? projectIds.get(interaction.projectVcsId.trim()) || null : null, interaction.channel || "EMAIL", interaction.direction || "INTERNAL",
         interaction.interactionType || "MESSAGE", occurredAt, interaction.subject?.trim() || null, interaction.summary.trim(), interaction.outcomeCode?.trim() || null,
-        interaction.externalReference?.trim() || null];
+        externalReference];
       if (hasThreadColumn) {
         await client.query(
-          `INSERT INTO sales_interactions (id,organization_id,contact_id,project_id,channel,direction,interaction_type,occurred_at,subject,summary,outcome_code,external_reference,gmail_thread_id,created_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`, [...values, interaction.gmailThreadId?.trim() || null, now]
+          `INSERT INTO sales_interactions (id,organization_id,contact_id,project_id,channel,direction,interaction_type,occurred_at,subject,summary,outcome_code,external_reference,gmail_thread_id,is_imported,created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,TRUE,$14)
+           ON CONFLICT (external_reference) WHERE is_imported AND external_reference IS NOT NULL DO NOTHING`, [...values, interaction.gmailThreadId?.trim() || null, now]
         );
       } else {
         await client.query(
-          `INSERT INTO sales_interactions (id,organization_id,contact_id,project_id,channel,direction,interaction_type,occurred_at,subject,summary,outcome_code,external_reference,created_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [...values, now]
+          `INSERT INTO sales_interactions (id,organization_id,contact_id,project_id,channel,direction,interaction_type,occurred_at,subject,summary,outcome_code,external_reference,is_imported,created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,TRUE,$13)
+           ON CONFLICT (external_reference) WHERE is_imported AND external_reference IS NOT NULL DO NOTHING`, [...values, now]
         );
       }
     }

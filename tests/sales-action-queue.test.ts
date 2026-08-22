@@ -17,5 +17,6 @@ test("action queue covers overdue, new-without-outreach, and engaged-without-act
   assert.match(page, /OVERDUE/);
   assert.match(page, /item\.status === "NEW" && !item\.hasOutreach/);
   assert.match(page, /item\.status === "ENGAGED" && !item\.nextAction/);
-  assert.match(store, /ORDER BY \(next_action_date IS NULL\) ASC, next_action_date ASC/);
+  assert.match(store, /WHEN 'OPPORTUNITY' THEN 1[\s\S]*WHEN 'ENGAGED' THEN 2[\s\S]*WHEN 'NEW' THEN 4/);
+  assert.match(store, /\(next_action_date IS NULL\) ASC,[\s\S]*next_action_date ASC NULLS LAST/);
 });

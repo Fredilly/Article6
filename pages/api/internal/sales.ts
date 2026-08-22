@@ -121,7 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!isSalesTenderStatus(tenderStatus)) return res.status(400).json({ error: "Invalid tender status." });
       const salesStatus = value(req.body, "salesStatus") || "NEW";
       if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
-      const tenderId = await createSalesTenderOpportunity({ organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
+      const tenderId = await createSalesTenderOpportunity({ organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined, sourceKey: value(req.body, "sourceKey") });
       return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
     }
 
@@ -129,11 +129,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const tenderId = value(req.body, "tenderId");
       const name = value(req.body, "name");
       if (!tenderId || !name) return res.status(400).json({ error: "Tender id and name are required." });
-      const tenderStatus = value(req.body, "status");
-      if (!isSalesTenderStatus(tenderStatus)) return res.status(400).json({ error: "Invalid tender status." });
+      const tenderStatusValue = value(req.body, "status");
+      if (tenderStatusValue && !isSalesTenderStatus(tenderStatusValue)) return res.status(400).json({ error: "Invalid tender status." });
       const salesStatus = value(req.body, "salesStatus") || "NEW";
       if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
-      await updateSalesTenderOpportunity({ id: tenderId, organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
+      await updateSalesTenderOpportunity({ id: tenderId, organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatusValue && isSalesTenderStatus(tenderStatusValue) ? tenderStatusValue : undefined, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
       return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
     }
 
@@ -141,7 +141,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const tenderId = value(req.body, "tenderId");
       const name = value(req.body, "name");
       if (!tenderId || !name) return res.status(400).json({ error: "Tender id and document name are required." });
-      await addSalesTenderDocument({ organizationId, tenderOpportunityId: tenderId, name, requested: req.body?.requested === "on", received: req.body?.received === "on", notes: value(req.body, "notes") });
+      await addSalesTenderDocument({ organizationId, tenderOpportunityId: tenderId, name, requested: req.body?.requested === "on", received: req.body?.received === "on", notes: value(req.body, "notes"), sourceKey: value(req.body, "sourceKey") });
       return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
     }
 

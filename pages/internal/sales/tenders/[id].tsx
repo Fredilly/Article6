@@ -1,7 +1,9 @@
 import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import { useEffect } from "react";
 import { getSalesTenderOpportunity } from "../../../../lib/sales-store";
+import { salesDateTimeLocalToIso } from "../../../../lib/sales-dates";
 
 interface Props { record: NonNullable<Awaited<ReturnType<typeof getSalesTenderOpportunity>>>; error?: string; }
 const fieldClass = "rounded-md border border-gray-300 px-3 py-2 text-sm";
@@ -18,6 +20,16 @@ function money(value?: number) { return value == null ? "Not recorded" : value.t
 
 export default function TenderPage({ record, error }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { tender, organization, contacts } = record;
+  useEffect(() => {
+    const forms = Array.from(document.querySelectorAll("main form"));
+    const normalize = (event: Event) => {
+      const form = event.currentTarget as HTMLFormElement;
+      const input = form.elements.namedItem("nextActionDate");
+      if (input instanceof HTMLInputElement && input.value) input.value = salesDateTimeLocalToIso(input.value);
+    };
+    forms.forEach((form) => form.addEventListener("submit", normalize));
+    return () => forms.forEach((form) => form.removeEventListener("submit", normalize));
+  }, []);
   return <><Head><title>{tender.name} | Tender Readiness</title><meta name="robots" content="noindex,nofollow" /></Head>
     <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900"><div className="mx-auto max-w-5xl">
       <Link href={`/internal/sales/organizations/${organization.id}`} className="text-sm font-medium text-forest-700">← {organization.name}</Link>

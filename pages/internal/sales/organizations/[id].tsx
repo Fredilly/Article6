@@ -1,6 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import { useEffect } from "react";
 import SalesHeader from "../../../../components/SalesHeader";
 import { buildSalesMemorySearchEntries } from "../../../../lib/sales-search";
 import { listSalesOrganizations } from "../../../../lib/sales-store";
@@ -8,6 +9,7 @@ import { getSalesOrganizationDetail, type SalesOrganizationDetail } from "../../
 import { SALES_EXPERIMENTS, SALES_OBJECTION_CODES, SALES_ORGANIZATION_STATUSES } from "../../../../lib/sales-memory";
 import { relationshipHistoryPresentation } from "../../../../lib/sales-interaction-display";
 import { groupSalesInteractions } from "../../../../lib/sales-conversations";
+import { salesDateTimeLocalToIso } from "../../../../lib/sales-dates";
 
 interface Props { detail: SalesOrganizationDetail; duplicate: boolean; error?: string; searchEntries: ReturnType<typeof buildSalesMemorySearchEntries>; initialQuery: string; initialStatus: "ALL" | SalesOrganizationDetail["organization"]["status"]; selectedContactId?: string; selectedConversationId?: string; }
 
@@ -41,6 +43,16 @@ export default function OrganizationPage({ detail, duplicate, error, searchEntri
   const allConversations = groupSalesInteractions(interactions);
   const conversations = allConversations.filter((conversation) => (!selectedContactId || conversation.contactId === selectedContactId) && (!selectedConversationId || conversation.id === selectedConversationId));
   const website = websiteHref(organization.domain);
+  useEffect(() => {
+    const forms = Array.from(document.querySelectorAll("main form"));
+    const normalize = (event: Event) => {
+      const form = event.currentTarget as HTMLFormElement;
+      const input = form.elements.namedItem("nextActionDate");
+      if (input instanceof HTMLInputElement && input.value) input.value = salesDateTimeLocalToIso(input.value);
+    };
+    forms.forEach((form) => form.addEventListener("submit", normalize));
+    return () => forms.forEach((form) => form.removeEventListener("submit", normalize));
+  }, []);
 
   return <>
     <Head><title>{organization.name} | Sales Memory</title><meta name="robots" content="noindex,nofollow" /></Head>
@@ -97,7 +109,7 @@ export default function OrganizationPage({ detail, duplicate, error, searchEntri
         </section>
       </div>
 
-      <section className="mt-6 rounded-lg border border-blue-200 bg-blue-50/30 p-5 shadow-sm"><h2 className="font-semibold">Carbon evidence</h2><div className="mt-3 space-y-2">{projects.map((project) => <div key={project.id} className="rounded-md border border-blue-100 bg-white p-3 text-sm"><div className="font-medium">{project.name}</div><div className="mt-1 text-xs text-gray-600">{project.documents.length} documents · {project.documents.filter((document) => document.received).length} received · Status: {project.salesStatus}</div></div>)}</div></section>
+      <section className="mt-6 rounded-lg border border-blue-200 bg-blue-50/30 p-5 shadow-sm"><h2 className="font-semibold">Carbon evidence</h2><div className="mt-3 space-y-2">{projects.map((project) => <div key={project.id} className="rounded-md border border-blue-100 bg-white p-3 text-sm"><div className="font-medium">{project.name}</div><div className="mt-1 text-xs text-gray-600">{project.documents.length} documents · {project.documents.filter((document) => document.received).length} received · Status: {project.salesStatus}</div>{project.stakeholderNames?.length ? <div className="mt-1 text-xs text-gray-500">Related organizations: {project.stakeholderNames.join(", ")}</div> : null}</div>)}</div></section>
 
       <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50/30 p-5 shadow-sm"><div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold">Tender Readiness <span className="ml-1 text-xs font-normal text-gray-500">({tenderOpportunities.length})</span></h2><p className="mt-1 text-xs text-gray-600">Separate from VCS carbon projects.</p></div><span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">TENDER_READINESS</span></div><div className="mt-4 space-y-3">{tenderOpportunities.length ? tenderOpportunities.map((tender) => <Link key={tender.id} href={`/internal/sales/tenders/${tender.id}`} className="block rounded-md border border-amber-100 bg-white p-3 hover:border-amber-300"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-medium text-gray-900">{tender.name}</div><div className="mt-1 text-sm text-gray-600">{tender.buyer || "Buyer not recorded"}{tender.referenceNumber ? ` · ${tender.referenceNumber}` : ""}</div></div><div className="text-right"><div className="text-sm font-semibold text-amber-700">{tender.status}</div><div className="mt-1 text-xs text-gray-500">{tender.documentsReceived}/{tender.documentsRequested} documents received</div></div></div></Link>) : <p className="text-sm text-gray-500">No tender opportunities yet.</p>}</div><details className="mt-4"><summary className="cursor-pointer list-none text-sm font-medium text-amber-800">+ Add tender opportunity</summary><form method="post" action="/api/internal/sales" className="mt-3 grid gap-2 md:grid-cols-2"><input type="hidden" name="action" value="add_tender" /><input type="hidden" name="organizationId" value={organization.id} /><input required name="name" placeholder="Tender name" className={fieldClass} /><select name="contactId" className={fieldClass}><option value="">No contact</option>{contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}</option>)}</select><input name="buyer" placeholder="Buyer" className={fieldClass} /><input name="referenceNumber" placeholder="Reference number" className={fieldClass} /><input name="submissionDeadline" type="datetime-local" className={fieldClass} /><input name="contractValue" type="number" step="0.01" placeholder="Contract value" className={fieldClass} /><input name="sector" placeholder="Sector" className={fieldClass} /><select name="status" className={fieldClass}><option>NEW</option><option>DOCUMENTS_REQUESTED</option><option>DOCUMENTS_RECEIVED</option><option>SUBMITTED</option><option>AWARDED</option><option>NOT_AWARDED</option></select><input name="documentsRequested" type="number" min="0" placeholder="Documents requested" className={fieldClass} /><input name="documentsReceived" type="number" min="0" placeholder="Documents received" className={fieldClass} /><textarea name="notes" placeholder="Notes" className={`${fieldClass} md:col-span-2`} /><button className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white md:col-span-2">Add tender opportunity</button></form></details></section>
 
