@@ -600,14 +600,12 @@ export async function addSalesInteraction(input: { organizationId: string; conta
   }
   if (input.projectId && input.direction === "OUTBOUND") {
     const blocked = await getPool().query(
-      `SELECT EXISTS (
-         SELECT 1
-         FROM sales_organization_projects op
-         JOIN sales_organizations o ON o.id = op.organization_id
-         WHERE op.project_id = $1 AND (o.do_not_contact OR o.status = 'CLOSED_NO')
-       ) AS blocked`, [input.projectId]
+      `SELECT COALESCE(BOOL_AND(o.do_not_contact OR o.status = 'DO_NOT_CONTACT') FILTER (WHERE o.status <> 'CLOSED_NO'), FALSE) AS blocked
+       FROM sales_organization_projects op
+       JOIN sales_organizations o ON o.id = op.organization_id
+       WHERE op.project_id = $1`, [input.projectId]
     );
-    if (blocked.rows[0]?.blocked) throw new Error("Outbound outreach is blocked because this project is closed or marked do not contact by a stakeholder.");
+    if (blocked.rows[0]?.blocked) throw new Error("Outbound outreach is blocked because all live stakeholders are marked do not contact.");
   }
   const hasThreadColumn = await hasGmailThreadColumn();
   const values = [randomUUID(), input.organizationId, input.contactId || null, input.projectId || null, input.tenderOpportunityId || null, input.channel, input.direction, input.interactionType, occurredAt, input.subject?.trim() || null, input.summary.trim(), input.outcomeCode?.trim() || null, input.externalReference?.trim() || null];
@@ -655,11 +653,10 @@ export async function getSalesOrganizationDetail(id: string): Promise<SalesOrgan
        JOIN sales_projects p ON p.id = op.project_id
        LEFT JOIN LATERAL (
          SELECT COUNT(*)::int AS stakeholder_count, ARRAY_AGG(o.name ORDER BY o.name) AS stakeholder_names,
-           CASE WHEN BOOL_OR(o.do_not_contact) THEN 'DO_NOT_CONTACT'
-                WHEN BOOL_OR(o.status = 'CLOSED_NO') THEN 'CLOSED_NO'
-                ELSE (ARRAY_AGG(o.status ORDER BY CASE o.status WHEN 'CLOSED_WON' THEN 50 WHEN 'OPPORTUNITY' THEN 40 WHEN 'ENGAGED' THEN 30 WHEN 'NURTURE' THEN 20 WHEN 'CONTACTED' THEN 10 ELSE 0 END DESC))[1]
+           CASE WHEN BOOL_AND(o.do_not_contact OR o.status = 'DO_NOT_CONTACT') FILTER (WHERE o.status <> 'CLOSED_NO') THEN 'DO_NOT_CONTACT'
+                ELSE (ARRAY_AGG(o.status ORDER BY CASE o.status WHEN 'CLOSED_WON' THEN 50 WHEN 'OPPORTUNITY' THEN 40 WHEN 'ENGAGED' THEN 30 WHEN 'NURTURE' THEN 20 WHEN 'CONTACTED' THEN 10 ELSE 0 END DESC) FILTER (WHERE o.status <> 'CLOSED_NO'))[1]
            END AS rolled_up_status,
-           BOOL_OR(o.do_not_contact OR o.status = 'CLOSED_NO') AS blocked
+           COALESCE(BOOL_AND(o.do_not_contact OR o.status = 'DO_NOT_CONTACT') FILTER (WHERE o.status <> 'CLOSED_NO'), FALSE) AS blocked
          FROM sales_organization_projects all_op
          JOIN sales_organizations o ON o.id = all_op.organization_id
          WHERE all_op.project_id = p.id
