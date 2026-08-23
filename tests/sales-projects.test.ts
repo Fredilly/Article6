@@ -17,15 +17,32 @@ test("project roll-up uses the strongest live status", () => {
   ]), { status: "ENGAGED", blocked: false });
 });
 
-test("closed or do-not-contact stakeholders block the whole project", () => {
+test("a closed stakeholder does not block an active outreach path", () => {
+  assert.deepEqual(rollUpSalesProjectStatus([
+    { status: "CLOSED_NO", doNotContact: false },
+    { status: "ENGAGED", doNotContact: false },
+  ]), { status: "ENGAGED", blocked: false });
+});
+
+test("outreach is blocked only when all live stakeholders are blocked", () => {
   assert.deepEqual(rollUpSalesProjectStatus([
     { status: "ENGAGED", doNotContact: false },
     { status: "CONTACTED", doNotContact: true },
-  ]), { status: "DO_NOT_CONTACT", blocked: true });
+  ]), { status: "ENGAGED", blocked: false });
   assert.deepEqual(rollUpSalesProjectStatus([
-    { status: "ENGAGED", doNotContact: false },
+    { status: "ENGAGED", doNotContact: true },
+    { status: "CONTACTED", doNotContact: true },
+  ]), { status: "DO_NOT_CONTACT", blocked: true });
+});
+
+test("historical stakeholders do not affect project sales status", () => {
+  assert.deepEqual(rollUpSalesProjectStatus([
     { status: "CLOSED_NO", doNotContact: false },
-  ]), { status: "CLOSED_NO", blocked: true });
+  ]), { status: "NEW", blocked: false });
+  assert.deepEqual(rollUpSalesProjectStatus([
+    { status: "CLOSED_NO", doNotContact: false },
+    { status: "CONTACTED", doNotContact: false },
+  ]), { status: "CONTACTED", blocked: false });
 });
 
 test("normalizes project organization roles into the controlled vocabulary", () => {

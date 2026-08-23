@@ -40,9 +40,14 @@ export function canonicalSalesProjectName(vcsId: string | undefined, name: strin
 }
 
 export function rollUpSalesProjectStatus(statuses: Array<{ status: SalesOrganizationStatus; doNotContact: boolean }>): { status: SalesProjectRollupStatus; blocked: boolean } {
-  if (statuses.some((value) => value.doNotContact)) return { status: "DO_NOT_CONTACT", blocked: true };
-  if (statuses.some((value) => value.status === "CLOSED_NO")) return { status: "CLOSED_NO", blocked: true };
-  const status = statuses.reduce<SalesOrganizationStatus | undefined>((best, value) => {
+  // CLOSED_NO organizations are historical stakeholders. They remain attached
+  // to the project for context, but must not close or block its live outreach.
+  const liveStatuses = statuses.filter((value) => value.status !== "CLOSED_NO");
+  if (!liveStatuses.length) return { status: "NEW", blocked: false };
+  if (liveStatuses.every((value) => value.doNotContact || value.status === "DO_NOT_CONTACT")) {
+    return { status: "DO_NOT_CONTACT", blocked: true };
+  }
+  const status = liveStatuses.reduce<SalesOrganizationStatus | undefined>((best, value) => {
     if (!best || STATUS_RANK[value.status] > STATUS_RANK[best]) return value.status;
     return best;
   }, undefined) || "NEW";
