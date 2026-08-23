@@ -37,11 +37,11 @@ export default function VerificationReadinessHome() {
         trustLine="Independent pre-validation review. No commitment required for initial scope review."
         primaryCta={{ label: 'Upload your PDD', href: '#upload-pdd' }}
         onPrimaryCtaClick={() => trackEvent('homepage_primary_cta', { location: 'hero' })}
-        secondaryCta={{ label: 'View Sample Assessment', href: SAMPLE_ASSESSMENT_PATH }}
+        secondaryCta={{ label: 'View sample assessment', href: SAMPLE_ASSESSMENT_PATH }}
       >
-        {/* Premium report preview */}
+        {/* Future VSL insertion point: keep the current report preview visible until a real video is ready. */}
         <div className="w-full max-w-[320px] lg:max-w-full">
-          <div className="rounded-md border border-gray-200 bg-white shadow-md overflow-hidden">
+          <div className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
             {/* Cover header */}
             <div className="bg-forest-900 px-6 py-7">
               <div className="border border-forest-600/40 px-4 py-5 text-center">
@@ -247,9 +247,9 @@ export default function VerificationReadinessHome() {
             </ul>
             <Link
               href={SAMPLE_ASSESSMENT_PATH}
-              className="mt-6 inline-flex items-center text-sm font-medium text-forest-700 hover:text-forest-800 transition-colors"
+              className="preview-focus-ring mt-6 inline-flex items-center rounded-sm text-sm font-medium text-forest-700 transition-colors hover:text-forest-800"
             >
-              View Sample Assessment &rarr;
+              View sample assessment &rarr;
             </Link>
           </div>
           <div className="flex justify-center lg:justify-end">
@@ -298,7 +298,7 @@ export default function VerificationReadinessHome() {
               fit, and explain the next steps.
             </p>
 
-            <div className="mt-8 rounded-lg border border-gray-200 bg-white p-5 md:p-7 shadow-sm">
+            <div className="mt-8 rounded-md border border-gray-200 bg-white p-5 shadow-sm md:p-7">
               <PddUploadForm />
             </div>
 
@@ -314,7 +314,7 @@ export default function VerificationReadinessHome() {
 
       {/* 8. Disclaimer */}
       <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-        <div className="max-w-2xl mx-auto rounded-lg bg-gray-50 p-5 md:p-6 text-xs text-gray-500 leading-relaxed">
+        <div className="mx-auto max-w-2xl rounded-md bg-gray-50 p-5 text-xs leading-relaxed text-gray-500 md:p-6">
           Article6 provides independent pre-validation evidence readiness assessments. The service is
           not validation, verification, legal advice, a registry determination, or a guarantee of
           acceptance by Verra or any validation and verification body.

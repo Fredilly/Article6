@@ -32,7 +32,7 @@ const PreviewHeader: React.FC = () => {
       return (
         <a
           href="#upload-pdd"
-          className={`inline-flex items-center rounded-md bg-forest-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 ${className}`}
+          className={`preview-primary-cta ${className}`}
           onClick={(e) => {
             setOpen(false);
             trackEvent('homepage_primary_cta', { location: 'header' });
@@ -50,7 +50,7 @@ const PreviewHeader: React.FC = () => {
     return (
       <Link
         href={ctaLink.href}
-        className={`inline-flex items-center rounded-md bg-forest-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 ${className}`}
+        className={`preview-primary-cta ${className}`}
         onClick={() => setOpen(false)}
       >
           {ctaLink.label}
@@ -70,7 +70,8 @@ const PreviewHeader: React.FC = () => {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`text-sm font-medium transition-colors duration-200 ${
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`preview-focus-ring text-sm font-medium transition-colors duration-200 ${
                     isActive
                       ? 'text-forest-700'
                       : 'text-gray-600 hover:text-forest-700'
@@ -86,7 +87,7 @@ const PreviewHeader: React.FC = () => {
         <div className="flex items-center gap-3">
           <CtaButton className="hidden md:inline-flex" />
           <button
-            className="md:hidden p-1 text-gray-700"
+            className="preview-focus-ring flex min-h-11 min-w-11 items-center justify-center rounded-md text-gray-700 transition-colors hover:bg-gray-50 hover:text-forest-700"
             onClick={() => setOpen((o) => !o)}
             aria-label="Toggle navigation menu"
             aria-expanded={open}
@@ -117,7 +118,8 @@ const PreviewHeader: React.FC = () => {
                 <li key={href}>
                   <Link
                     href={href}
-                    className={`block py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`preview-focus-ring flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors ${
                       isActive
                         ? 'text-forest-700 bg-forest-50'
                         : 'text-gray-600 hover:text-forest-700 hover:bg-forest-50'

@@ -30,7 +30,7 @@ export default function SampleAssessmentPage() {
         />
       </Head>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="max-w-3xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
             SAMPLE ASSESSMENT
@@ -49,7 +49,7 @@ export default function SampleAssessmentPage() {
       </section>
 
       {/* Report structure */}
-      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="max-w-2xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
             REPORT STRUCTURE
@@ -68,7 +68,7 @@ export default function SampleAssessmentPage() {
 
       {/* Example findings */}
       <section className="bg-gray-50 border-y border-gray-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
+        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
           <div className="max-w-2xl">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
               EXAMPLE FINDINGS
@@ -134,14 +134,14 @@ export default function SampleAssessmentPage() {
           rel="noopener noreferrer"
           download
           onClick={() => trackEvent('sample_pdf_download')}
-          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600"
+          className="preview-primary-cta mt-6"
         >
-          Download Sample Report (PDF)
+          Download sample report (PDF)
         </a>
         <p className="mt-5 text-sm text-gray-500">
           Ready to review your own project documentation?{' '}
-          <Link href="/#upload-pdd" className="font-semibold text-forest-700 hover:text-forest-800">
-            Start with a scope review &rarr;
+          <Link href="/#upload-pdd" className="preview-focus-ring rounded-sm font-semibold text-forest-700 hover:text-forest-800">
+            Upload your PDD &rarr;
           </Link>
         </p>
         </div>

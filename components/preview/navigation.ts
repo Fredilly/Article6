@@ -17,6 +17,6 @@ export function getPreviewNavigationLinks(isPreview: boolean): PreviewNavLink[] 
 export function getPreviewCtaLink(isPreview: boolean): PreviewNavLink {
   return {
     href: `${isPreview ? PREVIEW_BASE : '/'}#upload-pdd`,
-    label: 'Upload PDD',
+    label: 'Upload your PDD',
   };
 }

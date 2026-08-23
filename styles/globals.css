@@ -16,6 +16,20 @@ canvas {
   display: block;
 }
 
+@layer components {
+  .preview-primary-cta {
+    @apply inline-flex min-h-11 items-center justify-center rounded-md bg-forest-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-forest-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .preview-secondary-cta {
+    @apply inline-flex min-h-11 items-center justify-center rounded-md border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:border-gray-400 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500 active:translate-y-px;
+  }
+
+  .preview-focus-ring {
+    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600;
+  }
+}
+
 /* Styles for card flip effect */
 .card {
   perspective: 1000px; /* Allows for 3D effect */

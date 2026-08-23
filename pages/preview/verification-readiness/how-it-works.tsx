@@ -22,7 +22,7 @@ export default function HowItWorksPage() {
       </Head>
 
       {/* Introduction and process */}
-      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="max-w-3xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
             HOW IT WORKS
@@ -72,7 +72,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Human review */}
-      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="max-w-2xl">
           <h2 className="text-lg font-semibold tracking-tight text-gray-900 md:text-xl">
             Human-reviewed. Methodology-specific. Evidence-focused.
@@ -85,7 +85,7 @@ export default function HowItWorksPage() {
 
       {/* Scope */}
       <section className="border-t border-gray-200 bg-gray-50">
-        <div className="mx-auto max-w-6xl px-4 py-10 md:py-12">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400">
             SCOPE CLARIFICATION
           </p>
@@ -111,7 +111,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="max-w-2xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
             NEXT STEP
@@ -123,7 +123,7 @@ export default function HowItWorksPage() {
         <Link
           href={`${base}#upload-pdd`}
           onClick={() => trackEvent('homepage_primary_cta', { location: 'mid_page' })}
-          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600"
+          className="preview-primary-cta mt-6"
         >
           Upload your PDD
         </Link>

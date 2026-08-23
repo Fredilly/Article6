@@ -12,7 +12,7 @@ const evidenceSources = ['PDD Section 3.2', 'Supporting documentation'];
 
 export default function EvidenceMapPreview() {
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-7">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-forest-600">
