@@ -1,5 +1,7 @@
 import PreviewHero from './preview/PreviewHero';
 import PddUploadForm from './preview/PddUploadForm';
+import EvidenceMapPreview from './preview/EvidenceMapPreview';
+import SampleFindings from './preview/SampleFindings';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { trackEvent } from '../lib/analytics';
@@ -150,7 +152,42 @@ export default function VerificationReadinessHome() {
         </div>
       </section>
 
-      {/* 3. Cost of doing nothing */}
+      {/* 3. Evidence map */}
+      <section className="border-y border-gray-200 bg-gray-50">
+        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+          <div className="max-w-2xl">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
+              SEE THE REVIEW
+            </p>
+            <h2 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+              Every requirement is traced to evidence, risk, and a next action.
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-gray-600 md:text-base">
+              The assessment turns a document review into a practical preparation record your team can work through.
+            </p>
+          </div>
+          <div className="mt-8">
+            <EvidenceMapPreview />
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Sample findings */}
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+        <div className="max-w-2xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
+            SAMPLE FINDINGS
+          </p>
+          <h2 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+            Identify validation risks before validation begins.
+          </h2>
+        </div>
+        <div className="mt-8">
+          <SampleFindings />
+        </div>
+      </section>
+
+      {/* 5. Cost of doing nothing */}
       <section className="border-y border-gray-200 bg-gray-50">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-forest-600 mb-3">
@@ -185,7 +222,7 @@ export default function VerificationReadinessHome() {
         </div>
       </section>
 
-      {/* 4. What you receive */}
+      {/* 6. What you receive */}
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
           <div>
@@ -197,11 +234,10 @@ export default function VerificationReadinessHome() {
             </h2>
             <ul className="mt-6 space-y-3 text-sm text-gray-700">
               {[
-                'Requirement-by-requirement evidence assessment',
-                'Supported, unclear, and action-required findings',
-                'Evidence references and traceability notes',
-                'Priority preparation actions',
-                'Reviewed readiness report',
+                'Requirement-by-requirement evidence review',
+                'Missing and insufficient evidence identified',
+                'Validation preparation actions',
+                'Clear resolution guidance for each finding',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2.5">
                   <span className="mt-0.5 text-forest-600 font-bold">&#x2713;</span>
@@ -247,7 +283,7 @@ export default function VerificationReadinessHome() {
         </div>
       </section>
 
-      {/* 5. PDD upload form */}
+      {/* 7. PDD upload form */}
       <section ref={uploadSectionRef} id="upload-pdd" className="border-y border-gray-200 bg-gray-50 scroll-mt-16">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
           <div className="max-w-lg mx-auto">
@@ -276,7 +312,7 @@ export default function VerificationReadinessHome() {
         </div>
       </section>
 
-      {/* 6. Disclaimer */}
+      {/* 8. Disclaimer */}
       <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
         <div className="max-w-2xl mx-auto rounded-lg bg-gray-50 p-5 md:p-6 text-xs text-gray-500 leading-relaxed">
           Article6 provides independent pre-validation evidence readiness assessments. The service is
