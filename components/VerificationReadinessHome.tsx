@@ -188,36 +188,36 @@ export default function VerificationReadinessHome() {
       </section>
 
       {/* 5. Cost of doing nothing */}
-      <section className="border-y border-gray-200 bg-gray-50">
+      <section className="border-y border-forest-800 bg-forest-950">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-forest-600 mb-3">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-300">
             THE COST OF WAITING
           </p>
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+          <h2 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
             Finding gaps during validation costs more.
           </h2>
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Clarification cycles</h3>
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-                Your team spends time responding to questions and locating additional evidence.
+          <div className="mt-8 grid max-w-5xl grid-cols-1 md:grid-cols-3 md:divide-x md:divide-forest-800">
+            <div className="border-t border-forest-800 pt-5 first:border-t-0 first:pt-0 md:border-t-0 md:px-6 md:pt-0 md:first:pl-0 md:last:pr-0">
+              <h3 className="text-sm font-semibold text-white">Clarification cycles</h3>
+              <p className="mt-2 text-sm leading-relaxed text-forest-100">
+                More questions. More evidence hunting.
               </p>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Rework</h3>
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-                Documentation must be revised under external review pressure.
+            <div className="border-t border-forest-800 pt-5 md:border-t-0 md:px-6 md:pt-0 md:first:pl-0 md:last:pr-0">
+              <h3 className="text-sm font-semibold text-white">Rework</h3>
+              <p className="mt-2 text-sm leading-relaxed text-forest-100">
+                Documentation changes under external review pressure.
               </p>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Delays</h3>
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-                Unresolved evidence questions can slow validation progress.
+            <div className="border-t border-forest-800 pt-5 md:border-t-0 md:px-6 md:pt-0 md:first:pl-0 md:last:pr-0">
+              <h3 className="text-sm font-semibold text-white">Delays</h3>
+              <p className="mt-2 text-sm leading-relaxed text-forest-100">
+                Unresolved evidence issues can slow validation.
               </p>
             </div>
           </div>
-          <p className="mt-8 text-sm text-gray-500 max-w-2xl">
-            Article6 moves that review forward, while your team still has time to prepare.
+          <p className="mt-8 max-w-2xl text-sm font-medium leading-relaxed text-forest-100">
+            Article6 moves that review earlier, while your team still has time to respond.
           </p>
         </div>
       </section>
