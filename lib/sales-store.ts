@@ -395,7 +395,7 @@ export async function mergeSalesOrganizations(sourceId: string, targetId: string
   }
 }
 
-export async function addSalesProject(input: { organizationId: string; vcsId?: string; name: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string; salesStatus?: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<SalesProject> {
+export async function addSalesProject(input: { organizationId: string; vcsId?: string; name: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string; salesStatus?: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<SalesProject & { duplicate: boolean }> {
   const now = new Date().toISOString();
   const vcsId = normalizeSalesVcsId(input.vcsId) || null;
   let projectRow: QueryResultRow | undefined;
@@ -409,6 +409,7 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
       [input.organizationId, input.name]
     )).rows[0];
   }
+  const duplicate = Boolean(projectRow);
   if (!projectRow) {
     projectRow = (await getPool().query(
       `INSERT INTO sales_projects (id, vcs_id, name, methodology, methodology_version, stage, country, vvb, sales_status, assigned_owner, next_action, next_action_date, notes, created_at, updated_at)
@@ -417,12 +418,52 @@ export async function addSalesProject(input: { organizationId: string; vcsId?: s
     )).rows[0];
   }
   if (!projectRow) throw new Error("Project could not be created or resolved.");
+  const resolvedProjectRow = projectRow;
+  if (projectRow.id) {
+    await getPool().query(
+      `UPDATE sales_projects
+       SET name=$2, methodology=COALESCE(NULLIF($3, ''), methodology), methodology_version=COALESCE(NULLIF($4, ''), methodology_version), stage=COALESCE(NULLIF($5, ''), stage), country=COALESCE(NULLIF($6, ''), country), vvb=COALESCE(NULLIF($7, ''), vvb), sales_status=$8, assigned_owner=COALESCE(NULLIF($9, ''), assigned_owner), next_action=COALESCE(NULLIF($10, ''), next_action), next_action_date=COALESCE($11, next_action_date), notes=COALESCE(NULLIF($12, ''), notes), updated_at=$13
+       WHERE id=$1`,
+      [projectRow.id, canonicalSalesProjectName(vcsId || undefined, input.name), input.methodology?.trim() || "", input.methodologyVersion?.trim() || "", input.stage?.trim() || "", input.country?.trim() || "", input.vvb?.trim() || "", input.salesStatus || "NEW", input.assignedOwner?.trim() || "", input.nextAction?.trim() || "", normalizeSalesDateTime(input.nextActionDate), input.notes?.trim() || "", now]
+    );
+    projectRow = (await getPool().query("SELECT * FROM sales_projects WHERE id = $1", [resolvedProjectRow.id])).rows[0];
+  }
+  if (!projectRow) throw new Error("Project could not be refreshed after deduplication.");
+  const finalProjectRow = projectRow;
   await getPool().query(
     `INSERT INTO sales_organization_projects (organization_id, project_id, role, created_at)
      VALUES ($1,$2,$3,$4) ON CONFLICT (organization_id, project_id) DO UPDATE SET role = EXCLUDED.role`,
-    [input.organizationId, projectRow.id, normalizeSalesProjectOrganizationRole(input.role), now]
+    [input.organizationId, finalProjectRow.id, normalizeSalesProjectOrganizationRole(input.role), now]
   );
-  return { id: String(projectRow.id), vcsId: projectRow.vcs_id || undefined, name: String(projectRow.name), methodology: projectRow.methodology || undefined, methodologyVersion: projectRow.methodology_version || undefined, stage: projectRow.stage || undefined, country: projectRow.country || undefined, vvb: projectRow.vvb || undefined, notes: String(projectRow.notes || ""), salesStatus: projectRow.sales_status || "NEW", assignedOwner: projectRow.assigned_owner || undefined, nextAction: projectRow.next_action || undefined, nextActionDate: projectRow.next_action_date ? iso(projectRow.next_action_date) : undefined, documents: [], role: normalizeSalesProjectOrganizationRole(input.role), contacts: [] };
+  return { id: String(finalProjectRow.id), vcsId: finalProjectRow.vcs_id || undefined, name: String(finalProjectRow.name), methodology: finalProjectRow.methodology || undefined, methodologyVersion: finalProjectRow.methodology_version || undefined, stage: finalProjectRow.stage || undefined, country: finalProjectRow.country || undefined, vvb: finalProjectRow.vvb || undefined, notes: String(finalProjectRow.notes || ""), salesStatus: finalProjectRow.sales_status || "NEW", assignedOwner: finalProjectRow.assigned_owner || undefined, nextAction: finalProjectRow.next_action || undefined, nextActionDate: finalProjectRow.next_action_date ? iso(finalProjectRow.next_action_date) : undefined, documents: [], role: normalizeSalesProjectOrganizationRole(input.role), contacts: [], duplicate };
+}
+
+export async function deleteSalesProject(organizationId: string, projectId: string): Promise<void> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const linked = await client.query(
+      "SELECT 1 FROM sales_organization_projects WHERE organization_id = $1 AND project_id = $2 FOR UPDATE",
+      [organizationId, projectId]
+    );
+    if (!linked.rows[0]) throw new Error("Project not found for this organization.");
+
+    // Keep relationship history and contacts, but remove references that cannot
+    // survive the project deletion. Explicit ordering also works on older schemas
+    // before all project foreign keys were declared with ON DELETE CASCADE.
+    await client.query("UPDATE sales_interactions SET project_id = NULL WHERE project_id = $1", [projectId]);
+    await client.query("DELETE FROM sales_project_documents WHERE project_id = $1", [projectId]);
+    await client.query("DELETE FROM sales_project_contacts WHERE project_id = $1", [projectId]);
+    await client.query("DELETE FROM sales_organization_projects WHERE project_id = $1", [projectId]);
+    const deleted = await client.query("DELETE FROM sales_projects WHERE id = $1 RETURNING id", [projectId]);
+    if (!deleted.rows[0]) throw new Error("Project not found.");
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function updateSalesProject(input: { organizationId: string; projectId: string; name: string; vcsId?: string; methodology?: string; methodologyVersion?: string; stage?: string; country?: string; vvb?: string; role?: string; notes?: string; salesStatus?: SalesOrganizationStatus; assignedOwner?: string; nextAction?: string; nextActionDate?: string }): Promise<void> {
