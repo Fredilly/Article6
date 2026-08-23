@@ -237,30 +237,34 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
 
   if (phase === 'success') {
     return (
-      <div className="rounded-lg border border-forest-200 bg-forest-50 p-6 md:p-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-forest-100">
-          <svg className="h-6 w-6 text-forest-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
+      <div className="rounded-lg border border-forest-200 bg-forest-50 p-6 md:p-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-forest-100">
+            <svg className="h-5 w-5 text-forest-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-forest-800">Submission received</h3>
+            <p className="mt-1.5 text-sm text-gray-600 max-w-md">
+              {isInternal
+                ? 'The internal submission has been recorded for scope review.'
+                : 'Your PDD has been submitted for scope review. We will review your project documentation and respond within two business days.'}
+            </p>
+            {submissionId && (
+              <p className="mt-3 text-xs text-gray-400">
+                Reference: <code className="text-gray-500">{submissionId}</code>
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={isInternal ? resetInternalPage : resetForm}
+              className="mt-5 text-sm font-medium text-forest-700 hover:text-forest-800 transition-colors"
+            >
+              Submit another PDD
+            </button>
+          </div>
         </div>
-        <h3 className="mt-4 text-lg font-semibold text-forest-800">Submission received</h3>
-        <p className="mt-2 text-sm text-gray-600 max-w-md mx-auto">
-          {isInternal
-            ? 'The internal submission has been recorded for scope review.'
-            : 'Your PDD has been submitted for scope review. We will review your project documentation and respond within two business days.'}
-        </p>
-        {submissionId && (
-          <p className="mt-3 text-xs text-gray-400">
-            Reference: <code className="text-gray-500">{submissionId}</code>
-          </p>
-        )}
-        <button
-          type="button"
-          onClick={isInternal ? resetInternalPage : resetForm}
-          className="mt-6 text-sm font-medium text-forest-700 hover:text-forest-800 transition-colors"
-        >
-          Submit another PDD
-        </button>
       </div>
     );
   }

@@ -124,6 +124,9 @@ export default function VerificationReadinessHome() {
       {/* 2. Why this matters */}
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-forest-600 mb-3">
+            WHY THIS MATTERS
+          </p>
           <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
             A complete PDD does not always mean a validation-ready project.
           </h2>
@@ -140,7 +143,7 @@ export default function VerificationReadinessHome() {
             'Documentation gaps are often discovered after validation has already started.',
           ].map((item) => (
             <div key={item} className="flex items-start gap-2.5 text-sm text-gray-700 leading-relaxed">
-              <span className="mt-0.5 flex-shrink-0 text-forest-600 font-bold">&#x2713;</span>
+              <span aria-hidden="true" className="mt-0.5 flex-shrink-0 h-1.5 w-1.5 rounded-full bg-forest-600" />
               <span>{item}</span>
             </div>
           ))}
@@ -150,6 +153,9 @@ export default function VerificationReadinessHome() {
       {/* 3. Cost of doing nothing */}
       <section className="border-y border-gray-200 bg-gray-50">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-forest-600 mb-3">
+            THE COST OF WAITING
+          </p>
           <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
             Finding gaps during validation costs more.
           </h2>
@@ -183,6 +189,9 @@ export default function VerificationReadinessHome() {
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
           <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-forest-600 mb-3">
+              WHAT YOU RECEIVE
+            </p>
             <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
               A clear preparation plan before validation.
             </h2>
@@ -242,7 +251,10 @@ export default function VerificationReadinessHome() {
       <section ref={uploadSectionRef} id="upload-pdd" className="border-y border-gray-200 bg-gray-50 scroll-mt-16">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
           <div className="max-w-lg mx-auto">
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-forest-600 mb-3 text-center">
+              GET STARTED
+            </p>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 text-center">
               Send us your PDD.
             </h2>
             <p className="mt-3 text-sm text-gray-600 leading-relaxed">
@@ -266,7 +278,7 @@ export default function VerificationReadinessHome() {
 
       {/* 6. Disclaimer */}
       <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-        <div className="max-w-2xl mx-auto rounded-lg border border-gray-200 bg-gray-50 p-5 md:p-6 text-sm text-gray-500 leading-relaxed">
+        <div className="max-w-2xl mx-auto rounded-lg bg-gray-50 p-5 md:p-6 text-xs text-gray-500 leading-relaxed">
           Article6 provides independent pre-validation evidence readiness assessments. The service is
           not validation, verification, legal advice, a registry determination, or a guarantee of
           acceptance by Verra or any validation and verification body.

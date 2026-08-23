@@ -32,7 +32,7 @@ const PreviewHero: React.FC<PreviewHeroProps> = ({
                 {eyebrow}
               </p>
             )}
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900 leading-tight">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 leading-tight">
               {headline}
             </h1>
             {body && (
