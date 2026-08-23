@@ -26,7 +26,7 @@ const PreviewFooter: React.FC = () => {
             <Link
               key={href}
               href={href}
-              className="text-xs text-gray-400 hover:text-forest-700 transition-colors"
+              className="preview-focus-ring rounded-sm text-xs text-gray-500 transition-colors hover:text-forest-700"
             >
               {label}
             </Link>

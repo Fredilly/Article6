@@ -35,7 +35,7 @@ export default function SampleFindings() {
     <div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {findings.map((finding) => (
-          <article key={finding.requirement} className="flex h-full flex-col border-t-2 border-forest-200 bg-gray-50 px-5 py-5">
+          <article key={finding.requirement} className="flex h-full flex-col rounded-md border border-gray-200 border-t-2 border-t-forest-200 bg-gray-50 px-5 py-5">
             <div className="flex items-start justify-between gap-3">
               <h3 className="text-sm font-semibold leading-snug text-gray-900">{finding.requirement}</h3>
               <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${riskStyles[finding.risk]}`}>

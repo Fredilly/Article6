@@ -8,7 +8,7 @@ interface DisclaimerPanelProps {
 const DisclaimerPanel: React.FC<DisclaimerPanelProps> = ({ children, className = '' }) => {
   return (
     <div
-      className={`rounded-lg border border-gray-300 bg-gray-50 p-5 md:p-6 text-sm text-gray-600 leading-relaxed ${className}`}
+      className={`rounded-md border border-gray-300 bg-gray-50 p-5 md:p-6 text-sm text-gray-600 leading-relaxed ${className}`}
     >
       {children}
     </div>

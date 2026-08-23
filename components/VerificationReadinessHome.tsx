@@ -37,11 +37,11 @@ export default function VerificationReadinessHome() {
         trustLine="Independent pre-validation review. No commitment required for initial scope review."
         primaryCta={{ label: 'Upload your PDD', href: '#upload-pdd' }}
         onPrimaryCtaClick={() => trackEvent('homepage_primary_cta', { location: 'hero' })}
-        secondaryCta={{ label: 'View Sample Assessment', href: SAMPLE_ASSESSMENT_PATH }}
+        secondaryCta={{ label: 'View sample assessment', href: SAMPLE_ASSESSMENT_PATH }}
       >
-        {/* Premium report preview */}
+        {/* Future VSL insertion point: keep the current report preview visible until a real video is ready. */}
         <div className="w-full max-w-[320px] lg:max-w-full">
-          <div className="rounded-md border border-gray-200 bg-white shadow-md overflow-hidden">
+          <div className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
             {/* Cover header */}
             <div className="bg-forest-900 px-6 py-7">
               <div className="border border-forest-600/40 px-4 py-5 text-center">
@@ -188,36 +188,36 @@ export default function VerificationReadinessHome() {
       </section>
 
       {/* 5. Cost of doing nothing */}
-      <section className="border-y border-gray-200 bg-gray-50">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-forest-600 mb-3">
+      <section className="border-y border-gray-200 bg-forest-50/50">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
             THE COST OF WAITING
           </p>
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+          <h2 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
             Finding gaps during validation costs more.
           </h2>
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Clarification cycles</h3>
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-                Your team spends time responding to questions and locating additional evidence.
+          <div className="mt-6 grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-3 md:gap-10">
+            <div className="border-t border-gray-200 pt-5 first:border-t-0 first:pt-0 md:border-0 md:pt-0">
+              <h3 className="text-base font-semibold text-gray-900">Clarification cycles</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                More questions. More evidence hunting.
               </p>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Rework</h3>
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-                Documentation must be revised under external review pressure.
+            <div className="border-t border-gray-200 pt-5 md:border-0 md:pt-0">
+              <h3 className="text-base font-semibold text-gray-900">Rework</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                Documentation changes under external review pressure.
               </p>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Delays</h3>
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-                Unresolved evidence questions can slow validation progress.
+            <div className="border-t border-gray-200 pt-5 md:border-0 md:pt-0">
+              <h3 className="text-base font-semibold text-gray-900">Delays</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                Unresolved evidence issues can slow validation.
               </p>
             </div>
           </div>
-          <p className="mt-8 text-sm text-gray-500 max-w-2xl">
-            Article6 moves that review forward, while your team still has time to prepare.
+          <p className="mt-6 max-w-2xl text-sm font-medium leading-relaxed text-forest-800">
+            Article6 moves that review earlier, while your team still has time to respond.
           </p>
         </div>
       </section>
@@ -247,9 +247,9 @@ export default function VerificationReadinessHome() {
             </ul>
             <Link
               href={SAMPLE_ASSESSMENT_PATH}
-              className="mt-6 inline-flex items-center text-sm font-medium text-forest-700 hover:text-forest-800 transition-colors"
+              className="preview-focus-ring mt-6 inline-flex items-center rounded-sm text-sm font-medium text-forest-700 transition-colors hover:text-forest-800"
             >
-              View Sample Assessment &rarr;
+              View sample assessment &rarr;
             </Link>
           </div>
           <div className="flex justify-center lg:justify-end">
@@ -298,7 +298,7 @@ export default function VerificationReadinessHome() {
               fit, and explain the next steps.
             </p>
 
-            <div className="mt-8 rounded-lg border border-gray-200 bg-white p-5 md:p-7 shadow-sm">
+            <div className="mt-8 rounded-md border border-gray-200 bg-white p-5 shadow-sm md:p-7">
               <PddUploadForm />
             </div>
 
@@ -314,7 +314,7 @@ export default function VerificationReadinessHome() {
 
       {/* 8. Disclaimer */}
       <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-        <div className="max-w-2xl mx-auto rounded-lg bg-gray-50 p-5 md:p-6 text-xs text-gray-500 leading-relaxed">
+        <div className="mx-auto max-w-2xl rounded-md bg-gray-50 p-5 text-xs leading-relaxed text-gray-500 md:p-6">
           Article6 provides independent pre-validation evidence readiness assessments. The service is
           not validation, verification, legal advice, a registry determination, or a guarantee of
           acceptance by Verra or any validation and verification body.

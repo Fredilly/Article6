@@ -46,7 +46,7 @@ const PreviewHero: React.FC<PreviewHeroProps> = ({
                   <Link
                     href={primaryCta.href}
                     onClick={onPrimaryCtaClick}
-                    className="inline-flex items-center justify-center rounded-md bg-forest-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600"
+                    className="preview-primary-cta"
                   >
                     {primaryCta.label}
                   </Link>
@@ -54,7 +54,7 @@ const PreviewHero: React.FC<PreviewHeroProps> = ({
                 {secondaryCta && (
                   <Link
                     href={secondaryCta.href}
-                    className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+                    className="preview-secondary-cta"
                   >
                     {secondaryCta.label}
                   </Link>

@@ -26,7 +26,7 @@ export default function Logo({
     </>
   );
 
-  const linkClasses = `flex items-center gap-2.5 rounded-xl px-2 py-1 transition hover:bg-forest-50 ${className}`;
+  const linkClasses = `preview-focus-ring flex min-h-11 items-center gap-2.5 rounded-md px-2 py-1 transition-colors hover:bg-forest-50 ${className}`;
 
   if (href) {
     return (

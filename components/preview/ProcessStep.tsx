@@ -13,7 +13,7 @@ const ProcessStep: React.FC<ProcessStepProps> = ({ step, title, children }) => {
         {step}
       </div>
       <div>
-        <h4 className="text-base md:text-lg font-semibold text-forest-900">{title}</h4>
+        <h3 className="text-base md:text-lg font-semibold text-forest-900">{title}</h3>
         <p className="mt-2 text-sm md:text-base text-gray-600 leading-relaxed">{children}</p>
       </div>
     </div>

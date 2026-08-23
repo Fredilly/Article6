@@ -420,7 +420,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={phase === 'uploading'}
-              className="w-full flex items-center justify-between rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-4 text-sm text-gray-600 hover:border-forest-400 hover:bg-forest-50/50 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="preview-focus-ring flex min-h-11 w-full items-center justify-between rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-left text-sm text-gray-600 transition-colors hover:border-forest-400 hover:bg-forest-50/50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className={fileName ? 'text-gray-900' : 'text-gray-500'}>
                 {fileName || 'Choose a PDF file'}
@@ -454,7 +454,7 @@ const PddUploadForm: React.FC<PddUploadFormProps> = ({ mode = 'public' }) => {
         <button
           type="submit"
           disabled={phase === 'uploading'}
-          className="w-full rounded-md bg-forest-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="preview-primary-cta w-full"
         >
           {phase === 'uploading' ? (
             <span className="flex items-center justify-center gap-2">

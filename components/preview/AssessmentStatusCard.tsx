@@ -47,7 +47,7 @@ const AssessmentStatusCard: React.FC<AssessmentStatusCardProps> = ({
 
   return (
     <div
-      className={`rounded-lg border border-gray-200 bg-white p-5 md:p-6 border-l-4 ${config.borderClass}`}
+      className={`rounded-md border border-gray-200 bg-white p-5 md:p-6 border-l-4 ${config.borderClass}`}
     >
       <div className="flex items-center gap-2 mb-3">
         <span className={`h-2.5 w-2.5 rounded-full ${config.dotClass}`} />
@@ -55,7 +55,7 @@ const AssessmentStatusCard: React.FC<AssessmentStatusCardProps> = ({
           {config.label}
         </span>
       </div>
-      <h4 className="text-base md:text-lg font-semibold text-forest-900">{title}</h4>
+      <h3 className="text-base md:text-lg font-semibold text-forest-900">{title}</h3>
       {children ? (
         <p className="mt-2 text-sm text-gray-600 leading-relaxed">{children}</p>
       ) : (
