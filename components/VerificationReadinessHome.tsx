@@ -188,35 +188,35 @@ export default function VerificationReadinessHome() {
       </section>
 
       {/* 5. Cost of doing nothing */}
-      <section className="border-y border-forest-800 bg-forest-950">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-300">
+      <section className="border-y border-gray-200 bg-forest-50/50">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
             THE COST OF WAITING
           </p>
-          <h2 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+          <h2 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
             Finding gaps during validation costs more.
           </h2>
-          <div className="mt-8 grid max-w-5xl grid-cols-1 md:grid-cols-3 md:divide-x md:divide-forest-800">
-            <div className="border-t border-forest-800 pt-5 first:border-t-0 first:pt-0 md:border-t-0 md:px-6 md:pt-0 md:first:pl-0 md:last:pr-0">
-              <h3 className="text-sm font-semibold text-white">Clarification cycles</h3>
-              <p className="mt-2 text-sm leading-relaxed text-forest-100">
+          <div className="mt-6 grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-3 md:gap-10">
+            <div className="border-t border-gray-200 pt-5 first:border-t-0 first:pt-0 md:border-0 md:pt-0">
+              <h3 className="text-base font-semibold text-gray-900">Clarification cycles</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
                 More questions. More evidence hunting.
               </p>
             </div>
-            <div className="border-t border-forest-800 pt-5 md:border-t-0 md:px-6 md:pt-0 md:first:pl-0 md:last:pr-0">
-              <h3 className="text-sm font-semibold text-white">Rework</h3>
-              <p className="mt-2 text-sm leading-relaxed text-forest-100">
+            <div className="border-t border-gray-200 pt-5 md:border-0 md:pt-0">
+              <h3 className="text-base font-semibold text-gray-900">Rework</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
                 Documentation changes under external review pressure.
               </p>
             </div>
-            <div className="border-t border-forest-800 pt-5 md:border-t-0 md:px-6 md:pt-0 md:first:pl-0 md:last:pr-0">
-              <h3 className="text-sm font-semibold text-white">Delays</h3>
-              <p className="mt-2 text-sm leading-relaxed text-forest-100">
+            <div className="border-t border-gray-200 pt-5 md:border-0 md:pt-0">
+              <h3 className="text-base font-semibold text-gray-900">Delays</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
                 Unresolved evidence issues can slow validation.
               </p>
             </div>
           </div>
-          <p className="mt-8 max-w-2xl text-sm font-medium leading-relaxed text-forest-100">
+          <p className="mt-6 max-w-2xl text-sm font-medium leading-relaxed text-forest-800">
             Article6 moves that review earlier, while your team still has time to respond.
           </p>
         </div>
