@@ -11,6 +11,7 @@ import {
   deleteSalesContact,
   deleteSalesOrganization,
   deleteSalesInteraction,
+  deleteSalesProject,
   deleteSalesProjectContact,
   updateSalesContact,
   updateSalesProject,
@@ -94,8 +95,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!name) return res.status(400).json({ error: "Project name is required." });
       const salesStatus = value(req.body, "salesStatus") || "NEW";
       if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
-      await addSalesProject({ organizationId, name, vcsId: value(req.body, "vcsId"), methodology: value(req.body, "methodology"), methodologyVersion: value(req.body, "methodologyVersion"), stage: value(req.body, "stage"), country: value(req.body, "country"), vvb: value(req.body, "vvb"), role: value(req.body, "role"), notes: value(req.body, "notes"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
-      return organizationRedirect(res, organizationId);
+      const result = await addSalesProject({ organizationId, name, vcsId: value(req.body, "vcsId"), methodology: value(req.body, "methodology"), methodologyVersion: value(req.body, "methodologyVersion"), stage: value(req.body, "stage"), country: value(req.body, "country"), vvb: value(req.body, "vvb"), role: value(req.body, "role"), notes: value(req.body, "notes"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
+      return organizationRedirect(res, organizationId, result.duplicate ? { projectDuplicate: "1" } : undefined);
     }
 
     if (action === "update_project") {
@@ -106,6 +107,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
       await updateSalesProject({ organizationId, projectId, name, vcsId: value(req.body, "vcsId"), methodology: value(req.body, "methodology"), methodologyVersion: value(req.body, "methodologyVersion"), stage: value(req.body, "stage"), country: value(req.body, "country"), vvb: value(req.body, "vvb"), role: value(req.body, "role"), notes: value(req.body, "notes"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
       return organizationRedirect(res, organizationId, { updated: "1" });
+    }
+
+    if (action === "delete_project") {
+      const projectId = value(req.body, "projectId");
+      if (!projectId) return res.status(400).json({ error: "Project id is required." });
+      if (!hasDeleteConfirmation(value(req.body, "confirmation"))) return organizationRedirect(res, organizationId, { error: "Type delete to confirm project deletion." });
+      await deleteSalesProject(organizationId, projectId);
+      return organizationRedirect(res, organizationId, { deleted: "1" });
     }
 
     if (action === "update_project_workflow") {

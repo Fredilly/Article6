@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { canonicalSalesProjectName, normalizeSalesProjectOrganizationRole, normalizeSalesVcsId, rollUpSalesProjectStatus } from "../lib/sales-projects.ts";
+import fs from "node:fs";
 
 test("normalizes VCS IDs and preserves a canonical project title", () => {
   assert.equal(normalizeSalesVcsId(" VCS 5075 "), "5075");
@@ -34,4 +35,14 @@ test("normalizes project organization roles into the controlled vocabulary", () 
   assert.equal(normalizeSalesProjectOrganizationRole("PDD Writer"), "PDD_AUTHOR");
   assert.equal(normalizeSalesProjectOrganizationRole("VVB"), "VALIDATION_BODY");
   assert.equal(normalizeSalesProjectOrganizationRole("unrecognized role"), "OTHER");
+});
+
+test("carbon project creation deduplicates by VCS ID and organization/name", () => {
+  const store = fs.readFileSync(new URL("../lib/sales-store.ts", import.meta.url), "utf8");
+  const route = fs.readFileSync(new URL("../pages/api/internal/sales.ts", import.meta.url), "utf8");
+  assert.match(store, /SELECT \* FROM sales_projects WHERE vcs_id = \$1 LIMIT 1/);
+  assert.match(store, /LOWER\(TRIM\(p\.name\)\) = LOWER\(TRIM\(\$2\)\)/);
+  assert.match(store, /UPDATE sales_projects/);
+  assert.match(store, /ON CONFLICT \(organization_id, project_id\)/);
+  assert.match(route, /projectDuplicate/);
 });
