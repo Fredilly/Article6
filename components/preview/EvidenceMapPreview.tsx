@@ -54,7 +54,7 @@ export default function EvidenceMapPreview() {
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
                 Requirement review
               </p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">VM0007 v1.8</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">Applicable methodology</p>
             </div>
             <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
               Medium risk
