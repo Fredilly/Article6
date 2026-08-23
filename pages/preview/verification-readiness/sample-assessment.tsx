@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import SectionHeading from '../../../components/preview/SectionHeading';
 import ReportPreview from '../../../components/preview/ReportPreview';
 import AssessmentStatusCard from '../../../components/preview/AssessmentStatusCard';
 import DisclaimerPanel from '../../../components/preview/DisclaimerPanel';
@@ -31,23 +30,38 @@ export default function SampleAssessmentPage() {
         />
       </Head>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24 text-center">
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900 leading-tight max-w-3xl mx-auto">
-          Sample VM0007 v1.8 Evidence Readiness Assessment
-        </h1>
-        <p className="mt-5 max-w-2xl mx-auto text-base md:text-lg text-gray-600 leading-relaxed">
-          This redacted sample demonstrates the structure, level of detail, and practical outputs
-          of an Article6 assessment.
+      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <div className="max-w-3xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
+            SAMPLE ASSESSMENT
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 leading-tight md:text-4xl">
+            Sample vm0007 1.8 Evidence Readiness Assessment
+          </h1>
+        </div>
+        <p className="mt-5 max-w-2xl text-sm leading-relaxed text-gray-600 md:text-base">
+          This redacted sample demonstrates the structure, level of detail, and practical outputs of an Article6 assessment.
         </p>
-        <p className="mt-3 max-w-xl mx-auto text-sm text-gray-400 leading-relaxed">
+        <p className="mt-3 max-w-xl text-xs leading-relaxed text-gray-400 md:text-sm">
           The sample is based on publicly available project documentation. It does not represent
           a commissioned engagement, customer relationship, endorsement, or validation decision.
         </p>
       </section>
 
-      {/* Sample contents */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-        <div className="max-w-2xl mx-auto">
+      {/* Report structure */}
+      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <div className="max-w-2xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
+            REPORT STRUCTURE
+          </p>
+          <h2 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+            This is what the analysis looks like.
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-gray-600">
+            The full sample report brings the review record, findings, evidence references, and actions together.
+          </p>
+        </div>
+        <div className="mt-8 max-w-xl">
           <ReportPreview items={reportContents} />
         </div>
       </section>
@@ -55,11 +69,19 @@ export default function SampleAssessmentPage() {
       {/* Example findings */}
       <section className="bg-gray-50 border-y border-gray-200">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-          <SectionHeading heading="Example findings" />
-          <p className="mt-4 text-center text-xs text-gray-400 uppercase tracking-wider">
-            Illustrative examples
-          </p>
-          <div className="mt-10 max-w-3xl mx-auto space-y-5">
+          <div className="max-w-2xl">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
+              EXAMPLE FINDINGS
+            </p>
+            <h2 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+              Findings are organized for resolution.
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-gray-600">
+              Each finding connects the requirement, evidence, gap, risk, and action needed to close it.
+            </p>
+          </div>
+          <p className="mt-6 text-xs uppercase tracking-wider text-gray-400">Illustrative examples</p>
+          <div className="mt-6 max-w-4xl space-y-5">
             <AssessmentStatusCard
               status="unclear"
               title="Carbon-pool selection needs a clearer basis"
@@ -95,27 +117,34 @@ export default function SampleAssessmentPage() {
       </section>
 
       {/* Sample download */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24 text-center">
-        <h2 className="text-xl font-bold text-forest-900">Download Sample Assessment</h2>
-        <p className="mt-3 mx-auto max-w-md text-sm text-gray-500">
-          Download the full VM0007 v1.8 pre-validation evidence readiness assessment sample.
-        </p>
+      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+        <div className="max-w-2xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
+            TAKE A CLOSER LOOK
+          </p>
+          <h2 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+            Download the full sample assessment.
+          </h2>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-gray-500">
+            Review the full vm0007 1.8 pre-validation evidence readiness assessment sample.
+          </p>
         <a
           href="https://ik.imagekit.io/tzublgy5d/Article6/Sample%20Documents/VM0007_v1.8_SAMPLE.pdf?ik-attachment=true"
           target="_blank"
           rel="noopener noreferrer"
           download
           onClick={() => trackEvent('sample_pdf_download')}
-          className="mt-6 inline-flex items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600"
         >
           Download Sample Report (PDF)
         </a>
         <p className="mt-5 text-sm text-gray-500">
-          Reviewing your own project documentation?{' '}
+          Ready to review your own project documentation?{' '}
           <Link href="/#upload-pdd" className="font-semibold text-forest-700 hover:text-forest-800">
             Start with a scope review &rarr;
           </Link>
         </p>
+        </div>
       </section>
 
       {/* Disclaimer */}
