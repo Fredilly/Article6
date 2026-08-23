@@ -1,6 +1,6 @@
 import Head from 'next/head';
-import SectionHeading from '../../../components/preview/SectionHeading';
 import ProcessStep from '../../../components/preview/ProcessStep';
+import EvidenceMapPreview from '../../../components/preview/EvidenceMapPreview';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { trackEvent } from '../../../lib/analytics';
@@ -21,45 +21,78 @@ export default function HowItWorksPage() {
         />
       </Head>
 
-      {/* Process */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-        <div className="max-w-2xl mx-auto space-y-8">
+      {/* Introduction and process */}
+      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <div className="max-w-3xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
+            HOW IT WORKS
+          </p>
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900 md:text-4xl">
+            From PDD to a clear validation-readiness plan.
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-600 md:text-base">
+            Article6 maps methodology requirements to project evidence, identifies gaps, and provides preparation actions.
+          </p>
+        </div>
+
+        <div className="mt-10 max-w-3xl space-y-6 md:mt-12">
           <ProcessStep step={1} title="Share your documents">
-            Provide the current PDD and relevant supporting materials through an agreed secure
-            channel.
+            Share the current PDD and relevant supporting materials through an agreed secure channel.
           </ProcessStep>
           <ProcessStep step={2} title="Confirm the scope">
-            We verify the methodology, version, project stage, available documentation, and
-            assessment scope.
+            Confirm the methodology, version, project stage, and assessment scope.
           </ProcessStep>
           <ProcessStep step={3} title="Map requirements to evidence">
-            Project documentation is reviewed against the applicable assessment framework.
+            Trace applicable requirements to the evidence in your project documentation.
           </ProcessStep>
           <ProcessStep step={4} title="Review findings and priorities">
-            Evidence support, unclear areas, missing information, and preparation actions are
-            reviewed.
+            Review supported, unclear, and action-required areas with their priorities.
           </ProcessStep>
           <ProcessStep step={5} title="Deliver the readiness assessment">
-            You receive a structured report designed to support internal preparation before
-            validation.
+            Receive a structured report with preparation actions before validation begins.
           </ProcessStep>
+        </div>
+      </section>
+
+      {/* Evidence map */}
+      <section className="border-y border-gray-200 bg-gray-50">
+        <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
+          <div className="max-w-2xl">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
+              THE REVIEW IN PRACTICE
+            </p>
+            <h2 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+              The evidence map turns the review into a working plan.
+            </h2>
+          </div>
+          <div className="mt-8">
+            <EvidenceMapPreview />
+          </div>
         </div>
       </section>
 
       {/* Human review */}
-      <section className="bg-forest-50/50 border-y border-gray-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-          <SectionHeading
-            heading="Human-reviewed. Methodology-specific. Evidence-focused."
-            body="Structured analysis supports the review process, but client-facing conclusions are reviewed before release."
-          />
+      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <div className="max-w-2xl">
+          <h2 className="text-lg font-semibold tracking-tight text-gray-900 md:text-xl">
+            Human-reviewed. Methodology-specific. Evidence-focused.
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-gray-600">
+            Structured analysis supports the review process, but client-facing conclusions are reviewed before release.
+          </p>
         </div>
       </section>
 
       {/* Scope */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-        <SectionHeading heading="What the assessment does not replace" />
-        <div className="mt-10 max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <section className="border-t border-gray-200 bg-gray-50">
+        <div className="mx-auto max-w-6xl px-4 py-10 md:py-12">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400">
+            SCOPE CLARIFICATION
+          </p>
+          <h2 className="mt-2 text-base font-semibold tracking-tight text-gray-800">
+            What the assessment does not replace
+          </h2>
+          <div className="mt-5 grid max-w-3xl grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
           {[
             'Validation or verification',
             "A VVB's independent judgment",
@@ -68,20 +101,29 @@ export default function HowItWorksPage() {
             'Project monitoring',
             'A guarantee of approval',
           ].map((item) => (
-            <div key={item} className="flex items-start gap-3 text-sm text-gray-700">
-              <span className="mt-0.5 text-forest-600 font-bold">&#x2022;</span>
+            <div key={item} className="flex items-start gap-2 text-xs leading-relaxed text-gray-500">
+              <span aria-hidden="true" className="mt-1 h-1 w-1 shrink-0 rounded-full bg-gray-400" />
               <span>{item}</span>
             </div>
           ))}
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 md:pb-24 text-center">
+      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <div className="max-w-2xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-forest-600">
+            NEXT STEP
+          </p>
+          <h2 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+            Start with your project documentation.
+          </h2>
+        </div>
         <Link
           href={`${base}#upload-pdd`}
           onClick={() => trackEvent('homepage_primary_cta', { location: 'mid_page' })}
-          className="inline-flex items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800"
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-forest-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600"
         >
           Upload your PDD
         </Link>

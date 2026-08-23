@@ -8,10 +8,10 @@ interface ReportPreviewProps {
 const ReportPreview: React.FC<ReportPreviewProps> = ({ items, className = '' }) => {
   return (
     <div className={`rounded-lg border border-gray-200 bg-white overflow-hidden ${className}`}>
-      <div className="bg-gradient-to-br from-forest-700 to-forest-900 px-6 py-10 md:px-10 md:py-16 text-white">
+      <div className="bg-forest-900 px-6 py-10 md:px-10 md:py-16 text-white">
         <div className="max-w-sm mx-auto text-center">
           <div className="text-xs uppercase tracking-[0.2em] text-forest-200 mb-3">Evidence Readiness Assessment</div>
-          <div className="text-xl md:text-2xl font-bold leading-tight">VM0007 v1.8</div>
+          <div className="text-xl md:text-2xl font-bold leading-tight">vm0007 1.8</div>
           <div className="text-forest-200 text-sm mt-2">Sample Assessment Report</div>
           <div className="mt-6 border-t border-forest-600 pt-4 text-xs text-forest-200">
             Prepared by Article6
