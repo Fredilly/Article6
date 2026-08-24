@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { Pool, type QueryResultRow } from "pg";
-import type { SubmissionSource } from "./submissions";
+import type { SubmissionSource, SubmissionSourceSite, SubmissionType } from "./submissions";
 
 export type SubmissionStatus = "received" | "in_review" | "completed" | "rejected";
 export type QuickCheckStatus = "received" | "processing" | "completed" | "failed";
@@ -9,6 +9,7 @@ export interface SubmissionRecord {
   id: string; reference: string; objectKey: string; bucket: string; originalFilename: string;
   fileSize: number; contentType: string; project: string; organization: string; contactName: string;
   workEmail?: string; externalContact?: string; submissionSource: SubmissionSource; methodology: string;
+  submissionType: SubmissionType; sourceSite: SubmissionSourceSite; productMetadata: Record<string, unknown>;
   notes: string; status: SubmissionStatus; createdAt: string; updatedAt: string;
   quickCheckStatus: QuickCheckStatus; quickCheckId?: string; quickCheckResult?: unknown;
   quickCheckStartedAt?: string; quickCheckCompletedAt?: string; quickCheckFailedAt?: string; quickCheckError?: string;
@@ -18,6 +19,7 @@ export interface NewSubmissionRecord {
   reference: string; objectKey: string; bucket: string; originalFilename: string; fileSize: number;
   contentType: string; project: string; organization: string; contactName: string; workEmail?: string;
   externalContact?: string; submissionSource: SubmissionSource; methodology: string; notes: string;
+  submissionType?: SubmissionType; sourceSite?: SubmissionSourceSite; productMetadata?: Record<string, unknown>;
   status?: SubmissionStatus; createdAt: string;
 }
 
@@ -45,8 +47,12 @@ function toRecord(row: QueryResultRow): SubmissionRecord {
     originalFilename: String(row.original_filename), fileSize: Number(row.file_size), contentType: String(row.content_type),
     project: String(row.project), organization: String(row.organization), contactName: String(row.contact_name),
     workEmail: row.work_email || undefined, externalContact: row.external_contact || undefined,
-    submissionSource: row.submission_source as SubmissionSource, methodology: String(row.methodology), notes: String(row.notes || ""),
-    status: row.status as SubmissionStatus, createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString(),
+    submissionSource: row.submission_source as SubmissionSource, methodology: String(row.methodology),
+    submissionType: (row.submission_type || "CARBON") as SubmissionType,
+    sourceSite: (row.source_site || "article6.org") as SubmissionSourceSite,
+    productMetadata: (row.product_metadata && typeof row.product_metadata === "object" ? row.product_metadata : {}) as Record<string, unknown>,
+    notes: String(row.notes || ""), status: row.status as SubmissionStatus,
+    createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString(),
     quickCheckStatus: (row.quick_check_status || "received") as QuickCheckStatus,
     quickCheckId: row.quick_check_id ? String(row.quick_check_id) : undefined,
     quickCheckResult: row.quick_check_result || undefined,
@@ -61,7 +67,9 @@ export function buildSubmissionRecord(input: NewSubmissionRecord): SubmissionRec
   return { id: randomUUID(), reference: input.reference, objectKey: input.objectKey, bucket: input.bucket,
     originalFilename: input.originalFilename, fileSize: input.fileSize, contentType: input.contentType, project: input.project,
     organization: input.organization, contactName: input.contactName, workEmail: input.workEmail, externalContact: input.externalContact,
-    submissionSource: input.submissionSource, methodology: input.methodology, notes: input.notes, status: input.status || "received",
+    submissionSource: input.submissionSource, methodology: input.methodology,
+    submissionType: input.submissionType || "CARBON", sourceSite: input.sourceSite || "article6.org",
+    productMetadata: input.productMetadata || {}, notes: input.notes, status: input.status || "received",
     createdAt: input.createdAt, updatedAt: input.createdAt, quickCheckStatus: "received" };
 }
 
@@ -70,11 +78,13 @@ export async function createSubmission(input: NewSubmissionRecord): Promise<Subm
   const result = await getPool().query(
     `INSERT INTO submissions
       (id, reference, object_key, bucket, original_filename, file_size, content_type, project, organization,
-       contact_name, work_email, external_contact, submission_source, methodology, notes, status, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $17) RETURNING *`,
+       contact_name, work_email, external_contact, submission_source, methodology, submission_type, source_site,
+       product_metadata, notes, status, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb, $18, $19, $20, $20) RETURNING *`,
     [record.id, record.reference, record.objectKey, record.bucket, record.originalFilename, record.fileSize, record.contentType,
       record.project, record.organization, record.contactName, record.workEmail || null, record.externalContact || null,
-      record.submissionSource, record.methodology, record.notes, record.status, record.createdAt]
+      record.submissionSource, record.methodology, record.submissionType, record.sourceSite, JSON.stringify(record.productMetadata),
+      record.notes, record.status, record.createdAt]
   );
   return toRecord(result.rows[0]);
 }
@@ -84,12 +94,14 @@ export async function createSubmissionIfAbsent(input: NewSubmissionRecord): Prom
   const result = await getPool().query(
     `INSERT INTO submissions
       (id, reference, object_key, bucket, original_filename, file_size, content_type, project, organization,
-       contact_name, work_email, external_contact, submission_source, methodology, notes, status, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $17)
+       contact_name, work_email, external_contact, submission_source, methodology, submission_type, source_site,
+       product_metadata, notes, status, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb, $18, $19, $20, $20)
      ON CONFLICT (reference) DO NOTHING RETURNING *`,
     [record.id, record.reference, record.objectKey, record.bucket, record.originalFilename, record.fileSize, record.contentType,
       record.project, record.organization, record.contactName, record.workEmail || null, record.externalContact || null,
-      record.submissionSource, record.methodology, record.notes, record.status, record.createdAt]
+      record.submissionSource, record.methodology, record.submissionType, record.sourceSite, JSON.stringify(record.productMetadata),
+      record.notes, record.status, record.createdAt]
   );
   if (result.rows[0]) return { submission: toRecord(result.rows[0]), created: true };
   const existing = await getSubmissionByReference(record.reference);
