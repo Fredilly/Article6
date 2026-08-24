@@ -25,6 +25,7 @@ export interface ConfirmedCarbonIntake {
 
 export interface CarbonIntakeResult {
   packageReference: string;
+  pddSubmissionId: string;
   pddSubmissionReference: string;
   created: boolean;
 }
@@ -58,7 +59,7 @@ export async function commitCarbonIntake(input: ConfirmedCarbonIntake): Promise<
     await client.query("BEGIN");
 
     const existing = await client.query(
-      `SELECT reference FROM submissions
+      `SELECT id, reference FROM submissions
        WHERE submission_type = 'CARBON'
          AND source_site = 'carbon.article6.org'
          AND product_metadata->>'packageReference' = $1
@@ -68,10 +69,18 @@ export async function commitCarbonIntake(input: ConfirmedCarbonIntake): Promise<
     );
     if (existing.rows[0]) {
       await client.query("COMMIT");
-      return { packageReference: input.packageReference, pddSubmissionReference: String(existing.rows[0].reference), created: false };
+      return {
+        packageReference: input.packageReference,
+        pddSubmissionId: String(existing.rows[0].id),
+        pddSubmissionReference: String(existing.rows[0].reference),
+        created: false,
+      };
     }
 
+    let pddSubmissionId = "";
     for (const file of input.files) {
+      const submissionId = randomUUID();
+      if (file.role === "PDD") pddSubmissionId = submissionId;
       const productMetadata = {
         packageReference: input.packageReference,
         documentRole: file.role,
@@ -84,7 +93,7 @@ export async function commitCarbonIntake(input: ConfirmedCarbonIntake): Promise<
            product_metadata, created_at, updated_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'website',$12,$13,'received','CARBON','carbon.article6.org',$14::jsonb,$15,$15)`,
         [
-          randomUUID(),
+          submissionId,
           file.submissionReference,
           file.key,
           input.bucket,
@@ -104,7 +113,12 @@ export async function commitCarbonIntake(input: ConfirmedCarbonIntake): Promise<
     }
 
     await client.query("COMMIT");
-    return { packageReference: input.packageReference, pddSubmissionReference: pdd.submissionReference, created: true };
+    return {
+      packageReference: input.packageReference,
+      pddSubmissionId,
+      pddSubmissionReference: pdd.submissionReference,
+      created: true,
+    };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
