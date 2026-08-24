@@ -5,6 +5,12 @@ import { isApprovedSubmissionKey, isSubmissionReference } from "./submissions.ts
 import { generateSubmissionReference } from "./submission-reference.ts";
 
 const PDF_CONTENT_TYPE = "application/pdf";
+const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
+  pdf: PDF_CONTENT_TYPE,
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+};
 
 function getR2Credentials() {
   const accountId = process.env.R2_ACCOUNT_ID;
@@ -65,28 +71,35 @@ function getS3Client(): S3Client {
   });
 }
 
-function generateKey(): string {
+function generateKey(extension = "pdf"): string {
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
   const uuid = randomUUID();
-  return `submissions/${yyyy}-${mm}-${dd}/${uuid}.pdf`;
+  return `submissions/${yyyy}-${mm}-${dd}/${uuid}.${extension}`;
 }
 
-export async function generatePresignedUploadUrl(): Promise<{ uploadUrl: string; uploadReference: string; submissionReference: string }> {
+function inferContentType(key: string): string {
+  const extension = key.split(".").pop()?.toLowerCase() || "pdf";
+  return CONTENT_TYPE_BY_EXTENSION[extension] || PDF_CONTENT_TYPE;
+}
+
+export async function generatePresignedUploadUrl(options?: { contentType?: string; extension?: string }): Promise<{ uploadUrl: string; uploadReference: string; submissionReference: string }> {
   const s3 = getS3Client();
   const { bucketName } = getR2Credentials();
-  const key = generateKey();
+  const contentType = options?.contentType || PDF_CONTENT_TYPE;
+  const extension = options?.extension || "pdf";
+  const key = generateKey(extension);
   const submissionReference = generateSubmissionReference();
   const expiresAt = Date.now() + 10 * 60 * 1000;
 
-  console.info("[r2] Generating presigned PUT URL", { bucket: bucketName, key });
+  console.info("[r2] Generating presigned PUT URL", { bucket: bucketName, key, contentType });
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
     Key: key,
-    ContentType: PDF_CONTENT_TYPE,
+    ContentType: contentType,
   });
 
   const uploadUrl = await getSignedUrl(s3, command, {
@@ -98,7 +111,7 @@ export async function generatePresignedUploadUrl(): Promise<{ uploadUrl: string;
   return { uploadUrl, uploadReference: signUploadReference(key, submissionReference, expiresAt), submissionReference };
 }
 
-export async function generatePresignedDownloadUrl(bucket: string, key: string): Promise<string> {
+export async function generatePresignedDownloadUrl(bucket: string, key: string, contentType?: string): Promise<string> {
   if (!bucket || !isApprovedSubmissionKey(key)) {
     throw new Error("Invalid stored submission object.");
   }
@@ -107,7 +120,7 @@ export async function generatePresignedDownloadUrl(bucket: string, key: string):
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
-    ResponseContentType: PDF_CONTENT_TYPE,
+    ResponseContentType: contentType || inferContentType(key),
     ResponseContentDisposition: "attachment",
   });
 
