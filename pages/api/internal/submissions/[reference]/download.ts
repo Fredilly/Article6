@@ -12,14 +12,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!isSubmissionReference(reference)) return res.status(404).json({ error: "Submission not found." });
   const submission = await getSubmissionByReference(reference);
   if (!submission) return res.status(404).json({ error: "Submission not found." });
-  if (!submission.bucket || !submission.objectKey) return res.status(404).json({ error: "Submission PDF is not available." });
+  if (!submission.bucket || !submission.objectKey) return res.status(404).json({ error: "Submission document is not available." });
 
   try {
     const object = await verifyObjectExists(submission.objectKey, submission.bucket);
-    if (!object.exists) return res.status(404).json({ error: "Submission PDF is not available." });
-    return res.redirect(307, await generatePresignedDownloadUrl(submission.bucket, submission.objectKey));
+    if (!object.exists) return res.status(404).json({ error: "Submission document is not available." });
+    return res.redirect(307, await generatePresignedDownloadUrl(submission.bucket, submission.objectKey, submission.contentType));
   } catch (error) {
-    console.error("[submissions] PDF download signing failed", { reference, error });
-    return res.status(502).json({ error: "Unable to prepare the submission PDF for download." });
+    console.error("[submissions] document download signing failed", { reference, error });
+    return res.status(502).json({ error: "Unable to prepare the submission document for download." });
   }
 }
