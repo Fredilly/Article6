@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { generatePresignedUploadUrl } from "../../../lib/r2";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
-import { PDF_CONTENT_TYPE, validateSubmissionMetadata, type SubmissionSource } from "../../../lib/submissions";
+import { PDF_CONTENT_TYPE, validateSubmissionMetadata, type SubmissionSource, type SubmissionSourceSite, type SubmissionType } from "../../../lib/submissions";
 
 interface PresignRequestBody {
   fileName: string;
@@ -13,14 +13,15 @@ interface PresignRequestBody {
   projectName: string;
   methodology: string;
   submissionSource: SubmissionSource;
+  submissionType?: SubmissionType;
+  sourceSite?: SubmissionSourceSite;
   externalContact?: string;
   note?: string;
 }
 
 export function validatePresignRequest(body: Partial<PresignRequestBody>): string | null {
   if (body.contentType !== PDF_CONTENT_TYPE) return "Only PDF files are accepted.";
-  const error = validateSubmissionMetadata(body);
-  return error;
+  return validateSubmissionMetadata(body);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

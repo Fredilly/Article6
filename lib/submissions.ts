@@ -2,6 +2,8 @@ export const MAX_FILE_SIZE = 50 * 1024 * 1024;
 export const PDF_CONTENT_TYPE = "application/pdf";
 
 export type SubmissionSource = "website" | "whatsapp" | "email" | "internal" | "other";
+export type SubmissionType = "CARBON" | "TENDER";
+export type SubmissionSourceSite = "article6.org" | "carbon.article6.org" | "bids.article6.org";
 
 export interface SubmissionMetadata {
   contactName: string;
@@ -10,6 +12,8 @@ export interface SubmissionMetadata {
   projectName: string;
   methodology: string;
   submissionSource: SubmissionSource;
+  submissionType?: SubmissionType;
+  sourceSite?: SubmissionSourceSite;
   externalContact?: string;
   note?: string;
   fileName: string;
@@ -17,6 +21,8 @@ export interface SubmissionMetadata {
 }
 
 export const NON_WEBSITE_SOURCES: SubmissionSource[] = ["whatsapp", "email", "internal", "other"];
+export const SUBMISSION_TYPES: SubmissionType[] = ["CARBON", "TENDER"];
+export const SUBMISSION_SOURCE_SITES: SubmissionSourceSite[] = ["article6.org", "carbon.article6.org", "bids.article6.org"];
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -42,11 +48,17 @@ export function isSubmissionReference(value: unknown): value is string {
 }
 
 export function validateSubmissionMetadata(
-  input: Partial<SubmissionMetadata> & { submissionSource?: unknown }
+  input: Partial<SubmissionMetadata> & { submissionSource?: unknown; submissionType?: unknown; sourceSite?: unknown }
 ): string | null {
   const value = input as Partial<SubmissionMetadata>;
   if (typeof value.submissionSource !== "string" || !["website", ...NON_WEBSITE_SOURCES].includes(value.submissionSource)) {
     return "Invalid submission source.";
+  }
+  if (value.submissionType !== undefined && (typeof value.submissionType !== "string" || !SUBMISSION_TYPES.includes(value.submissionType as SubmissionType))) {
+    return "Invalid submission type.";
+  }
+  if (value.sourceSite !== undefined && (typeof value.sourceSite !== "string" || !SUBMISSION_SOURCE_SITES.includes(value.sourceSite as SubmissionSourceSite))) {
+    return "Invalid submission source site.";
   }
   if (typeof value.contactName !== "string" || !value.contactName.trim() || value.contactName.length > 200) {
     return "Contact name is required (max 200 characters).";
