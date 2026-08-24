@@ -5,6 +5,12 @@ import { isApprovedSubmissionKey, isSubmissionReference } from "./submissions.ts
 import { generateSubmissionReference } from "./submission-reference.ts";
 
 const PDF_CONTENT_TYPE = "application/pdf";
+const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
+  pdf: PDF_CONTENT_TYPE,
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+};
 
 function getR2Credentials() {
   const accountId = process.env.R2_ACCOUNT_ID;
@@ -74,6 +80,11 @@ function generateKey(extension = "pdf"): string {
   return `submissions/${yyyy}-${mm}-${dd}/${uuid}.${extension}`;
 }
 
+function inferContentType(key: string): string {
+  const extension = key.split(".").pop()?.toLowerCase() || "pdf";
+  return CONTENT_TYPE_BY_EXTENSION[extension] || PDF_CONTENT_TYPE;
+}
+
 export async function generatePresignedUploadUrl(options?: { contentType?: string; extension?: string }): Promise<{ uploadUrl: string; uploadReference: string; submissionReference: string }> {
   const s3 = getS3Client();
   const { bucketName } = getR2Credentials();
@@ -100,7 +111,7 @@ export async function generatePresignedUploadUrl(options?: { contentType?: strin
   return { uploadUrl, uploadReference: signUploadReference(key, submissionReference, expiresAt), submissionReference };
 }
 
-export async function generatePresignedDownloadUrl(bucket: string, key: string, contentType = PDF_CONTENT_TYPE): Promise<string> {
+export async function generatePresignedDownloadUrl(bucket: string, key: string, contentType?: string): Promise<string> {
   if (!bucket || !isApprovedSubmissionKey(key)) {
     throw new Error("Invalid stored submission object.");
   }
@@ -109,7 +120,7 @@ export async function generatePresignedDownloadUrl(bucket: string, key: string, 
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
-    ResponseContentType: contentType,
+    ResponseContentType: contentType || inferContentType(key),
     ResponseContentDisposition: "attachment",
   });
 
