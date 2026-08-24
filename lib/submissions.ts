@@ -104,7 +104,7 @@ export function isPdfUpload(file: { type: string; size: number }): string | null
 }
 
 export function isApprovedSubmissionKey(key: unknown): key is string {
-  return typeof key === "string" && /^submissions\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]{36}\.pdf$/.test(key);
+  return typeof key === "string" && /^submissions\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]{36}\.(pdf|docx|xlsx|pptx)$/.test(key);
 }
 
 export function validateStoredObject(
