@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Link from 'next/link';
 
 export default function HomePage() {
   return (
@@ -13,12 +14,12 @@ export default function HomePage() {
 
       <div className="min-h-screen bg-[#f7f7f5] text-[#111111]">
         <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 md:px-10 lg:px-12">
-          <a
+          <Link
             href="/"
             className="rounded-md text-[15px] font-semibold tracking-[-0.02em] text-[#111111] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#111111]"
           >
             Article6
-          </a>
+          </Link>
           <a
             href="mailto:fredilly@article6.org"
             className="rounded-md text-sm text-[#5f5f5f] transition-colors duration-200 hover:text-[#111111] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#111111]"
