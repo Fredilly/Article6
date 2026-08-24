@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getBucketName, resolveUploadReference, verifyObjectExists } from "../../../lib/r2";
 import { sendSubmissionNotification } from "../../../lib/email";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
-import { sanitizeOriginalFilename, validateStoredObject, validateSubmissionMetadata, type SubmissionSource } from "../../../lib/submissions";
+import { sanitizeOriginalFilename, validateStoredObject, validateSubmissionMetadata, type SubmissionSource, type SubmissionSourceSite, type SubmissionType } from "../../../lib/submissions";
 import { createSubmissionIfAbsent } from "../../../lib/submission-store";
 
 interface ConfirmRequestBody {
@@ -15,6 +15,8 @@ interface ConfirmRequestBody {
   projectName: string;
   methodology: string;
   submissionSource: SubmissionSource;
+  submissionType?: SubmissionType;
+  sourceSite?: SubmissionSourceSite;
   externalContact?: string;
   note?: string;
 }
@@ -58,12 +60,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       organization: body.organization!.trim(),
       methodology: body.methodology!.trim(),
       submissionSource: body.submissionSource!,
+      submissionType: body.submissionType || "CARBON",
+      sourceSite: body.sourceSite || "article6.org",
       externalContact: body.externalContact?.trim() || undefined,
       notes: body.note?.trim() || "",
       createdAt: timestamp,
     });
 
-    console.log("[Submission Confirmed]", JSON.stringify({ reference: submission.reference, bucket: submission.bucket }));
+    console.log("[Submission Confirmed]", JSON.stringify({ reference: submission.reference, bucket: submission.bucket, submissionType: submission.submissionType, sourceSite: submission.sourceSite }));
     if (created) await sendSubmissionNotification({
       contactName: submission.contactName,
       workEmail: submission.workEmail,
