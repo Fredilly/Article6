@@ -82,9 +82,9 @@ test("separate Gmail threads at one organization never mix contacts", () => {
     interaction("s1", "samrat", "Samrat", "2026-08-21T09:05:00.000Z", "Fred outreach", "thread-samrat"),
     interaction("v2", "vijay", "Vijay", "2026-08-21T09:10:00.000Z", "Vijay reply", "thread-vijay"),
   ]);
-  assert.deepEqual(conversations.map((conversation) => conversation.contactName), ["Vijay", "Samrat"]);
-  assert.deepEqual(conversations[0]?.interactions.map((message) => message.id), ["v1", "v2"]);
-  assert.deepEqual(conversations[1]?.interactions.map((message) => message.id), ["s1"]);
+  assert.deepEqual(conversations.map((conversation) => conversation.contactName), ["Samrat", "Vijay"]);
+  assert.deepEqual(conversations[0]?.interactions.map((message) => message.id), ["s1"]);
+  assert.deepEqual(conversations[1]?.interactions.map((message) => message.id), ["v1", "v2"]);
 });
 
 test("legacy rows infer a thread only for the same contact and nearby subject", () => {

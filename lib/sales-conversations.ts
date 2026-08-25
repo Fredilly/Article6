@@ -38,6 +38,11 @@ function sortInteractions(interactions: SalesInteraction[]): SalesInteraction[] 
     .map(({ interaction }) => interaction);
 }
 
+function latestInteractionTime(conversation: SalesConversation): number {
+  const latest = conversation.interactions[conversation.interactions.length - 1];
+  return latest ? Date.parse(latest.occurredAt) : Number.NEGATIVE_INFINITY;
+}
+
 function addInteraction(conversation: SalesConversation, interaction: SalesInteraction): void {
   conversation.contactId ||= interaction.contactId;
   conversation.contactName ||= interaction.contactName;
@@ -101,8 +106,10 @@ export function groupSalesInteractions(interactions: SalesInteraction[]): SalesC
     addInteraction(conversation, interaction);
   }
 
-  return groups.map((conversation) => ({
-    ...conversation,
-    interactions: sortInteractions(conversation.interactions),
-  }));
+  return groups
+    .map((conversation) => ({
+      ...conversation,
+      interactions: sortInteractions(conversation.interactions),
+    }))
+    .sort((a, b) => latestInteractionTime(a) - latestInteractionTime(b));
 }
