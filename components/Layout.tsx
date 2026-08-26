@@ -10,9 +10,9 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const router = useRouter();
-  const isHome = router.pathname === '/';
+  const isParentSurface = router.pathname === '/' || router.pathname === '/contact';
 
-  if (isHome) {
+  if (isParentSurface) {
     return <>{children}</>;
   }
 
