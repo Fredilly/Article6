@@ -1,17 +1,17 @@
 import Head from 'next/head';
-import VerificationReadinessHome from '../components/VerificationReadinessHome';
+import ParentHome from '../components/ParentHome';
 
 export default function HomePage() {
   return (
     <>
       <Head>
-        <title>Article6 — Pre-Validation Evidence Readiness</title>
+        <title>Article6 — Specialist review for high-consequence documents</title>
         <meta
           name="description"
-          content="Find evidence gaps before your validator does. Article6 reviews project documentation against applicable methodology requirements to identify missing, unclear, and unsupported evidence before validation begins."
+          content="Article6 builds specialist review services for high-consequence documents and expensive, rules-heavy decisions."
         />
       </Head>
-      <VerificationReadinessHome />
+      <ParentHome />
     </>
   );
 }
