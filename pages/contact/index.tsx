@@ -1,47 +1,52 @@
-// pages/contact/index.tsx
-import React from 'react';
-import { EnvelopeIcon } from '@heroicons/react/24/outline';
+import Head from 'next/head';
+import Link from 'next/link';
 import ContactForm from '../../components/ContactForm';
 
-const ContactPage = () => {
+export default function ContactPage() {
   return (
-    <main className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-12 md:py-16">
-      {/* Intro */}
-      <section className="mb-16">
-        <div className="max-w-xl mx-auto p-8 text-center space-y-4 rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-          <h1 className="text-3xl md:text-5xl font-bold">Contact Us</h1>
-          <p className="text-gray-600">
-            We work with governments, corporates, and partners worldwide. Connect with us to discuss projects, partnerships, or opportunities.
-          </p>
-          <p>
-            <a
-              href="mailto:contact@article6.org"
-              className="inline-flex items-center text-blue-600 font-semibold hover:underline"
-              rel="nofollow"
-            >
-              <EnvelopeIcon className="h-5 w-5 mr-1" aria-hidden="true" />
-              contact@article6.org
-            </a>
-          </p>
-          <div>
-            <a
-              href="https://wa.me/2349066876272"
-              aria-label="Chat on WhatsApp"
-              rel="nofollow"
-              className="inline-flex items-center rounded-full bg-green-600 text-white px-5 py-3 hover:bg-green-700"
-            >
-              Chat on WhatsApp
-            </a>
-          </div>
-        </div>
-      </section>
+    <>
+      <Head>
+        <title>Contact Article6</title>
+        <meta
+          name="description"
+          content="Tell Article6 what needs reviewing and what is at stake."
+        />
+      </Head>
 
-      {/* Contact Form */}
-      <section className="mb-16">
-        <ContactForm className="bg-white p-8 shadow-sm rounded-lg mx-auto max-w-2xl" />
-      </section>
-    </main>
+      <div className="min-h-screen bg-[#f3f0e9] text-neutral-900">
+        <header className="flex items-center justify-between px-[4.2vw] py-8 text-xs tracking-[0.08em]">
+          <Link href="/" className="font-semibold tracking-[0.22em]" aria-label="Article6 home">
+            ARTICLE6
+          </Link>
+          <Link href="/" className="text-neutral-600 transition-colors hover:text-black">
+            Home
+          </Link>
+        </header>
+
+        <main className="mx-auto grid max-w-[1400px] grid-cols-1 gap-16 px-[6.2vw] pb-24 pt-[8vw] lg:grid-cols-[1.15fr_0.85fr] lg:gap-[10vw] lg:pb-32">
+          <section>
+            <p className="mb-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+              CONTACT ARTICLE6
+            </p>
+            <h1 className="max-w-4xl text-[clamp(3rem,6vw,7rem)] font-normal leading-[0.95] tracking-[-0.055em]">
+              Tell us what needs reviewing and what is at stake.
+            </h1>
+            <p className="mt-10 max-w-xl text-base leading-7 text-neutral-600 md:text-lg">
+              If the work is rules-heavy, evidence-dependent, or expensive to get wrong, send us the context.
+            </p>
+          </section>
+
+          <section className="self-end border-t border-black/15 pt-8 lg:mt-32">
+            <ContactForm />
+            <p className="mt-12 text-sm leading-6 text-neutral-500">
+              Prefer email?{' '}
+              <a className="text-neutral-900 underline underline-offset-4" href="mailto:contact@article6.org">
+                contact@article6.org
+              </a>
+            </p>
+          </section>
+        </main>
+      </div>
+    </>
   );
-};
-
-export default ContactPage;
+}
