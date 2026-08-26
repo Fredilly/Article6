@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import styles from './ParentHome.module.css';
 
-const PLACEHOLDER_VIDEO = 'https://storage.googleapis.com/coverr-main/mp4/Mt_Baker.mp4';
+const HERO_VIDEO = 'https://assets.article6.org/hero/article6-hero.mp4';
 
 export default function ParentHome() {
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function ParentHome() {
             preload="metadata"
             aria-hidden="true"
           >
-            <source src={PLACEHOLDER_VIDEO} type="video/mp4" />
+            <source src={HERO_VIDEO} type="video/mp4" />
           </video>
           <div className={styles.heroShade} />
 
