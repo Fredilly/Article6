@@ -112,10 +112,9 @@ export async function storeContactEnquiry(input: ContactEnquiryInput): Promise<{
          WHEN status IN ('NEW', 'CONTACTED', 'NURTURE') THEN 'ENGAGED'
          ELSE status
        END,
-       experiment = CASE WHEN experiment = 'ARTICLE6_CARBON' AND $2 = FALSE THEN 'OTHER' ELSE experiment END,
-       updated_at = $3
+       updated_at = $2
        WHERE id = $1`,
-      [organizationId, Boolean(existingContact.rows[0]), now],
+      [organizationId, now],
     );
 
     const interactionId = randomUUID();
