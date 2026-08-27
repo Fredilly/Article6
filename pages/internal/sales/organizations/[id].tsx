@@ -2,9 +2,10 @@ import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useEffect, useState } from "react";
+import SalesAutoRefresh from "../../../../components/SalesAutoRefresh";
 import SalesHeader from "../../../../components/SalesHeader";
+import { loadSalesHomepageData } from "../../../../lib/sales-homepage-store";
 import { buildSalesMemorySearchEntries } from "../../../../lib/sales-search";
-import { listSalesOrganizations } from "../../../../lib/sales-store";
 import { getSalesOrganizationDetail, type SalesOrganizationDetail } from "../../../../lib/sales-store";
 import { SALES_EXPERIMENTS, SALES_OBJECTION_CODES, SALES_ORGANIZATION_STATUSES } from "../../../../lib/sales-memory";
 import { relationshipHistoryPresentation } from "../../../../lib/sales-interaction-display";
@@ -16,13 +17,11 @@ interface Props { detail: SalesOrganizationDetail; duplicate: boolean; projectDu
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ params, query }) => {
   const id = typeof params?.id === "string" ? params.id : "";
-  const detail = await getSalesOrganizationDetail(id);
+  const [detail, homepageData] = await Promise.all([getSalesOrganizationDetail(id), loadSalesHomepageData()]);
   if (!detail) return { notFound: true };
-  const organizations = await listSalesOrganizations("");
-  const details = (await Promise.all(organizations.map((organization) => getSalesOrganizationDetail(organization.id)))).filter((value): value is NonNullable<typeof value> => Boolean(value));
   const rawStatus = typeof query.status === "string" ? query.status : "ALL";
   const initialStatus = rawStatus === "ALL" || detail.organization.status === rawStatus ? rawStatus as Props["initialStatus"] : "ALL";
-  return { props: { detail, duplicate: query.duplicate === "1", projectDuplicate: query.projectDuplicate === "1", error: typeof query.error === "string" ? query.error : undefined, searchEntries: buildSalesMemorySearchEntries(details), initialQuery: typeof query.q === "string" ? query.q : "", initialStatus, selectedContactId: typeof query.contactId === "string" ? query.contactId : undefined, selectedConversationId: typeof query.threadId === "string" ? query.threadId : undefined } };
+  return { props: { detail, duplicate: query.duplicate === "1", projectDuplicate: query.projectDuplicate === "1", error: typeof query.error === "string" ? query.error : undefined, searchEntries: buildSalesMemorySearchEntries(homepageData.details), initialQuery: typeof query.q === "string" ? query.q : "", initialStatus, selectedContactId: typeof query.contactId === "string" ? query.contactId : undefined, selectedConversationId: typeof query.threadId === "string" ? query.threadId : undefined } };
 };
 
 const fieldClass = "rounded-md border border-gray-300 px-3 py-2 text-sm";
@@ -53,6 +52,7 @@ export default function OrganizationPage({ detail, duplicate, projectDuplicate, 
 
   return <>
     <Head><title>{organization.name} | Sales Memory</title><meta name="robots" content="noindex,nofollow" /></Head>
+    <SalesAutoRefresh />
     <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900"><div className="mx-auto max-w-6xl">
       <Link href="/internal/sales" className="text-sm font-medium text-forest-700">← Sales memory</Link>
       <SalesHeader entries={searchEntries} initialQuery={initialQuery} initialStatus={initialStatus} />

@@ -1,6 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import SalesAutoRefresh from "../../../components/SalesAutoRefresh";
 import SalesOrganizationsTable from "../../../components/SalesOrganizationsTable";
 import { loadSalesHomepageData } from "../../../lib/sales-homepage-store";
 import { buildSalesMemorySearchEntries } from "../../../lib/sales-search";
@@ -25,7 +26,7 @@ function experimentLabel(value: string) {
 }
 
 export default function SalesIndexPage({ organizations, tenderOpportunities, searchEntries, initialQuery, initialStatus }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  return <><Head><title>Sales Memory | Article6 Internal</title><meta name="robots" content="noindex,nofollow" /></Head>
+  return <><Head><title>Sales Memory | Article6 Internal</title><meta name="robots" content="noindex,nofollow" /></Head><SalesAutoRefresh />
     <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900"><div className="mx-auto max-w-6xl">
       <p className="text-sm font-semibold uppercase tracking-wide text-forest-700">Internal experiments & sales</p>
       <div className="mt-2 flex justify-end"><Link href="/internal/sales/import-review" className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700">Review imports</Link></div>
