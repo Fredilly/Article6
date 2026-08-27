@@ -38,10 +38,16 @@ export default function SalesOrganizationsTable({ organizations, searchEntries, 
     const matchesSearch = needle.length < 2 || searchEntries.some((e) => e.organizationId === o.id && e.searchText.includes(needle));
     return matchesSearch && (activeStatus === "ALL" || o.status === activeStatus) && (experiment === "ALL" || o.experiment === experiment);
   })].sort((a, b) => {
-    const ad = sortMode === "UPDATED" ? a.updatedAt : a.lastInteractionAt;
-    const bd = sortMode === "UPDATED" ? b.updatedAt : b.lastInteractionAt;
-    const diff = new Date(bd || 0).getTime() - new Date(ad || 0).getTime();
-    return sortMode === "OLDEST" ? -diff : diff;
+    if (sortMode === "NEWEST") {
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    }
+    if (sortMode === "OLDEST") {
+      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+    }
+    if (sortMode === "UPDATED") {
+      return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+    }
+    return new Date(b.lastInteractionAt || 0).getTime() - new Date(a.lastInteractionAt || 0).getTime();
   });
 
   return <>
