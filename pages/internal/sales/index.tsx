@@ -2,18 +2,19 @@ import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import SalesOrganizationsTable from "../../../components/SalesOrganizationsTable";
+import { loadSalesHomepageData } from "../../../lib/sales-homepage-store";
 import { buildSalesMemorySearchEntries } from "../../../lib/sales-search";
-import { getSalesOrganizationDetail, listSalesOrganizations, type SalesOrganization, type SalesTenderOpportunity } from "../../../lib/sales-store";
+import type { SalesOrganization, SalesTenderOpportunity } from "../../../lib/sales-store";
 import { SALES_EXPERIMENTS } from "../../../lib/sales-memory";
 
 interface Props { organizations: SalesOrganization[]; tenderOpportunities: SalesTenderOpportunity[]; searchEntries: ReturnType<typeof buildSalesMemorySearchEntries>; initialQuery: string; initialStatus: "ALL" | SalesOrganization["status"]; }
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => {
-  const organizations = await listSalesOrganizations("");
-  const details = (await Promise.all(organizations.map((organization) => getSalesOrganizationDetail(organization.id)))).filter((detail): detail is NonNullable<typeof detail> => Boolean(detail));
+  const { details, tenderOpportunities } = await loadSalesHomepageData();
+  const organizations = details.map((detail) => detail.organization);
   const rawStatus = typeof query.status === "string" ? query.status : "ALL";
   const initialStatus = rawStatus === "ALL" || organizations.some((organization) => organization.status === rawStatus) ? rawStatus as Props["initialStatus"] : "ALL";
-  return { props: { organizations, tenderOpportunities: details.flatMap((detail) => detail.tenderOpportunities), searchEntries: buildSalesMemorySearchEntries(details), initialQuery: typeof query.q === "string" ? query.q : "", initialStatus } };
+  return { props: { organizations, tenderOpportunities, searchEntries: buildSalesMemorySearchEntries(details), initialQuery: typeof query.q === "string" ? query.q : "", initialStatus } };
 };
 
 function experimentLabel(value: string) {
