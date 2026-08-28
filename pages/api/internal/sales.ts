@@ -29,6 +29,10 @@ function value(body: NextApiRequest["body"], key: string): string {
   return typeof candidate === "string" ? candidate.trim() : "";
 }
 
+function hasBodyKey(body: NextApiRequest["body"], key: string): boolean {
+  return Boolean(body && Object.prototype.hasOwnProperty.call(body, key));
+}
+
 function organizationRedirect(res: NextApiResponse, id: string, params?: Record<string, string>) {
   const query = params ? `?${new URLSearchParams(params).toString()}` : "";
   res.redirect(303, `/internal/sales/organizations/${encodeURIComponent(id)}${query}`);
@@ -148,7 +152,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!isSalesTenderStatus(tenderStatus)) return res.status(400).json({ error: "Invalid tender status." });
       const salesStatus = value(req.body, "salesStatus") || "NEW";
       if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
-      const tenderId = await createSalesTenderOpportunity({ organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined, sourceKey: value(req.body, "sourceKey") });
+      const tenderId = await createSalesTenderOpportunity({ organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatus, bidderStatus: value(req.body, "bidderStatus") || undefined, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined, sourceKey: value(req.body, "sourceKey") });
       return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
     }
 
@@ -160,7 +164,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (tenderStatusValue && !isSalesTenderStatus(tenderStatusValue)) return res.status(400).json({ error: "Invalid tender status." });
       const salesStatus = value(req.body, "salesStatus") || "NEW";
       if (!isSalesOrganizationStatus(salesStatus)) return res.status(400).json({ error: "Invalid sales status." });
-      await updateSalesTenderOpportunity({ id: tenderId, organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatusValue && isSalesTenderStatus(tenderStatusValue) ? tenderStatusValue : undefined, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
+      await updateSalesTenderOpportunity({ id: tenderId, organizationId, contactId: normalizeOptional(req.body?.contactId) || undefined, name, buyer: value(req.body, "buyer"), referenceNumber: value(req.body, "referenceNumber"), submissionDeadline: value(req.body, "submissionDeadline") || undefined, contractValue: value(req.body, "contractValue"), sector: value(req.body, "sector"), status: tenderStatusValue && isSalesTenderStatus(tenderStatusValue) ? tenderStatusValue : undefined, bidderStatus: hasBodyKey(req.body, "bidderStatus") ? value(req.body, "bidderStatus") : undefined, notes: value(req.body, "notes"), documentsRequested: Number(value(req.body, "documentsRequested") || 0), documentsReceived: Number(value(req.body, "documentsReceived") || 0), buyerRequirements: value(req.body, "buyerRequirements"), salesStatus, assignedOwner: value(req.body, "assignedOwner"), nextAction: value(req.body, "nextAction"), nextActionDate: value(req.body, "nextActionDate") || undefined });
       return res.redirect(303, `/internal/sales/tenders/${encodeURIComponent(tenderId)}`);
     }
 
