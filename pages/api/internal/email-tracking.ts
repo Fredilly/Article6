@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
-import { attachEmailTracking, createEmailTracking, listEmailTracking } from "../../../lib/email-tracking";
+import { createEmailTracking, listEmailTracking } from "../../../lib/email-tracking";
+import { attachEmailTrackingByToken } from "../../../lib/email-tracking-attach";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!(await hasInternalUploadSession(req))) {
@@ -48,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (body.action === "attach") {
       if (!body.token) throw new Error("token is required.");
       if (!body.gmailMessageId && !body.gmailThreadId) throw new Error("A Gmail message or thread id is required.");
-      const record = await attachEmailTracking({
+      const record = await attachEmailTrackingByToken({
         token: String(body.token),
         gmailMessageId: body.gmailMessageId ? String(body.gmailMessageId) : undefined,
         gmailThreadId: body.gmailThreadId ? String(body.gmailThreadId) : undefined,
