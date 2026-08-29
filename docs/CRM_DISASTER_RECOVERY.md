@@ -21,7 +21,7 @@ Neon history/PITR is useful but must not be the only recovery mechanism. The pro
 
 ## Prerequisites
 
-Install PostgreSQL client tools so `pg_dump` and `pg_restore` are available on `PATH`.
+Install PostgreSQL client tools so `pg_dump` and `pg_restore` are available on `PATH`. Production currently runs PostgreSQL 18, so use PostgreSQL 18 or newer client tools.
 
 Set these server/local environment variables:
 
@@ -80,12 +80,11 @@ Never test a restore against production.
 4. Restore:
 
 ```bash
-pg_restore \
+PGDATABASE="$RECOVERY_DATABASE_URL" pg_restore \
   --no-owner \
   --no-acl \
   --clean \
   --if-exists \
-  --dbname="$RECOVERY_DATABASE_URL" \
   article6-crm.dump
 ```
 
