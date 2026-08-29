@@ -79,7 +79,7 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="font-semibold">Generate tracked email</h2>
-          <p className="mt-1 text-xs text-gray-500">Use {{"{{link}}"}} where the tracked Article6 link should appear. Open signals are probabilistic, not proof of a human read.</p>
+          <p className="mt-1 text-xs text-gray-500">Use {"{{link}}"} where the tracked Article6 link should appear. Open signals are probabilistic, not proof of a human read.</p>
           <div className="mt-4 grid gap-3">
             <select className={fieldClass} value={organizationId} onChange={(e) => { setOrganizationId(e.target.value); setContactId(""); setTenderOpportunityId(""); }}><option value="">Organization</option>{details.map((item) => <option key={item.organization.id} value={item.organization.id}>{item.organization.name}</option>)}</select>
             <select className={fieldClass} value={contactId} onChange={(e) => setContactId(e.target.value)}><option value="">Contact (optional)</option>{selected?.contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}{contact.email ? ` · ${contact.email}` : ""}</option>)}</select>
