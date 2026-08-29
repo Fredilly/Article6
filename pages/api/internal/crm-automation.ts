@@ -5,6 +5,7 @@ import {
   addSalesInteraction,
   createSalesOrganization,
   createSalesTenderOpportunity,
+  deleteSalesInteraction,
   getSalesOrganizationDetail,
   listSalesOrganizations,
   updateSalesContact,
@@ -99,7 +100,43 @@ interface CreateTenderCommand {
   };
 }
 
-type CrmAutomationCommand = RecordInteractionCommand | CreateOrganizationCommand | UpsertContactCommand | CreateTenderCommand;
+interface UpdateOrganizationCommand {
+  version: 1;
+  operation: "update_organization";
+  organization: OrganizationSelector;
+  update: {
+    status?: SalesOrganizationStatus;
+    experiment?: SalesExperiment;
+    objectionCode?: SalesObjectionCode;
+    doNotContact?: boolean;
+    notes?: string;
+    assignedOwner?: string;
+    nextAction?: string;
+    nextActionDate?: string;
+  };
+}
+
+interface DeleteInteractionCommand {
+  version: 1;
+  operation: "delete_interaction";
+  organization: OrganizationSelector;
+  interactionId: string;
+}
+
+interface InspectOrganizationCommand {
+  version: 1;
+  operation: "inspect_organization";
+  organization: OrganizationSelector;
+}
+
+type CrmAutomationCommand =
+  | RecordInteractionCommand
+  | CreateOrganizationCommand
+  | UpsertContactCommand
+  | CreateTenderCommand
+  | UpdateOrganizationCommand
+  | DeleteInteractionCommand
+  | InspectOrganizationCommand;
 
 function bearerToken(req: NextApiRequest): string | null {
   const authorization = req.headers.authorization || "";
@@ -322,6 +359,88 @@ async function createTender(command: CreateTenderCommand) {
   };
 }
 
+async function updateOrganization(command: UpdateOrganizationCommand) {
+  const organization = await resolveOrganization(command.organization);
+  const patch = command.update;
+  const status = patch.status || organization.status;
+  const experiment = patch.experiment || organization.experiment;
+  const objectionCode = patch.objectionCode || organization.objectionCode;
+  if (!isSalesOrganizationStatus(status)) throw new Error("Invalid organization status.");
+  if (!isSalesExperiment(experiment)) throw new Error("Invalid sales experiment.");
+  if (objectionCode && !isSalesObjectionCode(objectionCode)) throw new Error("Invalid objection code.");
+
+  await updateSalesOrganizationState({
+    organizationId: organization.id,
+    status,
+    experiment,
+    objectionCode,
+    internalCertificationTeam: organization.internalCertificationTeam,
+    doNotContact: patch.doNotContact ?? organization.doNotContact,
+    notes: patch.notes ?? organization.notes,
+    assignedOwner: patch.assignedOwner ?? organization.assignedOwner,
+    nextAction: patch.nextAction ?? organization.nextAction,
+    nextActionDate: patch.nextActionDate ?? organization.nextActionDate,
+  });
+
+  const verified = await getSalesOrganizationDetail(organization.id);
+  if (!verified || verified.organization.status !== status || verified.organization.experiment !== experiment) {
+    throw new Error("CRM organization verification failed after update.");
+  }
+  return {
+    organizationId: verified.organization.id,
+    organizationName: verified.organization.name,
+    status: verified.organization.status,
+    experiment: verified.organization.experiment,
+  };
+}
+
+async function deleteInteraction(command: DeleteInteractionCommand) {
+  const organization = await resolveOrganization(command.organization);
+  const interactionId = command.interactionId?.trim();
+  if (!interactionId) throw new Error("Interaction id is required.");
+  await deleteSalesInteraction(organization.id, interactionId);
+  const verified = await getSalesOrganizationDetail(organization.id);
+  if (!verified || verified.interactions.some((interaction) => interaction.id === interactionId)) {
+    throw new Error("CRM interaction deletion verification failed.");
+  }
+  return { organizationId: organization.id, organizationName: organization.name, interactionId, deleted: true };
+}
+
+async function inspectOrganization(command: InspectOrganizationCommand) {
+  const organization = await resolveOrganization(command.organization);
+  const detail = await getSalesOrganizationDetail(organization.id);
+  if (!detail) throw new Error("Organization not found.");
+  return {
+    organization: {
+      id: detail.organization.id,
+      name: detail.organization.name,
+      experiment: detail.organization.experiment,
+      status: detail.organization.status,
+    },
+    contacts: detail.contacts.map((contact) => ({ id: contact.id, name: contact.name, email: contact.email })),
+    tenders: detail.tenderOpportunities.map((tender) => ({
+      id: tender.id,
+      name: tender.name,
+      buyer: tender.buyer,
+      referenceNumber: tender.referenceNumber,
+      submissionDeadline: tender.submissionDeadline,
+      contractValue: tender.contractValue,
+      bidderStatus: tender.bidderStatus,
+      buyerRequirements: tender.buyerRequirements,
+      notes: tender.notes,
+    })),
+    interactions: detail.interactions.map((interaction) => ({
+      id: interaction.id,
+      channel: interaction.channel,
+      direction: interaction.direction,
+      interactionType: interaction.interactionType,
+      occurredAt: interaction.occurredAt,
+      summary: interaction.summary,
+      externalReference: interaction.externalReference,
+    })),
+  };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).setHeader("Allow", "POST").json({ error: "Method not allowed." });
 
@@ -343,7 +462,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ? await upsertContact(command)
           : command.operation === "create_tender"
             ? await createTender(command)
-            : null;
+            : command.operation === "update_organization"
+              ? await updateOrganization(command)
+              : command.operation === "delete_interaction"
+                ? await deleteInteraction(command)
+                : command.operation === "inspect_organization"
+                  ? await inspectOrganization(command)
+                  : null;
 
     if (!result) return res.status(400).json({ error: "Unsupported CRM automation operation." });
     return res.status(200).json({ ok: true, operation: command.operation, result });
