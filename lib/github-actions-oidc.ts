@@ -1,4 +1,4 @@
-import { createPublicKey, verify } from "crypto";
+import { createPublicKey, verify, type JsonWebKey } from "crypto";
 
 const ISSUER = "https://token.actions.githubusercontent.com";
 const AUDIENCE = "article6-crm-automation";
