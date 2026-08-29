@@ -49,31 +49,6 @@ jobs:
             exit 1
           fi
 
-      - name: Comment result
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          RESULT: ${{ steps.crm.outputs.response }}
-          JOB_STATUS: ${{ job.status }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "$JOB_STATUS" == "success" ]]; then
-            body="CRM automation succeeded.\n\n\`\`\`json\n${RESULT}\n\`\`\`"
-          else
-            body="CRM automation failed. Check the workflow run logs for details."
-          fi
-          python3 - <<'PY' > /tmp/comment.json
-          import json, os
-          print(json.dumps({"body": os.environ["BODY"]}))
-          PY
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          RESULT: ${{ steps.crm.outputs.response }}
-          JOB_STATUS: ${{ job.status }}
-          BODY: ${{ job.status == 'success' && format('CRM automation succeeded.\n\n```json\n{0}\n```', steps.crm.outputs.response) || 'CRM automation failed. Check the workflow run logs for details.' }}
       - name: Publish result comment
         if: always()
         env:
