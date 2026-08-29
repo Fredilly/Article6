@@ -21,7 +21,7 @@ Neon history/PITR is useful but must not be the only recovery mechanism. The pro
 
 ## Prerequisites
 
-Install PostgreSQL client tools so `pg_dump` and `pg_restore` are available on `PATH`. Production currently runs PostgreSQL 18, so use PostgreSQL 18 or newer client tools.
+The backup scripts first use PostgreSQL client tools already on `PATH`. On macOS they also automatically check the common Apple Silicon and Intel Homebrew `libpq` and PostgreSQL locations, so no shell-profile edit is needed. Production currently runs PostgreSQL 18, so use PostgreSQL 18 or newer client tools. If neither `pg_dump` nor `pg_restore` is available, the command fails with the exact installation command: `brew install libpq`.
 
 Set these server/local environment variables:
 
