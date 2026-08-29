@@ -2,7 +2,7 @@
 
 import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const ROOT = resolve(process.cwd());
@@ -39,8 +39,12 @@ function commandExists(command) {
   return result.status === 0;
 }
 
-function run(command, args) {
-  const result = spawnSync(command, args, { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' });
+function run(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: 'utf8',
+    ...options,
+  });
   if (result.status !== 0) {
     const detail = (result.stderr || result.stdout || '').trim();
     throw new Error(`${command} failed${detail ? `: ${detail}` : ''}`);
@@ -109,13 +113,11 @@ async function main() {
   const backupBranch = created?.branch;
   if (!backupBranch?.id) throw new Error('Neon branch creation returned no branch id');
 
-  run('pg_dump', [
-    '--format=custom',
-    '--no-owner',
-    '--no-acl',
-    `--dbname=${postgresUrl}`,
-    `--file=${dumpPath}`,
-  ]);
+  run(
+    'pg_dump',
+    ['--format=custom', '--no-owner', '--no-acl', `--file=${dumpPath}`],
+    { env: { ...process.env, PGDATABASE: postgresUrl } },
+  );
 
   if (!existsSync(dumpPath)) throw new Error('pg_dump completed but the dump file was not created');
   run('pg_restore', ['--list', dumpPath]);
@@ -139,7 +141,7 @@ async function main() {
   };
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o600 });
 
-  const restore = `# Article6 CRM backup restore\n\nBackup created: ${manifest.completedAt}\n\n## Safe recovery procedure\n\n1. Create a fresh Neon recovery branch or a fresh PostgreSQL database.\n2. Obtain its connection string. Do not point this command at production.\n3. Verify the dump checksum before restoring.\n4. Restore with:\n\n\`\`\`bash\npg_restore --no-owner --no-acl --clean --if-exists --dbname=\"$RECOVERY_DATABASE_URL\" article6-crm.dump\n\`\`\`\n\n5. Start Article6 against the recovery database and verify CRM organizations, contacts, tender opportunities, communication history, and document metadata.\n6. Only promote a recovered database to production after explicit approval.\n\nNeon recovery branch: ${backupBranch.name} (${backupBranch.id})\n`;
+  const restore = `# Article6 CRM backup restore\n\nBackup created: ${manifest.completedAt}\n\n## Safe recovery procedure\n\n1. Create a fresh Neon recovery branch or a fresh PostgreSQL database.\n2. Obtain its connection string. Do not point this command at production.\n3. Verify the dump checksum before restoring.\n4. Restore with:\n\n\`\`\`bash\nPGDATABASE=\"$RECOVERY_DATABASE_URL\" pg_restore --no-owner --no-acl --clean --if-exists article6-crm.dump\n\`\`\`\n\n5. Start Article6 against the recovery database and verify CRM organizations, contacts, tender opportunities, communication history, and document metadata.\n6. Only promote a recovered database to production after explicit approval.\n\nNeon recovery branch: ${backupBranch.name} (${backupBranch.id})\n`;
   writeFileSync(restorePath, restore, { mode: 0o600 });
 
   console.log('BACKUP VERIFIED');
