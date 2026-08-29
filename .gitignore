@@ -16,6 +16,9 @@
 # Production
 /build
 
+# CRM/database backup artifacts
+/backups/
+
 # Misc/OS files
 .DS_Store
 Thumbs.db
