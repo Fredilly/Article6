@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { resolvePostgresBinaries } from './postgres-client.mjs';
 
 const ROOT = resolve(process.cwd());
 const BACKUP_ROOT = join(ROOT, 'backups', 'crm');
@@ -32,11 +33,6 @@ function required(name) {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
   return value;
-}
-
-function commandExists(command) {
-  const result = spawnSync(command, ['--version'], { encoding: 'utf8' });
-  return result.status === 0;
 }
 
 function run(command, args, options = {}) {
@@ -94,8 +90,7 @@ async function main() {
 
   mkdirSync(backupDir, { recursive: true });
 
-  if (!commandExists('pg_dump')) throw new Error('pg_dump is not installed or not on PATH');
-  if (!commandExists('pg_restore')) throw new Error('pg_restore is not installed or not on PATH');
+  const { pgDump, pgRestore } = resolvePostgresBinaries();
 
   const postgresUrl = required('POSTGRES_URL');
   const projectId = required('NEON_PROJECT_ID');
@@ -114,13 +109,13 @@ async function main() {
   if (!backupBranch?.id) throw new Error('Neon branch creation returned no branch id');
 
   run(
-    'pg_dump',
+    pgDump,
     ['--format=custom', '--no-owner', '--no-acl', `--file=${dumpPath}`],
     { env: { ...process.env, PGDATABASE: postgresUrl } },
   );
 
   if (!existsSync(dumpPath)) throw new Error('pg_dump completed but the dump file was not created');
-  run('pg_restore', ['--list', dumpPath]);
+  run(pgRestore, ['--list', dumpPath]);
 
   const checksum = await sha256(dumpPath);
   writeFileSync(checksumPath, `${checksum}  article6-crm.dump\n`, { mode: 0o600 });

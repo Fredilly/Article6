@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { resolvePostgresBinaries } from './postgres-client.mjs';
 
 const ROOT = resolve(process.cwd());
 const BACKUP_ROOT = join(ROOT, 'backups', 'crm');
@@ -90,7 +91,8 @@ async function main() {
     throw new Error('Backup checksum mismatch');
   }
 
-  run('pg_restore', ['--list', dumpPath]);
+  const { pgRestore } = resolvePostgresBinaries();
+  run(pgRestore, ['--list', dumpPath]);
 
   const projectId = required('NEON_PROJECT_ID');
   const branches = await neonRequest(`/projects/${encodeURIComponent(projectId)}/branches`);
