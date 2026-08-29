@@ -3,6 +3,7 @@ import { verifyGitHubActionsOidc } from "../../../lib/github-actions-oidc";
 import {
   addSalesInteraction,
   createSalesOrganization,
+  getSalesOrganizationDetail,
   listSalesOrganizations,
   updateSalesOrganizationState,
 } from "../../../lib/sales-store";
@@ -34,6 +35,8 @@ interface RecordInteractionCommand {
     subject?: string;
     summary: string;
     outcomeCode?: string;
+    externalReference?: string;
+    gmailThreadId?: string;
   };
   organizationUpdate?: {
     status?: SalesOrganizationStatus;
@@ -66,14 +69,15 @@ function bearerToken(req: NextApiRequest): string | null {
 }
 
 async function resolveOrganization(selector: OrganizationSelector) {
-  const query = selector.id || selector.domain || selector.name || "";
+  if (selector.id) {
+    const detail = await getSalesOrganizationDetail(selector.id);
+    if (detail) return detail.organization;
+  }
+
+  const query = selector.domain || selector.name || "";
   if (!query) throw new Error("Organization selector is required.");
   const candidates = await listSalesOrganizations(query);
 
-  if (selector.id) {
-    const byId = candidates.find((candidate) => candidate.id === selector.id);
-    if (byId) return byId;
-  }
   if (selector.domain) {
     const domain = selector.domain.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
     const byDomain = candidates.filter((candidate) => candidate.domain?.toLowerCase() === domain);
@@ -95,35 +99,46 @@ async function recordInteraction(command: RecordInteractionCommand) {
   if (Number.isNaN(occurredAt.getTime())) throw new Error("Interaction date is invalid.");
   if (!command.interaction.summary?.trim()) throw new Error("Interaction summary is required.");
 
-  await addSalesInteraction({
-    organizationId: organization.id,
-    channel: command.interaction.channel || "EMAIL",
-    direction: command.interaction.direction || "INBOUND",
-    interactionType: command.interaction.interactionType || "REPLY",
-    occurredAt: occurredAt.toISOString(),
-    subject: command.interaction.subject?.trim() || undefined,
-    summary: command.interaction.summary.trim(),
-    outcomeCode: command.interaction.outcomeCode?.trim() || undefined,
-  });
-
   const patch = command.organizationUpdate;
-  let finalStatus = organization.status;
-  if (patch) {
-    const status = patch.status || organization.status;
-    const experiment = patch.experiment || organization.experiment;
-    const objectionCode = patch.objectionCode || organization.objectionCode;
-    if (!isSalesOrganizationStatus(status)) throw new Error("Invalid organization status.");
-    if (!isSalesExperiment(experiment)) throw new Error("Invalid sales experiment.");
-    if (objectionCode && !isSalesObjectionCode(objectionCode)) throw new Error("Invalid objection code.");
+  const finalStatus = patch?.status || organization.status;
+  const experiment = patch?.experiment || organization.experiment;
+  const objectionCode = patch?.objectionCode || organization.objectionCode;
+  if (!isSalesOrganizationStatus(finalStatus)) throw new Error("Invalid organization status.");
+  if (!isSalesExperiment(experiment)) throw new Error("Invalid sales experiment.");
+  if (objectionCode && !isSalesObjectionCode(objectionCode)) throw new Error("Invalid objection code.");
 
+  const before = await getSalesOrganizationDetail(organization.id);
+  if (!before) throw new Error("Organization disappeared before CRM update.");
+  const externalReference = command.interaction.externalReference?.trim();
+  const duplicateInteraction = Boolean(
+    externalReference && before.interactions.some((interaction) => interaction.externalReference === externalReference),
+  );
+
+  if (!duplicateInteraction) {
+    await addSalesInteraction({
+      organizationId: organization.id,
+      channel: command.interaction.channel || "EMAIL",
+      direction: command.interaction.direction || "INBOUND",
+      interactionType: command.interaction.interactionType || "REPLY",
+      occurredAt: occurredAt.toISOString(),
+      subject: command.interaction.subject?.trim() || undefined,
+      summary: command.interaction.summary.trim(),
+      outcomeCode: command.interaction.outcomeCode?.trim() || undefined,
+      externalReference,
+      gmailThreadId: command.interaction.gmailThreadId?.trim() || undefined,
+    });
+  }
+
+  if (patch) {
     const notesAppend = patch.notesAppend?.trim();
-    const notes = notesAppend
+    const notesAlreadyContainAppend = Boolean(notesAppend && organization.notes.includes(notesAppend));
+    const notes = notesAppend && !notesAlreadyContainAppend
       ? [organization.notes.trim(), notesAppend].filter(Boolean).join("\n\n")
       : organization.notes;
 
     await updateSalesOrganizationState({
       organizationId: organization.id,
-      status,
+      status: finalStatus,
       experiment,
       objectionCode,
       internalCertificationTeam: organization.internalCertificationTeam,
@@ -133,12 +148,22 @@ async function recordInteraction(command: RecordInteractionCommand) {
       nextAction: patch.nextAction ?? organization.nextAction,
       nextActionDate: patch.nextActionDate ?? organization.nextActionDate,
     });
-    finalStatus = status;
   }
 
-  const verified = await resolveOrganization({ id: organization.id, name: organization.name });
-  if (verified.status !== finalStatus) throw new Error("CRM verification failed after update.");
-  return { organizationId: organization.id, organizationName: organization.name, status: verified.status, interactionRecorded: true };
+  const verified = await getSalesOrganizationDetail(organization.id);
+  if (!verified || verified.organization.status !== finalStatus) throw new Error("CRM verification failed after update.");
+  const interactionVerified = externalReference
+    ? verified.interactions.some((interaction) => interaction.externalReference === externalReference)
+    : verified.interactions.some((interaction) => interaction.summary === command.interaction.summary.trim() && interaction.occurredAt === occurredAt.toISOString());
+  if (!interactionVerified) throw new Error("CRM interaction verification failed after update.");
+
+  return {
+    organizationId: organization.id,
+    organizationName: organization.name,
+    status: verified.organization.status,
+    interactionRecorded: true,
+    interactionWasDuplicate: duplicateInteraction,
+  };
 }
 
 async function createOrganization(command: CreateOrganizationCommand) {
@@ -152,7 +177,9 @@ async function createOrganization(command: CreateOrganizationCommand) {
     experiment: input.experiment,
     notes: input.notes?.trim(),
   });
-  return { organizationId: result.organization.id, organizationName: result.organization.name, created: result.created };
+  const verified = await getSalesOrganizationDetail(result.organization.id);
+  if (!verified) throw new Error("CRM verification failed after organization creation.");
+  return { organizationId: verified.organization.id, organizationName: verified.organization.name, created: result.created };
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
