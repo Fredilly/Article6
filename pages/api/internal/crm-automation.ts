@@ -1,10 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { verifyGitHubActionsOidc } from "../../../lib/github-actions-oidc";
 import {
+  addSalesContact,
   addSalesInteraction,
   createSalesOrganization,
   getSalesOrganizationDetail,
   listSalesOrganizations,
+  updateSalesContact,
   updateSalesOrganizationState,
 } from "../../../lib/sales-store";
 import {
@@ -61,7 +63,20 @@ interface CreateOrganizationCommand {
   };
 }
 
-type CrmAutomationCommand = RecordInteractionCommand | CreateOrganizationCommand;
+interface UpsertContactCommand {
+  version: 1;
+  operation: "upsert_contact";
+  organization: OrganizationSelector;
+  contact: {
+    name: string;
+    title?: string;
+    email?: string;
+    phone?: string;
+    notes?: string;
+  };
+}
+
+type CrmAutomationCommand = RecordInteractionCommand | CreateOrganizationCommand | UpsertContactCommand;
 
 function bearerToken(req: NextApiRequest): string | null {
   const authorization = req.headers.authorization || "";
@@ -182,6 +197,66 @@ async function createOrganization(command: CreateOrganizationCommand) {
   return { organizationId: verified.organization.id, organizationName: verified.organization.name, created: result.created };
 }
 
+async function upsertContact(command: UpsertContactCommand) {
+  const organization = await resolveOrganization(command.organization);
+  const input = command.contact;
+  const name = input.name?.trim();
+  if (!name) throw new Error("Contact name is required.");
+
+  const before = await getSalesOrganizationDetail(organization.id);
+  if (!before) throw new Error("Organization disappeared before contact update.");
+
+  const email = input.email?.trim().toLowerCase();
+  const normalizedName = name.toLowerCase();
+  const existingByEmail = email
+    ? before.contacts.find((contact) => contact.email?.trim().toLowerCase() === email)
+    : undefined;
+  const existingByName = before.contacts.find((contact) => contact.name.trim().toLowerCase() === normalizedName);
+  const existing = existingByEmail || existingByName;
+
+  let contactId: string;
+  let created = false;
+
+  if (existing) {
+    await updateSalesContact({
+      organizationId: organization.id,
+      contactId: existing.id,
+      name,
+      title: input.title?.trim() ?? existing.title,
+      email: email ?? existing.email,
+      phone: input.phone?.trim() ?? existing.phone,
+      notes: input.notes?.trim() ?? existing.notes,
+    });
+    contactId = existing.id;
+  } else {
+    const contact = await addSalesContact({
+      organizationId: organization.id,
+      name,
+      title: input.title?.trim(),
+      email,
+      phone: input.phone?.trim(),
+      notes: input.notes?.trim(),
+    });
+    contactId = contact.id;
+    created = true;
+  }
+
+  const verified = await getSalesOrganizationDetail(organization.id);
+  const verifiedContact = verified?.contacts.find((contact) => contact.id === contactId);
+  if (!verifiedContact) throw new Error("CRM contact verification failed after update.");
+  if (email && verifiedContact.email?.trim().toLowerCase() !== email) throw new Error("CRM contact email verification failed after update.");
+  if (verifiedContact.name.trim().toLowerCase() !== normalizedName) throw new Error("CRM contact name verification failed after update.");
+
+  return {
+    organizationId: organization.id,
+    organizationName: organization.name,
+    contactId: verifiedContact.id,
+    contactName: verifiedContact.name,
+    email: verifiedContact.email,
+    created,
+  };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).setHeader("Allow", "POST").json({ error: "Method not allowed." });
 
@@ -199,7 +274,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ? await recordInteraction(command)
       : command.operation === "create_organization"
         ? await createOrganization(command)
-        : null;
+        : command.operation === "upsert_contact"
+          ? await upsertContact(command)
+          : null;
 
     if (!result) return res.status(400).json({ error: "Unsupported CRM automation operation." });
     return res.status(200).json({ ok: true, operation: command.operation, result });
