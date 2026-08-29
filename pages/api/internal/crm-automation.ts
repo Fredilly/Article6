@@ -4,6 +4,7 @@ import {
   addSalesContact,
   addSalesInteraction,
   createSalesOrganization,
+  createSalesTenderOpportunity,
   getSalesOrganizationDetail,
   listSalesOrganizations,
   updateSalesContact,
@@ -76,7 +77,29 @@ interface UpsertContactCommand {
   };
 }
 
-type CrmAutomationCommand = RecordInteractionCommand | CreateOrganizationCommand | UpsertContactCommand;
+interface CreateTenderCommand {
+  version: 1;
+  operation: "create_tender";
+  organization: OrganizationSelector;
+  tender: {
+    name: string;
+    buyer?: string;
+    referenceNumber?: string;
+    submissionDeadline?: string;
+    contractValue?: string;
+    sector?: string;
+    bidderStatus?: string;
+    notes?: string;
+    buyerRequirements?: string;
+    salesStatus?: SalesOrganizationStatus;
+    assignedOwner?: string;
+    nextAction?: string;
+    nextActionDate?: string;
+    sourceKey?: string;
+  };
+}
+
+type CrmAutomationCommand = RecordInteractionCommand | CreateOrganizationCommand | UpsertContactCommand | CreateTenderCommand;
 
 function bearerToken(req: NextApiRequest): string | null {
   const authorization = req.headers.authorization || "";
@@ -257,6 +280,48 @@ async function upsertContact(command: UpsertContactCommand) {
   };
 }
 
+async function createTender(command: CreateTenderCommand) {
+  const organization = await resolveOrganization(command.organization);
+  const input = command.tender;
+  const name = input.name?.trim();
+  if (!name) throw new Error("Tender name is required.");
+  if (input.salesStatus && !isSalesOrganizationStatus(input.salesStatus)) throw new Error("Invalid tender sales status.");
+  if (input.submissionDeadline && Number.isNaN(Date.parse(input.submissionDeadline))) throw new Error("Tender deadline is invalid.");
+
+  const tenderId = await createSalesTenderOpportunity({
+    organizationId: organization.id,
+    name,
+    buyer: input.buyer?.trim(),
+    referenceNumber: input.referenceNumber?.trim(),
+    submissionDeadline: input.submissionDeadline,
+    contractValue: input.contractValue?.trim(),
+    sector: input.sector?.trim(),
+    status: "NEW",
+    bidderStatus: input.bidderStatus?.trim(),
+    notes: input.notes?.trim(),
+    buyerRequirements: input.buyerRequirements?.trim(),
+    salesStatus: input.salesStatus || "NEW",
+    assignedOwner: input.assignedOwner?.trim(),
+    nextAction: input.nextAction?.trim(),
+    nextActionDate: input.nextActionDate,
+    sourceKey: input.sourceKey?.trim(),
+  });
+
+  const verified = await getSalesOrganizationDetail(organization.id);
+  const tender = verified?.tenderOpportunities.find((candidate) => candidate.id === tenderId);
+  if (!tender) throw new Error("CRM tender verification failed after creation.");
+  if (input.bidderStatus?.trim() && tender.bidderStatus !== input.bidderStatus.trim()) throw new Error("CRM tender bidder-status verification failed after creation.");
+
+  return {
+    organizationId: organization.id,
+    organizationName: organization.name,
+    tenderId: tender.id,
+    tenderName: tender.name,
+    bidderStatus: tender.bidderStatus,
+    submissionDeadline: tender.submissionDeadline,
+  };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).setHeader("Allow", "POST").json({ error: "Method not allowed." });
 
@@ -276,7 +341,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ? await createOrganization(command)
         : command.operation === "upsert_contact"
           ? await upsertContact(command)
-          : null;
+          : command.operation === "create_tender"
+            ? await createTender(command)
+            : null;
 
     if (!result) return res.status(400).json({ error: "Unsupported CRM automation operation." });
     return res.status(200).json({ ok: true, operation: command.operation, result });
