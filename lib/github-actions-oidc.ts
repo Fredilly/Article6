@@ -12,6 +12,10 @@ interface JwtHeader {
   kid?: string;
 }
 
+interface GitHubJwk extends JsonWebKey {
+  kid?: string;
+}
+
 export interface GitHubActionsClaims {
   iss?: string;
   aud?: string | string[];
@@ -44,14 +48,14 @@ export function validateGitHubActionsClaims(claims: GitHubActionsClaims, nowSeco
   if (claims.workflow_ref !== EXPECTED_WORKFLOW_REF) throw new Error("GitHub OIDC workflow is not allowed.");
 }
 
-let jwksCache: { expiresAt: number; keys: JsonWebKey[] } | undefined;
+let jwksCache: { expiresAt: number; keys: GitHubJwk[] } | undefined;
 
-async function getJwks(): Promise<JsonWebKey[]> {
+async function getJwks(): Promise<GitHubJwk[]> {
   const now = Date.now();
   if (jwksCache && jwksCache.expiresAt > now) return jwksCache.keys;
   const response = await fetch(`${ISSUER}/.well-known/jwks`, { cache: "no-store" });
   if (!response.ok) throw new Error("Unable to fetch GitHub OIDC signing keys.");
-  const body = (await response.json()) as { keys?: JsonWebKey[] };
+  const body = (await response.json()) as { keys?: GitHubJwk[] };
   if (!Array.isArray(body.keys)) throw new Error("Invalid GitHub OIDC signing-key response.");
   jwksCache = { expiresAt: now + 60 * 60 * 1000, keys: body.keys };
   return body.keys;
