@@ -66,6 +66,15 @@ CREATE INDEX IF NOT EXISTS sales_email_tracking_events_tracking_occurred_idx
   ON sales_email_tracking_events (tracking_id, occurred_at DESC);
 `;
 
+const SALES_INTERACTION_THREAD_MIGRATION_SQL = `
+ALTER TABLE sales_interactions
+  ADD COLUMN IF NOT EXISTS gmail_thread_id TEXT;
+
+CREATE INDEX IF NOT EXISTS sales_interactions_organization_thread_idx
+  ON sales_interactions (organization_id, gmail_thread_id)
+  WHERE gmail_thread_id IS NOT NULL;
+`;
+
 export async function applyEmailTrackingMigration(): Promise<{ applied: true; tables: string[] }> {
   const client = await getPool().connect();
   try {
@@ -81,6 +90,42 @@ export async function applyEmailTrackingMigration(): Promise<{ applied: true; ta
     if (verification.rows.length !== 2) throw new Error("Email tracking migration verification failed.");
     await client.query("COMMIT");
     return { applied: true, tables: verification.rows.map((row) => row.table_name) };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function applySalesInteractionThreadMigration(): Promise<{ applied: true; column: string; index: string }> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(SALES_INTERACTION_THREAD_MIGRATION_SQL);
+    const columnVerification = await client.query<{ column_name: string }>(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = current_schema()
+         AND table_name = 'sales_interactions'
+         AND column_name = 'gmail_thread_id'`,
+    );
+    const indexVerification = await client.query<{ indexname: string }>(
+      `SELECT indexname
+       FROM pg_indexes
+       WHERE schemaname = current_schema()
+         AND tablename = 'sales_interactions'
+         AND indexname = 'sales_interactions_organization_thread_idx'`,
+    );
+    if (columnVerification.rows.length !== 1 || indexVerification.rows.length !== 1) {
+      throw new Error("Sales interaction thread migration verification failed.");
+    }
+    await client.query("COMMIT");
+    return {
+      applied: true,
+      column: columnVerification.rows[0].column_name,
+      index: indexVerification.rows[0].indexname,
+    };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
