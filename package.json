@@ -9,7 +9,10 @@
     "lint": "next lint",
     "test": "node --experimental-strip-types --test tests/**/*.test.ts",
     "crm:backup": "node scripts/crm-backup.mjs",
-    "crm:backup:check": "node scripts/crm-backup-check.mjs"
+    "crm:backup:check": "node scripts/crm-backup-check.mjs",
+    "knowledge:ingest": "node scripts/knowledge-ingest.mjs",
+    "knowledge:search": "node scripts/knowledge-search.mjs",
+    "knowledge:check": "node scripts/knowledge-check.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1095.0",
