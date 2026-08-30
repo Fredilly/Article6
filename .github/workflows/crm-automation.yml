@@ -39,7 +39,10 @@ jobs:
           payload="$CRM_COMMAND"
           if [[ "$ISSUE_TITLE" == '[CRM] migrate-email-tracking-015' ]]; then
             endpoint='https://www.article6.org/api/internal/email-tracking-migration'
-            payload='{}'
+            payload='{"migration":"015_email_tracking"}'
+          elif [[ "$ISSUE_TITLE" == '[CRM] migrate-sales-interaction-thread-007' ]]; then
+            endpoint='https://www.article6.org/api/internal/email-tracking-migration'
+            payload='{"migration":"007_sales_interaction_thread"}'
           fi
           response_file="$(mktemp)"
           status="$(curl -sS -o "$response_file" -w '%{http_code}' \
