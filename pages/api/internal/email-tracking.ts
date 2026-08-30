@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         approvedDestination: body.approvedDestination ? String(body.approvedDestination) : undefined,
         subject: body.subject ? String(body.subject) : undefined,
       });
-      const baseUrl = (process.env.EMAIL_TRACKING_BASE_URL || "https://bids.article6.org").replace(/\/$/, "");
+      const baseUrl = (process.env.EMAIL_TRACKING_BASE_URL || "https://article6.org").replace(/\/$/, "");
       res.status(201).json({
         token: created.token,
         record: created.record,
