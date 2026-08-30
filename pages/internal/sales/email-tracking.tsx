@@ -50,16 +50,36 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
   async function copyRichEmail() {
     if (!generated) return;
     const safeBody = escapeHtml(body).replace(/\n/g, "<br>");
-    const trackedLink = generated.clickUrl ? `<a href="${generated.clickUrl}">${escapeHtml(linkText || destination)}</a>` : "";
-    const withLink = safeBody.includes("{{link}}") ? safeBody.replace(/\{\{link\}\}/g, trackedLink) : [safeBody, trackedLink ? `<br><br>${trackedLink}` : ""].join("");
+    const visibleLinkText = escapeHtml(linkText || destination);
+    const trackedLink = generated.clickUrl ? `<a href="${generated.clickUrl}">${visibleLinkText}</a>` : "";
+
+    let withLink = safeBody;
+    if (trackedLink) {
+      if (safeBody.includes("{{link}}")) {
+        withLink = safeBody.replace(/\{\{link\}\}/g, trackedLink);
+      } else if (visibleLinkText && safeBody.includes(visibleLinkText)) {
+        const linkIndex = safeBody.lastIndexOf(visibleLinkText);
+        withLink = `${safeBody.slice(0, linkIndex)}${trackedLink}${safeBody.slice(linkIndex + visibleLinkText.length)}`;
+      } else {
+        withLink = `${safeBody}<br><br>${trackedLink}`;
+      }
+    }
+
     const html = `${withLink}<img src="${generated.openUrl}" width="1" height="1" style="display:none;width:1px;height:1px" alt="">`;
-    const plain = body.replace(/\{\{link\}\}/g, destination || linkText);
+    const plainLink = destination || linkText;
+    let plain = body;
+    if (body.includes("{{link}}")) {
+      plain = body.replace(/\{\{link\}\}/g, plainLink);
+    } else if (plainLink && !(linkText && body.includes(linkText))) {
+      plain = `${body}\n\n${plainLink}`;
+    }
+
     if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
       await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([plain], { type: "text/plain" }) })]);
     } else {
       await navigator.clipboard.writeText(plain);
     }
-    setMessage("Copied. Paste into Gmail's normal rich-text composer.");
+    setMessage("Copied. Existing signature website is used as the tracked link; it is not duplicated.");
   }
 
   async function attachGmail() {
@@ -79,7 +99,7 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="font-semibold">Generate tracked email</h2>
-          <p className="mt-1 text-xs text-gray-500">Use {"{{link}}"} where the tracked Article6 link should appear. Open signals are probabilistic, not proof of a human read.</p>
+          <p className="mt-1 text-xs text-gray-500">If the body already contains the visible Article6 website, it becomes the tracked link in place. You can also use {"{{link}}"}. Open signals are probabilistic, not proof of a human read.</p>
           <div className="mt-4 grid gap-3">
             <select className={fieldClass} value={organizationId} onChange={(e) => { setOrganizationId(e.target.value); setContactId(""); setTenderOpportunityId(""); }}><option value="">Organization</option>{details.map((item) => <option key={item.organization.id} value={item.organization.id}>{item.organization.name}</option>)}</select>
             <select className={fieldClass} value={contactId} onChange={(e) => setContactId(e.target.value)}><option value="">Contact (optional)</option>{selected?.contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}{contact.email ? ` · ${contact.email}` : ""}</option>)}</select>
