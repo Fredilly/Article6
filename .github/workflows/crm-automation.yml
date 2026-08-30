@@ -31,15 +31,22 @@ jobs:
         env:
           OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
           CRM_COMMAND: ${{ github.event.issue.body }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
         shell: bash
         run: |
           set -euo pipefail
+          endpoint='https://www.article6.org/api/internal/crm-automation'
+          payload="$CRM_COMMAND"
+          if [[ "$ISSUE_TITLE" == '[CRM] migrate-email-tracking-015' ]]; then
+            endpoint='https://www.article6.org/api/internal/email-tracking-migration'
+            payload='{}'
+          fi
           response_file="$(mktemp)"
           status="$(curl -sS -o "$response_file" -w '%{http_code}' \
-            -X POST 'https://www.article6.org/api/internal/crm-automation' \
+            -X POST "$endpoint" \
             -H "Authorization: Bearer ${OIDC_TOKEN}" \
             -H 'Content-Type: application/json' \
-            --data-binary "$CRM_COMMAND")"
+            --data-binary "$payload")"
           response="$(cat "$response_file")"
           echo "response<<EOF" >> "$GITHUB_OUTPUT"
           echo "$response" >> "$GITHUB_OUTPUT"
