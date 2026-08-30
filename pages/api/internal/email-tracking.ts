@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
 import { createEmailTracking, listEmailTracking } from "../../../lib/email-tracking";
 import { attachEmailTrackingByToken } from "../../../lib/email-tracking-attach";
+import { clearEmailTrackingHistory } from "../../../lib/email-tracking-admin";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!(await hasInternalUploadSession(req))) {
@@ -59,6 +60,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return;
       }
       res.status(200).json({ record });
+      return;
+    }
+
+    if (body.action === "clear") {
+      if (body.confirm !== "CLEAR TRACKING HISTORY") throw new Error("Explicit tracking-history confirmation is required.");
+      res.status(200).json({ result: await clearEmailTrackingHistory() });
       return;
     }
 
