@@ -2,6 +2,7 @@ import Head from "next/head";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useMemo, useState } from "react";
 import SalesHeader from "../../../components/SalesHeader";
+import OrganizationFuzzyPicker from "../../../components/OrganizationFuzzyPicker";
 import { loadSalesHomepageData } from "../../../lib/sales-homepage-store";
 import { buildSalesMemorySearchEntries } from "../../../lib/sales-search";
 import { listEmailTracking, type EmailTrackingRecord } from "../../../lib/email-tracking";
@@ -36,6 +37,7 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
   const [message, setMessage] = useState("");
   const [records, setRecords] = useState(initialRecords);
   const selected = useMemo(() => details.find((item) => item.organization.id === organizationId), [details, organizationId]);
+  const organizationOptions = useMemo(() => details.map((item) => ({ id: item.organization.id, name: item.organization.name })), [details]);
 
   async function createTrackedEmail() {
     setMessage("");
@@ -101,7 +103,7 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
           <h2 className="font-semibold">Generate tracked email</h2>
           <p className="mt-1 text-xs text-gray-500">If the body already contains the visible Article6 website, it becomes the tracked link in place. You can also use {"{{link}}"}. Open signals are probabilistic, not proof of a human read.</p>
           <div className="mt-4 grid gap-3">
-            <select className={fieldClass} value={organizationId} onChange={(e) => { setOrganizationId(e.target.value); setContactId(""); setTenderOpportunityId(""); }}><option value="">Organization</option>{details.map((item) => <option key={item.organization.id} value={item.organization.id}>{item.organization.name}</option>)}</select>
+            <OrganizationFuzzyPicker items={organizationOptions} value={organizationId} onChange={(id) => { setOrganizationId(id); setContactId(""); setTenderOpportunityId(""); }} />
             <select className={fieldClass} value={contactId} onChange={(e) => setContactId(e.target.value)}><option value="">Contact (optional)</option>{selected?.contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}{contact.email ? ` · ${contact.email}` : ""}</option>)}</select>
             <select className={fieldClass} value={tenderOpportunityId} onChange={(e) => setTenderOpportunityId(e.target.value)}><option value="">Tender (optional)</option>{selected?.tenderOpportunities.map((tender) => <option key={tender.id} value={tender.id}>{tender.name}</option>)}</select>
             <input className={fieldClass} value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" />
