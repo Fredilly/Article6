@@ -1,6 +1,6 @@
 import Head from "next/head";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SalesHeader from "../../../components/SalesHeader";
 import OrganizationFuzzyPicker from "../../../components/OrganizationFuzzyPicker";
 import { loadSalesHomepageData } from "../../../lib/sales-homepage-store";
@@ -25,6 +25,34 @@ function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
+function clientSignature(userAgent?: string): string | undefined {
+  if (!userAgent) return undefined;
+  const browser = /edg\//i.test(userAgent) ? "EDGE"
+    : /firefox\//i.test(userAgent) ? "FIREFOX"
+      : /chrome\//i.test(userAgent) ? "CHROME"
+        : /safari\//i.test(userAgent) ? "SAFARI"
+          : /mozilla/i.test(userAgent) ? "MOZILLA"
+            : undefined;
+  if (!browser) return undefined;
+  const platform = /android/i.test(userAgent) ? "ANDROID"
+    : /iphone|ipad|ios/i.test(userAgent) ? "IOS"
+      : /windows/i.test(userAgent) ? "WINDOWS"
+        : /macintosh|mac os/i.test(userAgent) ? "MAC"
+          : /linux/i.test(userAgent) ? "LINUX"
+            : "OTHER";
+  return `${browser}:${platform}`;
+}
+
+function hasPossibleForward(record: EmailTrackingRecord): boolean {
+  const clients = new Set(
+    record.events
+      .filter((event) => event.eventType === "CLICK" && event.classification === "HUMAN_LIKELY")
+      .map((event) => clientSignature(event.userAgent))
+      .filter((value): value is string => Boolean(value)),
+  );
+  return clients.size >= 2;
+}
+
 export default function EmailTrackingPage({ details, records: initialRecords, searchEntries }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [organizationId, setOrganizationId] = useState(details[0]?.organization.id || "");
   const [contactId, setContactId] = useState("");
@@ -38,6 +66,31 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
   const [records, setRecords] = useState(initialRecords);
   const selected = useMemo(() => details.find((item) => item.organization.id === organizationId), [details, organizationId]);
   const organizationOptions = useMemo(() => details.map((item) => ({ id: item.organization.id, name: item.organization.name })), [details]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function refreshTracking() {
+      try {
+        const response = await fetch("/api/internal/email-tracking", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (active && Array.isArray(data.records)) setRecords(data.records);
+      } catch {
+        // Keep the current screen intact if a background refresh fails.
+      }
+    }
+
+    const interval = window.setInterval(refreshTracking, 10_000);
+    const handleVisibility = () => { if (document.visibilityState === "visible") void refreshTracking(); };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, []);
 
   async function createTrackedEmail() {
     setMessage("");
@@ -94,6 +147,20 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
     setMessage(response.ok ? "Gmail IDs attached idempotently." : data.error || "Unable to attach Gmail IDs.");
   }
 
+  async function clearTrackingHistory() {
+    if (!window.confirm("Clear all email-tracking records and tracking events? CRM contacts, tenders and Gmail interactions will not be deleted.")) return;
+    const response = await fetch("/api/internal/email-tracking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clear", confirm: "CLEAR TRACKING HISTORY" }),
+    });
+    const data = await response.json();
+    if (!response.ok) { setMessage(data.error || "Unable to clear tracking history."); return; }
+    setRecords([]);
+    setGenerated(null);
+    setMessage(`Cleared ${data.result?.trackingDeleted || 0} tracking records and ${data.result?.eventsDeleted || 0} tracking events.`);
+  }
+
   return <>
     <Head><title>Email tracking | Sales memory</title><meta name="robots" content="noindex,nofollow" /></Head>
     <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900"><div className="mx-auto max-w-6xl">
@@ -116,12 +183,18 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="font-semibold">Tracked outbound email</h2>
-          <div className="mt-4 space-y-4">{records.length ? records.map((record) => <div key={record.id} className="rounded-md border border-gray-200 p-4 text-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-medium">{record.subject || "Outbound email"}</div><div className="mt-1 text-xs text-gray-500">SENT · {dt(record.createdAt)}</div></div><div className="flex flex-wrap gap-2 text-[11px] font-semibold"><span className="rounded-full bg-blue-50 px-2 py-1 text-blue-700">SENT</span>{record.openCount ? <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">OPEN DETECTED · {record.openCount}</span> : null}{record.clickCount ? <span className="rounded-full bg-violet-50 px-2 py-1 text-violet-700">CLICKED · {record.clickCount}</span> : null}{record.replied ? <span className="rounded-full bg-green-50 px-2 py-1 text-green-700">REPLIED</span> : null}</div></div>
-            <div className="mt-2 grid gap-1 text-xs text-gray-600"><div>First open: {dt(record.firstOpenedAt)} · Last open: {dt(record.lastOpenedAt)}</div><div>First click: {dt(record.firstClickedAt)} · Last click: {dt(record.lastClickedAt)}</div></div>
-            {record.events.length ? <div className="mt-3 border-t border-gray-100 pt-3"><div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Timeline</div><div className="mt-2 space-y-1 text-xs"><div>{dt(record.createdAt)} · Sent / tracking created</div>{record.events.map((event) => <div key={event.id}>{dt(event.occurredAt)} · {event.eventType === "OPEN" ? "Open detected" : "Link clicked"} · {event.classification.replace(/_/g, " ")}</div>)}{record.replied ? <div>Reply detected by Gmail sync</div> : null}</div></div> : null}
-          </div>) : <p className="text-sm text-gray-500">No tracked emails yet.</p>}</div>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div><h2 className="font-semibold">Tracked outbound email</h2><p className="mt-1 text-xs text-gray-500">Auto-updates about every 10 seconds. Possible forward is an inference from distinct human-like click clients, not proof.</p></div>
+            {records.length ? <button type="button" onClick={clearTrackingHistory} className="rounded border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Clear tracking history</button> : null}
+          </div>
+          <div className="mt-4 space-y-4">{records.length ? records.map((record) => {
+            const possibleForward = hasPossibleForward(record);
+            return <div key={record.id} className="rounded-md border border-gray-200 p-4 text-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-medium">{record.subject || "Outbound email"}</div><div className="mt-1 text-xs text-gray-500">SENT · {dt(record.createdAt)}</div></div><div className="flex flex-wrap gap-2 text-[11px] font-semibold"><span className="rounded-full bg-blue-50 px-2 py-1 text-blue-700">SENT</span>{record.openCount ? <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">OPEN DETECTED · {record.openCount}</span> : null}{record.clickCount ? <span className="rounded-full bg-violet-50 px-2 py-1 text-violet-700">CLICKED · {record.clickCount}</span> : null}{possibleForward ? <span className="rounded-full bg-orange-50 px-2 py-1 text-orange-700">POSSIBLE FORWARD</span> : null}{record.replied ? <span className="rounded-full bg-green-50 px-2 py-1 text-green-700">REPLIED</span> : null}</div></div>
+              <div className="mt-2 grid gap-1 text-xs text-gray-600"><div>First open: {dt(record.firstOpenedAt)} · Last open: {dt(record.lastOpenedAt)}</div><div>First click: {dt(record.firstClickedAt)} · Last click: {dt(record.lastClickedAt)}</div></div>
+              {record.events.length ? <div className="mt-3 border-t border-gray-100 pt-3"><div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Timeline</div><div className="mt-2 space-y-1 text-xs"><div>{dt(record.createdAt)} · Sent / tracking created</div>{record.events.map((event) => <div key={event.id}>{dt(event.occurredAt)} · {event.eventType === "OPEN" ? "Open detected" : "Link clicked"} · {event.classification.replace(/_/g, " ")}</div>)}{possibleForward ? <div>Possible forward activity · multiple distinct human-like click clients detected</div> : null}{record.replied ? <div>Reply detected by Gmail sync</div> : null}</div></div> : null}
+            </div>;
+          }) : <p className="text-sm text-gray-500">No tracked emails yet.</p>}</div>
         </section>
       </div>
     </div></main>
