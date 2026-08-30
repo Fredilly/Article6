@@ -43,6 +43,8 @@ jobs:
           elif [[ "$ISSUE_TITLE" == '[CRM] migrate-sales-interaction-thread-007' ]]; then
             endpoint='https://www.article6.org/api/internal/email-tracking-migration'
             payload='{"migration":"007_sales_interaction_thread"}'
+          elif [[ "$ISSUE_TITLE" == '[CRM] update-domain' ]]; then
+            endpoint='https://www.article6.org/api/internal/crm-domain-update'
           fi
           response_file="$(mktemp)"
           status="$(curl -sS -o "$response_file" -w '%{http_code}' \
