@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
 import { createCollateralDownloadUrl, createCollateralUpload, deleteCollateralObject, verifyCollateralObject } from "../../../lib/sales-collateral-storage";
-import { deleteSalesCollateral, getSalesCollateral, getSalesCollateralContext, isSalesCollateralDocumentType, listSalesCollateral, recordSalesCollateral, updateSalesCollateral } from "../../../lib/sales-collateral-store";
+import { deleteSalesCollateral, getSalesCollateral, getSalesCollateralContext, listSalesCollateral, recordSalesCollateral, updateSalesCollateral } from "../../../lib/sales-collateral-store";
+import { isSalesCollateralDocumentType } from "../../../lib/sales-collateral-types";
 
 function s(v: unknown) { return typeof v === "string" ? v.trim() : ""; }
 
