@@ -48,7 +48,7 @@ export default function ParentHome() {
             </Link>
             <nav className={styles.nav} aria-label="Primary navigation">
               <a href="#approach">Approach</a>
-              <Link href="/contact">Contact</Link>
+              <a href="mailto:contact@article6.org">Contact</a>
             </nav>
           </header>
 
@@ -101,7 +101,7 @@ export default function ParentHome() {
           </div>
           <div className={`${styles.closingAction} ${styles.reveal}`} data-reveal>
             <p>Article6 builds focused review services for specialist domains where the cost of error is high and the rules are complex.</p>
-            <Link href="/contact">Work with Article6 <span aria-hidden="true">→</span></Link>
+            <a href="mailto:contact@article6.org">Work with Article6 <span aria-hidden="true">→</span></a>
           </div>
         </section>
       </main>
