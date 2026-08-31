@@ -2,7 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { verifyGitHubActionsOidc } from "../../../lib/github-actions-oidc";
 import { getSalesOrganizationDetail, listSalesOrganizations } from "../../../lib/sales-store";
 import { normalizeOrganizationName } from "../../../lib/sales-memory";
-import { isSalesCollateralDocumentType, recordSalesCollateral } from "../../../lib/sales-collateral-store";
+import { recordSalesCollateral } from "../../../lib/sales-collateral-store";
+import { isSalesCollateralDocumentType } from "../../../lib/sales-collateral-types";
 import { isCollateralStoragePath, verifyCollateralObject } from "../../../lib/sales-collateral-storage";
 
 type Selector = { id?: string; name?: string; domain?: string };
