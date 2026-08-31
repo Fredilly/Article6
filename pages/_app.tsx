@@ -4,6 +4,7 @@ import type { AppProps } from 'next/app';
 import Layout from '../components/Layout';
 import InternalLayout from '../components/InternalLayout';
 import PreviewLayout from '../components/preview/PreviewLayout';
+import SalesCollateralPanel from '../components/SalesCollateralPanel';
 import { getAppLayoutKind } from '../lib/layout';
 import { Analytics } from '@vercel/analytics/next';
 
@@ -25,6 +26,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
       ) : layoutKind === 'internal' ? (
         <InternalLayout>
           <Component {...pageProps} />
+          <SalesCollateralPanel />
         </InternalLayout>
       ) : (
         <Layout>

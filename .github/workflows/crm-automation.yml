@@ -37,7 +37,10 @@ jobs:
           set -euo pipefail
           endpoint='https://www.article6.org/api/internal/crm-automation'
           payload="$CRM_COMMAND"
-          if [[ "$ISSUE_TITLE" == '[CRM] migrate-email-tracking-015' ]]; then
+          operation="$(printf '%s' "$payload" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("operation", ""))' 2>/dev/null || true)"
+          if [[ "$operation" == 'record_collateral' ]]; then
+            endpoint='https://www.article6.org/api/internal/crm-collateral-automation'
+          elif [[ "$ISSUE_TITLE" == '[CRM] migrate-email-tracking-015' ]]; then
             endpoint='https://www.article6.org/api/internal/email-tracking-migration'
             payload='{"migration":"015_email_tracking"}'
           elif [[ "$ISSUE_TITLE" == '[CRM] migrate-sales-interaction-thread-007' ]]; then
