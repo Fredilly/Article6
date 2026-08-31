@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
-import { SALES_COLLATERAL_DOCUMENT_TYPES } from "../lib/sales-collateral-store";
+import { SALES_COLLATERAL_DOCUMENT_TYPES } from "../lib/sales-collateral-types";
 
 const field = "rounded border border-gray-300 px-2 py-1.5 text-xs";
 export default function SalesCollateralPanel() {
