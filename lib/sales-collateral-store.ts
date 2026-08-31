@@ -1,8 +1,6 @@
 import { randomUUID } from "crypto";
 import { Pool } from "pg";
-
-export const SALES_COLLATERAL_DOCUMENT_TYPES = ["SAMPLE_REVIEW","PROPOSAL","CASE_STUDY","METHODOLOGY","PRICING","BROCHURE","OTHER"] as const;
-export type SalesCollateralDocumentType = typeof SALES_COLLATERAL_DOCUMENT_TYPES[number];
+import { type SalesCollateralDocumentType } from "./sales-collateral-types";
 
 export interface SalesCollateral {
   id: string;
@@ -57,10 +55,6 @@ const SELECT = `SELECT c.*, sc.name AS contact_name, t.name AS tender_name, i.su
   LEFT JOIN sales_contacts sc ON sc.id = c.contact_id
   LEFT JOIN sales_tender_opportunities t ON t.id = c.tender_opportunity_id
   LEFT JOIN sales_interactions i ON i.id = c.interaction_id`;
-
-export function isSalesCollateralDocumentType(value: unknown): value is SalesCollateralDocumentType {
-  return typeof value === "string" && (SALES_COLLATERAL_DOCUMENT_TYPES as readonly string[]).includes(value);
-}
 
 export async function listSalesCollateral(input: { organizationId?: string; contactId?: string; tenderOpportunityId?: string }) {
   const values: string[] = [];
