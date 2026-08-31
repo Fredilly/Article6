@@ -46,6 +46,9 @@ jobs:
           elif [[ "$ISSUE_TITLE" == '[CRM] migrate-sales-interaction-thread-007' ]]; then
             endpoint='https://www.article6.org/api/internal/email-tracking-migration'
             payload='{"migration":"007_sales_interaction_thread"}'
+          elif [[ "$ISSUE_TITLE" == '[CRM] migrate-sales-collateral-016' ]]; then
+            endpoint='https://www.article6.org/api/internal/email-tracking-migration'
+            payload='{"migration":"016_sales_collateral"}'
           elif [[ "$ISSUE_TITLE" == '[CRM] update-domain' ]]; then
             endpoint='https://www.article6.org/api/internal/crm-domain-update'
           fi
