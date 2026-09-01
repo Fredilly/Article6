@@ -62,14 +62,10 @@ export function isCollateralStoragePath(value: unknown): value is string {
   return typeof value === "string" && /^sales-collateral\/[0-9a-f-]{36}\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]{36}-[A-Za-z0-9._-]+$/i.test(value);
 }
 
-function buildCollateralStoragePath(organizationId: string, fileName: string) {
-  const day = new Date().toISOString().slice(0, 10);
-  return `sales-collateral/${organizationId}/${day}/${randomUUID()}-${safeName(fileName)}`;
-}
-
 export async function createCollateralUpload(input: { organizationId: string; fileName: string; contentType: string; fileSize?: number }) {
   const validated = validateCollateralFile(input.fileName, input.contentType, input.fileSize);
-  const storagePath = buildCollateralStoragePath(input.organizationId, input.fileName);
+  const day = new Date().toISOString().slice(0, 10);
+  const storagePath = `sales-collateral/${input.organizationId}/${day}/${randomUUID()}-${safeName(input.fileName)}`;
   const command = new PutObjectCommand({
     Bucket: credentials().bucketName,
     Key: storagePath,
@@ -78,19 +74,6 @@ export async function createCollateralUpload(input: { organizationId: string; fi
   });
   const uploadUrl = await getSignedUrl(client(), command, { expiresIn: 600 });
   return { uploadUrl, storagePath, contentType: validated.contentType };
-}
-
-export async function storeCollateralObject(input: { organizationId: string; fileName: string; contentType: string; bytes: Buffer }) {
-  const validated = validateCollateralFile(input.fileName, input.contentType, input.bytes.length);
-  const storagePath = buildCollateralStoragePath(input.organizationId, input.fileName);
-  await client().send(new PutObjectCommand({
-    Bucket: credentials().bucketName,
-    Key: storagePath,
-    Body: input.bytes,
-    ContentType: validated.contentType,
-    ContentLength: input.bytes.length,
-  }));
-  return { storagePath, contentType: validated.contentType, fileSize: input.bytes.length };
 }
 
 export async function verifyCollateralObject(storagePath: string) {
@@ -105,7 +88,7 @@ export async function createCollateralDownloadUrl(storagePath: string, fileName:
     Bucket: credentials().bucketName,
     Key: storagePath,
     ResponseContentType: fileType || undefined,
-    ResponseContentDisposition: `attachment; filename=\"${safeName(fileName)}\"`,
+    ResponseContentDisposition: `attachment; filename="${safeName(fileName)}"`,
   });
   return getSignedUrl(client(), command, { expiresIn: 300 });
 }
