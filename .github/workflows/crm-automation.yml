@@ -40,6 +40,8 @@ jobs:
           operation="$(printf '%s' "$payload" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("operation", ""))' 2>/dev/null || true)"
           if [[ "$operation" == 'record_collateral' ]]; then
             endpoint='https://www.article6.org/api/internal/crm-collateral-automation'
+          elif [[ "$operation" == 'list_email_activity' ]]; then
+            endpoint='https://www.article6.org/api/internal/crm-email-activity-automation'
           elif [[ "$ISSUE_TITLE" == '[CRM] migrate-email-tracking-015' ]]; then
             endpoint='https://www.article6.org/api/internal/email-tracking-migration'
             payload='{"migration":"015_email_tracking"}'
