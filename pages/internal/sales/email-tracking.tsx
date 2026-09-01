@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Link from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useEffect, useMemo, useState } from "react";
 import SalesHeader from "../../../components/SalesHeader";
@@ -211,6 +212,10 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
                 const recordOrganization = details.find((item) => item.organization.id === record.organizationId);
                 const recordContact = recordOrganization?.contacts.find((contact) => contact.id === record.contactId);
                 const clicked = Boolean(record.clickCount);
+                const hasAction = Boolean(record.replied || record.openCount || record.clickCount || possibleForward);
+                const leadHref = recordOrganization
+                  ? `/internal/sales/organizations/${recordOrganization.organization.id}${recordContact ? `?contactId=${encodeURIComponent(recordContact.id)}` : ""}`
+                  : undefined;
                 return <details key={record.id} className={`rounded-md border text-sm transition-colors ${clicked ? "border-green-300 bg-green-50/70" : "border-gray-200 bg-white"}`}>
                   <summary className="cursor-pointer list-none px-3 py-2.5">
                     <div className="flex min-w-0 items-start justify-between gap-3">
@@ -224,6 +229,7 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
                         {possibleForward ? <span className="rounded-full bg-orange-100 px-2 py-0.5 text-orange-800">POSSIBLE FORWARD</span> : null}
                         {!clicked && record.openCount ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">OPENED · {record.openCount}</span> : null}
                         {!clicked && !record.openCount ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">SENT</span> : null}
+                        {hasAction && leadHref ? <Link href={leadHref} onClick={(event) => event.stopPropagation()} className="rounded-full bg-gray-900 px-2 py-0.5 text-white hover:bg-gray-700">VIEW LEAD →</Link> : null}
                       </div>
                     </div>
                   </summary>
