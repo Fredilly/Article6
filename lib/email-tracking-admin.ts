@@ -93,10 +93,38 @@ export async function listEmailActivity(filters: ListEmailActivityFilters): Prom
   })) as EmailActivityRow[];
 }
 
-export async function clearEmailTrackingHistory(): Promise<{ trackingDeleted: number; eventsDeleted: number }> {
+function parseTrackingMonth(month: string): { start: string; end: string } {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error("month must be in YYYY-MM format.");
+  const [year, monthNumber] = month.split("-").map(Number);
+  const start = new Date(Date.UTC(year, monthNumber - 1, 1));
+  const end = new Date(Date.UTC(year, monthNumber, 1));
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+export async function clearEmailTrackingHistory(month?: string): Promise<{ trackingDeleted: number; eventsDeleted: number }> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+
+    if (month) {
+      const { start, end } = parseTrackingMonth(month);
+      const events = await client.query(
+        `DELETE FROM sales_email_tracking_events
+         WHERE tracking_id IN (
+           SELECT id FROM sales_email_tracking
+           WHERE created_at >= $1::timestamptz AND created_at < $2::timestamptz
+         )`,
+        [start, end],
+      );
+      const tracking = await client.query(
+        `DELETE FROM sales_email_tracking
+         WHERE created_at >= $1::timestamptz AND created_at < $2::timestamptz`,
+        [start, end],
+      );
+      await client.query("COMMIT");
+      return { trackingDeleted: tracking.rowCount || 0, eventsDeleted: events.rowCount || 0 };
+    }
+
     const events = await client.query("DELETE FROM sales_email_tracking_events");
     const tracking = await client.query("DELETE FROM sales_email_tracking");
     await client.query("COMMIT");
