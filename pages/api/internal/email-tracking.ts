@@ -64,8 +64,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (body.action === "clear") {
-      if (body.confirm !== "CLEAR TRACKING HISTORY") throw new Error("Explicit tracking-history confirmation is required.");
-      res.status(200).json({ result: await clearEmailTrackingHistory() });
+      const month = body.month ? String(body.month) : undefined;
+      const expectedConfirmation = month ? `CLEAR TRACKING ${month}` : "CLEAR TRACKING HISTORY";
+      if (body.confirm !== expectedConfirmation) throw new Error("Explicit tracking-history confirmation is required.");
+      res.status(200).json({ result: await clearEmailTrackingHistory(month) });
       return;
     }
 

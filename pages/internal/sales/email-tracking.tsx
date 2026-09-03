@@ -24,6 +24,8 @@ const dt = (value?: string) => value ? new Date(value).toLocaleString("en-GB", {
 const timeOnly = (value: string) => new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 const dateKey = (value: string) => value.slice(0, 10);
 const dateLabel = (key: string) => new Date(`${key}T00:00:00Z`).toLocaleDateString("en-GB", { dateStyle: "medium", timeZone: "UTC" });
+const monthKey = (value: string) => value.slice(0, 7);
+const monthLabel = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;");
@@ -68,8 +70,10 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
   const [generated, setGenerated] = useState<{ token: string; openUrl: string; clickUrl?: string } | null>(null);
   const [message, setMessage] = useState("");
   const [records, setRecords] = useState(initialRecords);
+  const [deleteMonth, setDeleteMonth] = useState(initialRecords[0] ? monthKey(initialRecords[0].createdAt) : "");
   const selected = useMemo(() => details.find((item) => item.organization.id === organizationId), [details, organizationId]);
   const organizationOptions = useMemo(() => details.map((item) => ({ id: item.organization.id, name: item.organization.name })), [details]);
+  const monthOptions = useMemo(() => Array.from(new Set(records.map((record) => monthKey(record.createdAt)))), [records]);
   const groupedRecords = useMemo(() => {
     const groups = new Map<string, EmailTrackingRecord[]>();
     records.forEach((record) => {
@@ -80,6 +84,11 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
     });
     return Array.from(groups.entries()).map(([key, items]) => ({ key, items }));
   }, [records]);
+
+  useEffect(() => {
+    if (!deleteMonth && monthOptions[0]) setDeleteMonth(monthOptions[0]);
+    if (deleteMonth && !monthOptions.includes(deleteMonth)) setDeleteMonth(monthOptions[0] || "");
+  }, [deleteMonth, monthOptions]);
 
   useEffect(() => {
     let active = true;
@@ -161,6 +170,22 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
     setMessage(response.ok ? "Gmail IDs attached idempotently." : data.error || "Unable to attach Gmail IDs.");
   }
 
+  async function clearTrackingMonth() {
+    if (!deleteMonth) return;
+    const label = monthLabel(deleteMonth);
+    if (!window.confirm(`Delete tracked outbound emails from ${label}? Their tracking events will also be deleted. CRM contacts, tenders and Gmail interactions will not be deleted.`)) return;
+    const response = await fetch("/api/internal/email-tracking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clear", month: deleteMonth, confirm: `CLEAR TRACKING ${deleteMonth}` }),
+    });
+    const data = await response.json();
+    if (!response.ok) { setMessage(data.error || "Unable to delete tracking for that month."); return; }
+    setRecords((current) => current.filter((record) => monthKey(record.createdAt) !== deleteMonth));
+    setGenerated(null);
+    setMessage(`Deleted ${data.result?.trackingDeleted || 0} tracked emails and ${data.result?.eventsDeleted || 0} tracking events from ${label}.`);
+  }
+
   async function clearTrackingHistory() {
     if (!window.confirm("Clear all email-tracking records and tracking events? CRM contacts, tenders and Gmail interactions will not be deleted.")) return;
     const response = await fetch("/api/internal/email-tracking", {
@@ -199,7 +224,11 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div><h2 className="font-semibold">Tracked outbound email</h2><p className="mt-1 text-xs text-gray-500">Grouped by sent date and compact by default. Auto-updates about every 10 seconds. Possible forward is an inference from distinct human-like click clients, not proof.</p></div>
-            {records.length ? <button type="button" onClick={clearTrackingHistory} className="rounded border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Clear tracking history</button> : null}
+            {records.length ? <div className="flex flex-wrap items-center justify-end gap-2">
+              <select aria-label="Tracking month to delete" className="rounded border border-gray-300 bg-white px-2 py-2 text-xs" value={deleteMonth} onChange={(event) => setDeleteMonth(event.target.value)}>{monthOptions.map((month) => <option key={month} value={month}>{monthLabel(month)}</option>)}</select>
+              <button type="button" onClick={clearTrackingMonth} disabled={!deleteMonth} className="rounded border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">Delete month</button>
+              <button type="button" onClick={clearTrackingHistory} className="rounded border border-gray-200 px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50">Clear all</button>
+            </div> : null}
           </div>
           <div className="mt-4 space-y-3">{records.length ? groupedRecords.map((group, groupIndex) => (
             <details key={group.key} open={groupIndex === 0} className="rounded-md border border-gray-200 bg-gray-50/60">
