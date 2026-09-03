@@ -1,0 +1,53 @@
+name: Apply relationship history identity fix
+
+on:
+  push:
+    branches:
+      - fix/relationship-history-email-identity
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/relationship-history-email-identity
+
+      - name: Patch relationship history identity display
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('pages/internal/sales/organizations/[id].tsx')
+          text = path.read_text()
+
+          old = 'const contactEmail = interaction.contactId ? contacts.find((contact) => contact.id === interaction.contactId)?.email : undefined; const isEmail = interaction.channel === "EMAIL";'
+          new = 'const contactEmail = (interaction.contactId ? contacts.find((contact) => contact.id === interaction.contactId)?.email : undefined) || (interaction.contactName ? contacts.find((contact) => contact.name.trim().toLowerCase() === interaction.contactName?.trim().toLowerCase())?.email : undefined) || (conversation.contactId ? contacts.find((contact) => contact.id === conversation.contactId)?.email : undefined) || (contacts.length === 1 ? contacts[0]?.email : undefined); const isEmail = interaction.channel === "EMAIL";'
+          if old not in text:
+              raise SystemExit('contactEmail renderer pattern not found')
+          text = text.replace(old, new, 1)
+
+          old_footer = '</div></article>; })}</div></section>)'
+          new_footer = '</div><div className="mt-1 px-1 text-xs font-medium text-gray-500">{presentation.actorName}</div></article>; })}</div></section>)'
+          if old_footer not in text:
+              raise SystemExit('article footer pattern not found')
+          text = text.replace(old_footer, new_footer, 1)
+
+          path.write_text(text)
+          PY
+
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/relationship-history-email-identity.yml
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/internal/sales/organizations/'[id].tsx' .github/workflows/relationship-history-email-identity.yml
+          git commit -m "fix: restore sender names and improve email address fallback"
+          git push origin HEAD:fix/relationship-history-email-identity
