@@ -113,21 +113,15 @@ async function renderAttributedContactHistory(router: ReturnType<typeof useRoute
       const bubble = document.createElement("div");
       bubble.className = `w-full max-w-3xl rounded-lg border px-4 py-3 ${presentation.alignment === "right" ? "border-blue-100 bg-blue-50" : "border-gray-200 bg-gray-50"}`;
 
-      const meta = document.createElement("div");
-      meta.className = "flex flex-wrap items-center gap-2 text-xs text-gray-500";
-      meta.appendChild(textElement("span", new Date(item.occurredAt).toLocaleString()));
-      meta.appendChild(textElement("span", `${presentation.direction} · ${item.channel} · ${item.interactionType}`));
+      bubble.appendChild(textElement("div", new Date(item.occurredAt).toLocaleString(), "text-xs text-gray-500"));
+      const addressLabel = item.direction === "INBOUND" ? "From" : "To";
+      const address = item.actualContactEmail || item.intendedContactEmail || item.actualContactName || item.intendedContactName || "Email address not recorded";
+      bubble.appendChild(textElement("div", `${addressLabel}: ${address}`, "mt-0.5 text-xs text-gray-500"));
+      bubble.appendChild(textElement("div", item.subject || "Interaction", "mt-2 text-sm font-medium text-gray-900"));
+      bubble.appendChild(textElement("p", item.summary.trim(), "mt-1 whitespace-pre-wrap text-sm leading-6 text-gray-700"));
       if (item.outcomeCode) {
-        meta.appendChild(textElement("span", item.outcomeCode, "rounded bg-gray-100 px-2 py-0.5 font-medium text-gray-700"));
+        bubble.appendChild(textElement("div", item.outcomeCode, "mt-2 text-xs text-gray-400"));
       }
-      bubble.appendChild(meta);
-      bubble.appendChild(textElement("div", item.subject || "Interaction", "mt-1 text-sm font-medium text-gray-900"));
-
-      const route = item.actualContactEmail
-        ? `${item.actualContactName || "General inbox"} <${item.actualContactEmail}>`
-        : item.actualContactName || "general company route";
-      const routingNote = `Via: ${route}`;
-      bubble.appendChild(textElement("p", `${item.summary}\n\n${routingNote}`, "mt-1 whitespace-pre-wrap text-sm leading-6 text-gray-700"));
 
       article.appendChild(bubble);
       article.appendChild(textElement("div", presentation.actorName, "mt-1 px-1 text-xs font-medium text-gray-500"));
