@@ -1,0 +1,51 @@
+name: Enforce email contact linkage
+on:
+  push:
+    branches:
+      - fix/require-email-contact-link
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/require-email-contact-link
+      - name: Patch CRM automation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('pages/api/internal/crm-automation.ts')
+          s = p.read_text()
+          anchor = '''  const duplicateInteraction = Boolean(\n    externalReference && before.interactions.some((interaction) => interaction.externalReference === externalReference),\n  );'''
+          guard = '''  const channel = (command.interaction.channel || "EMAIL").toUpperCase();\n  if (channel === "EMAIL" && !resolvedContactId) {\n    throw new Error("Email interaction requires a resolvable CRM contact. Pass contactId or the exact Gmail recipient as contactEmail; refusing to create an unlinked email interaction.");\n  }\n\n  const duplicateInteraction = Boolean(\n    externalReference && before.interactions.some((interaction) => interaction.externalReference === externalReference),\n  );'''
+          if anchor not in s:
+              raise SystemExit('guard anchor not found')
+          s = s.replace(anchor, guard, 1)
+          p.write_text(s)
+          PY
+      - name: Add regression test
+        run: |
+          cat > tests/crm-email-contact-required.test.ts <<'EOF'
+          import assert from "node:assert/strict";
+          import fs from "node:fs";
+          import test from "node:test";
+
+          test("CRM automation refuses unlinked email interactions", () => {
+            const source = fs.readFileSync(new URL("../pages/api/internal/crm-automation.ts", import.meta.url), "utf8");
+            assert.match(source, /channel === "EMAIL" && !resolvedContactId/);
+            assert.match(source, /Email interaction requires a resolvable CRM contact/);
+            assert.match(source, /exact Gmail recipient as contactEmail/);
+          });
+          EOF
+      - name: Test focused guards
+        run: node --experimental-strip-types --test tests/crm-automation-contact-linking.test.ts tests/crm-email-contact-required.test.ts
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/api/internal/crm-automation.ts tests/crm-email-contact-required.test.ts
+          git commit -m "fix: refuse unlinked email interactions"
+          git push origin fix/require-email-contact-link
