@@ -39,13 +39,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          intended.name AS intended_contact_name,
          intended.email AS intended_contact_email
        FROM sales_email_tracking t
-       JOIN sales_interactions i
-         ON i.organization_id = t.organization_id
-        AND (
-          (t.interaction_id IS NOT NULL AND i.id = t.interaction_id)
-          OR (t.gmail_message_id IS NOT NULL AND i.external_reference = 'gmail:' || t.gmail_message_id)
-          OR (t.gmail_thread_id IS NOT NULL AND i.gmail_thread_id = t.gmail_thread_id)
-        )
+       JOIN LATERAL (
+         SELECT i.*
+         FROM sales_interactions i
+         WHERE i.organization_id = t.organization_id
+           AND (
+             (t.interaction_id IS NOT NULL AND i.id = t.interaction_id)
+             OR (t.gmail_message_id IS NOT NULL AND i.external_reference = 'gmail:' || t.gmail_message_id)
+             OR (t.gmail_thread_id IS NOT NULL AND i.gmail_thread_id = t.gmail_thread_id)
+             OR (
+               t.subject IS NOT NULL
+               AND i.subject = t.subject
+               AND ABS(EXTRACT(EPOCH FROM (i.occurred_at - t.created_at))) <= 3600
+             )
+           )
+         ORDER BY
+           CASE
+             WHEN t.interaction_id IS NOT NULL AND i.id = t.interaction_id THEN 0
+             WHEN t.gmail_message_id IS NOT NULL AND i.external_reference = 'gmail:' || t.gmail_message_id THEN 1
+             WHEN t.gmail_thread_id IS NOT NULL AND i.gmail_thread_id = t.gmail_thread_id THEN 2
+             ELSE 3
+           END,
+           ABS(EXTRACT(EPOCH FROM (i.occurred_at - t.created_at))) ASC
+         LIMIT 1
+       ) i ON TRUE
        LEFT JOIN sales_contacts actual ON actual.id = i.contact_id
        LEFT JOIN sales_contacts intended ON intended.id = t.contact_id
        WHERE t.organization_id = $1
