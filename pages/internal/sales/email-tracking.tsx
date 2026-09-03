@@ -26,6 +26,7 @@ const dateKey = (value: string) => value.slice(0, 10);
 const dateLabel = (key: string) => new Date(`${key}T00:00:00Z`).toLocaleDateString("en-GB", { dateStyle: "medium", timeZone: "UTC" });
 const monthKey = (value: string) => value.slice(0, 7);
 const monthLabel = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+const DAY_DELETE_IDLE_MS = 48 * 60 * 60 * 1000;
 
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;");
@@ -57,6 +58,16 @@ function hasPossibleForward(record: EmailTrackingRecord): boolean {
       .filter((value): value is string => Boolean(value)),
   );
   return clients.size >= 2;
+}
+
+function canDeleteDay(items: EmailTrackingRecord[]): boolean {
+  if (!items.length) return false;
+  const latestActivity = Math.max(...items.map((record) => {
+    const createdAt = new Date(record.createdAt).getTime();
+    const lastClickedAt = record.lastClickedAt ? new Date(record.lastClickedAt).getTime() : 0;
+    return Math.max(createdAt, lastClickedAt);
+  }));
+  return Number.isFinite(latestActivity) && Date.now() - latestActivity >= DAY_DELETE_IDLE_MS;
 }
 
 export default function EmailTrackingPage({ details, records: initialRecords, searchEntries }: InferGetServerSidePropsType<typeof getServerSideProps>) {
@@ -186,6 +197,21 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
     setMessage(`Deleted ${data.result?.trackingDeleted || 0} tracked emails and ${data.result?.eventsDeleted || 0} tracking events from ${label}.`);
   }
 
+  async function clearTrackingDay(day: string) {
+    const label = dateLabel(day);
+    if (!window.confirm(`Delete the collapsed tracking section for ${label}? Its tracking events will also be deleted. CRM contacts, tenders and Gmail interactions will not be deleted.`)) return;
+    const response = await fetch("/api/internal/email-tracking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clear", day, confirm: `CLEAR TRACKING ${day}` }),
+    });
+    const data = await response.json();
+    if (!response.ok) { setMessage(data.error || "Unable to delete tracking for that day."); return; }
+    setRecords((current) => current.filter((record) => dateKey(record.createdAt) !== day));
+    setGenerated(null);
+    setMessage(`Deleted ${data.result?.trackingDeleted || 0} tracked emails and ${data.result?.eventsDeleted || 0} tracking events from ${label}.`);
+  }
+
   async function clearTrackingHistory() {
     if (!window.confirm("Clear all email-tracking records and tracking events? CRM contacts, tenders and Gmail interactions will not be deleted.")) return;
     const response = await fetch("/api/internal/email-tracking", {
@@ -234,7 +260,10 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
             <details key={group.key} open={groupIndex === 0} className="rounded-md border border-gray-200 bg-gray-50/60">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-semibold text-gray-700">
                 <span>{dateLabel(group.key)}</span>
-                <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-gray-500 ring-1 ring-gray-200">{group.items.length}</span>
+                <span className="flex items-center gap-2">
+                  {canDeleteDay(group.items) ? <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void clearTrackingDay(group.key); }} className="rounded border border-red-200 bg-white px-2 py-1 text-[10px] font-semibold text-red-700 hover:bg-red-50">Delete day</button> : null}
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-gray-500 ring-1 ring-gray-200">{group.items.length}</span>
+                </span>
               </summary>
               <div className="space-y-2 border-t border-gray-200 p-2">{group.items.map((record) => {
                 const possibleForward = hasPossibleForward(record);
