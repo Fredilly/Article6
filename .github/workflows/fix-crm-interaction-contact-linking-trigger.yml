@@ -1,0 +1,12 @@
+name: Trigger CRM contact-linking patch
+on:
+  push:
+    branches:
+      - fix/crm-interaction-contact-linking
+permissions:
+  contents: write
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ready
