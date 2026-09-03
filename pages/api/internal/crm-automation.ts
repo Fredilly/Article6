@@ -217,6 +217,11 @@ async function recordInteraction(command: RecordInteractionCommand) {
     else if (before.contacts.length === 1) resolvedContactId = before.contacts[0].id;
   }
 
+  const channel = (command.interaction.channel || "EMAIL").toUpperCase();
+  if (channel === "EMAIL" && !resolvedContactId) {
+    throw new Error("Email interaction requires a resolvable CRM contact. Pass contactId or the exact Gmail recipient as contactEmail; refusing to create an unlinked email interaction.");
+  }
+
   const duplicateInteraction = Boolean(
     externalReference && before.interactions.some((interaction) => interaction.externalReference === externalReference),
   );
