@@ -2,6 +2,7 @@ import { Pool, type QueryResultRow } from "pg";
 import {
   listSalesOrganizations,
   type SalesContact,
+  type SalesInteraction,
   type SalesOrganizationDetail,
   type SalesProject,
   type SalesTenderOpportunity,
@@ -40,7 +41,7 @@ export async function loadSalesHomepageData(): Promise<{
 
   const organizationIds = organizations.map((organization) => organization.id);
   const pool = getHomepagePool();
-  const [contactsResult, projectsResult, tendersResult] = await Promise.all([
+  const [contactsResult, projectsResult, tendersResult, interactionsResult] = await Promise.all([
     pool.query(
       `SELECT *
        FROM sales_contacts
@@ -73,6 +74,15 @@ export async function loadSalesHomepageData(): Promise<{
        LEFT JOIN sales_contacts c ON c.id = t.contact_id
        WHERE t.organization_id = ANY($1::uuid[])
        ORDER BY t.organization_id, t.submission_deadline ASC NULLS LAST, t.name ASC`,
+      [organizationIds]
+    ),
+    pool.query(
+      `SELECT i.*, c.name AS contact_name, p.name AS project_name
+       FROM sales_interactions i
+       LEFT JOIN sales_contacts c ON c.id = i.contact_id
+       LEFT JOIN sales_projects p ON p.id = i.project_id
+       WHERE i.organization_id = ANY($1::uuid[])
+       ORDER BY i.organization_id, i.occurred_at DESC`,
       [organizationIds]
     ),
   ]);
@@ -132,6 +142,7 @@ export async function loadSalesHomepageData(): Promise<{
     contractValue: row.contract_value == null ? undefined : Number(row.contract_value),
     sector: row.sector || undefined,
     status: row.status as SalesTenderStatus,
+    bidderStatus: row.bidder_status || undefined,
     notes: String(row.notes || ""),
     buyerRequirements: String(row.buyer_requirements || ""),
     salesStatus: row.sales_status as SalesOrganizationStatus,
@@ -149,12 +160,39 @@ export async function loadSalesHomepageData(): Promise<{
     tendersByOrganization.set(tender.organizationId, [...(tendersByOrganization.get(tender.organizationId) || []), tender]);
   }
 
+  const interactionsByOrganization = new Map<string, SalesInteraction[]>();
+  for (const row of interactionsResult.rows) {
+    const interaction: SalesInteraction = {
+      id: String(row.id),
+      organizationId: String(row.organization_id),
+      contactId: row.contact_id || undefined,
+      projectId: row.project_id || undefined,
+      tenderOpportunityId: row.tender_opportunity_id || undefined,
+      contactName: row.contact_name || undefined,
+      projectName: row.project_name || undefined,
+      channel: String(row.channel),
+      direction: String(row.direction),
+      interactionType: String(row.interaction_type),
+      occurredAt: iso(row.occurred_at),
+      subject: row.subject || undefined,
+      summary: String(row.summary || ""),
+      outcomeCode: row.outcome_code || undefined,
+      externalReference: row.external_reference || undefined,
+      gmailThreadId: row.gmail_thread_id || undefined,
+    };
+    interactionsByOrganization.set(interaction.organizationId, [...(interactionsByOrganization.get(interaction.organizationId) || []), interaction]);
+  }
+
+  for (const tender of tenderOpportunities) {
+    tender.interactions = (interactionsByOrganization.get(tender.organizationId) || []).filter((interaction) => interaction.tenderOpportunityId === tender.id);
+  }
+
   const details: SalesOrganizationDetail[] = organizations.map((organization) => ({
     organization,
     contacts: contactsByOrganization.get(organization.id) || [],
     projects: projectsByOrganization.get(organization.id) || [],
     tenderOpportunities: tendersByOrganization.get(organization.id) || [],
-    interactions: [],
+    interactions: interactionsByOrganization.get(organization.id) || [],
   }));
 
   return { details, tenderOpportunities };
