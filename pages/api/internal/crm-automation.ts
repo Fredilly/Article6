@@ -41,6 +41,9 @@ interface RecordInteractionCommand {
     outcomeCode?: string;
     externalReference?: string;
     gmailThreadId?: string;
+    contactId?: string;
+    contactEmail?: string;
+    contactName?: string;
   };
   organizationUpdate?: {
     status?: SalesOrganizationStatus;
@@ -185,6 +188,35 @@ async function recordInteraction(command: RecordInteractionCommand) {
   const before = await getSalesOrganizationDetail(organization.id);
   if (!before) throw new Error("Organization disappeared before CRM update.");
   const externalReference = command.interaction.externalReference?.trim();
+
+  const requestedContactId = command.interaction.contactId?.trim();
+  const requestedContactEmail = command.interaction.contactEmail?.trim().toLowerCase();
+  const requestedContactName = command.interaction.contactName?.trim().toLowerCase();
+  const summaryLower = command.interaction.summary.trim().toLowerCase();
+
+  let resolvedContactId: string | undefined;
+  if (requestedContactId) {
+    const match = before.contacts.find((contact) => contact.id === requestedContactId);
+    if (!match) throw new Error("Interaction contact does not belong to the selected organization.");
+    resolvedContactId = match.id;
+  } else if (requestedContactEmail) {
+    const matches = before.contacts.filter((contact) => contact.email?.trim().toLowerCase() === requestedContactEmail);
+    if (matches.length > 1) throw new Error("Interaction contact email is ambiguous within the selected organization.");
+    resolvedContactId = matches[0]?.id;
+  } else if (requestedContactName) {
+    const matches = before.contacts.filter((contact) => contact.name.trim().toLowerCase() === requestedContactName);
+    if (matches.length > 1) throw new Error("Interaction contact name is ambiguous within the selected organization.");
+    resolvedContactId = matches[0]?.id;
+  } else {
+    const summaryMatches = before.contacts.filter((contact) => {
+      const name = contact.name.trim().toLowerCase();
+      const email = contact.email?.trim().toLowerCase();
+      return (name && summaryLower.includes(name)) || Boolean(email && summaryLower.includes(email));
+    });
+    if (summaryMatches.length === 1) resolvedContactId = summaryMatches[0].id;
+    else if (before.contacts.length === 1) resolvedContactId = before.contacts[0].id;
+  }
+
   const duplicateInteraction = Boolean(
     externalReference && before.interactions.some((interaction) => interaction.externalReference === externalReference),
   );
@@ -192,6 +224,7 @@ async function recordInteraction(command: RecordInteractionCommand) {
   if (!duplicateInteraction) {
     await addSalesInteraction({
       organizationId: organization.id,
+      contactId: resolvedContactId,
       channel: command.interaction.channel || "EMAIL",
       direction: command.interaction.direction || "INBOUND",
       interactionType: command.interaction.interactionType || "REPLY",
