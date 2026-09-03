@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 
 const REFRESH_INTERVAL_MS = 15000;
 const ATTRIBUTED_HISTORY_ID = "attributed-contact-history";
+const ATTRIBUTION_RENDERING_ATTR = "data-attribution-rendering";
 
 type AttributedHistoryItem = {
   id: string;
@@ -33,63 +34,104 @@ function textDiv(text: string, className?: string): HTMLDivElement {
   return element;
 }
 
+function historyCountNode(section: HTMLElement): HTMLElement | null {
+  return Array.from(section.querySelectorAll<HTMLElement>("div")).find((element) => /^\d+ messages? · \d+ conversations?$/.test(element.textContent?.trim() || "")) || null;
+}
+
+function nativeCounts(countNode: HTMLElement | null): { messages: number; conversations: number } {
+  if (!countNode) return { messages: 0, conversations: 0 };
+
+  const storedMessages = countNode.dataset.nativeMessages;
+  const storedConversations = countNode.dataset.nativeConversations;
+  if (storedMessages != null && storedConversations != null) {
+    return { messages: Number(storedMessages) || 0, conversations: Number(storedConversations) || 0 };
+  }
+
+  const match = countNode.textContent?.trim().match(/^(\d+) messages? · (\d+) conversations?$/);
+  const messages = match ? Number(match[1]) : 0;
+  const conversations = match ? Number(match[2]) : 0;
+  countNode.dataset.nativeMessages = String(messages);
+  countNode.dataset.nativeConversations = String(conversations);
+  return { messages, conversations };
+}
+
+function setHistoryCount(countNode: HTMLElement | null, messages: number, conversations: number): void {
+  if (!countNode) return;
+  countNode.textContent = `${messages} message${messages === 1 ? "" : "s"} · ${conversations} conversation${conversations === 1 ? "" : "s"}`;
+}
+
 async function renderAttributedContactHistory(router: ReturnType<typeof useRouter>): Promise<void> {
   const organizationId = typeof router.query.id === "string" ? router.query.id : "";
   const contactId = typeof router.query.contactId === "string" ? router.query.contactId : "";
-  document.getElementById(ATTRIBUTED_HISTORY_ID)?.remove();
   if (!organizationId || !contactId) return;
-
-  const response = await fetch(`/api/internal/contact-history-attribution?organizationId=${encodeURIComponent(organizationId)}&contactId=${encodeURIComponent(contactId)}`, {
-    credentials: "same-origin",
-    headers: { Accept: "application/json" },
-  });
-  if (!response.ok) return;
-  const payload = await response.json() as { items?: AttributedHistoryItem[] };
-  const items = Array.isArray(payload.items) ? payload.items : [];
-  if (!items.length) return;
 
   const section = relationshipHistorySection();
   if (!section) return;
+  if (section.getAttribute(ATTRIBUTION_RENDERING_ATTR) === "1") return;
+  section.setAttribute(ATTRIBUTION_RENDERING_ATTR, "1");
 
-  const wrapper = document.createElement("div");
-  wrapper.id = ATTRIBUTED_HISTORY_ID;
-  wrapper.className = "mt-5 space-y-3";
-  wrapper.appendChild(textDiv("Routed outreach", "text-xs font-semibold uppercase tracking-wide text-gray-500"));
+  try {
+    const countNode = historyCountNode(section);
+    const base = nativeCounts(countNode);
+    document.getElementById(ATTRIBUTED_HISTORY_ID)?.remove();
+    setHistoryCount(countNode, base.messages, base.conversations);
 
-  for (const item of items) {
-    const card = document.createElement("div");
-    card.className = "rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm";
+    const response = await fetch(`/api/internal/contact-history-attribution?organizationId=${encodeURIComponent(organizationId)}&contactId=${encodeURIComponent(contactId)}`, {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return;
 
-    const heading = document.createElement("div");
-    heading.className = "flex flex-wrap items-start justify-between gap-2";
-    heading.appendChild(textDiv(item.subject || "Email", "font-semibold text-gray-900"));
-    heading.appendChild(textDiv(new Date(item.occurredAt).toLocaleString(), "text-xs text-gray-500"));
-    card.appendChild(heading);
+    const payload = await response.json() as { items?: AttributedHistoryItem[] };
+    const rawItems = Array.isArray(payload.items) ? payload.items : [];
+    const seen = new Set<string>();
+    const items = rawItems.filter((item) => {
+      if (!item?.id || seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+    if (!items.length) return;
 
-    const intended = item.intendedContactName || "Named contact";
-    const actualRoute = item.actualContactEmail
-      ? `${item.actualContactName || "General inbox"} <${item.actualContactEmail}>`
-      : item.actualContactName || "general company route";
-    card.appendChild(textDiv(`Intended for ${intended} · actually sent via ${actualRoute}`, "mt-2 font-medium text-amber-900"));
-    card.appendChild(textDiv(item.summary, "mt-2 whitespace-pre-wrap text-gray-700"));
-    if (item.externalReference) card.appendChild(textDiv(item.externalReference, "mt-2 text-xs text-gray-500"));
-    wrapper.appendChild(card);
-  }
+    const wrapper = document.createElement("div");
+    wrapper.id = ATTRIBUTED_HISTORY_ID;
+    wrapper.className = "mt-5 space-y-6";
 
-  const historyBody = Array.from(section.querySelectorAll<HTMLElement>("div")).find((element) => element.classList.contains("space-y-6"));
-  (historyBody || section).appendChild(wrapper);
+    for (const item of items) {
+      const conversation = document.createElement("section");
+      conversation.className = "rounded-lg border border-gray-100 bg-gray-50/50 p-4";
+      conversation.dataset.interactionId = item.id;
 
-  const emptyMessage = Array.from(section.querySelectorAll<HTMLParagraphElement>("p")).find((element) => element.textContent?.trim() === "No conversations yet.");
-  if (emptyMessage) emptyMessage.style.display = "none";
+      const header = document.createElement("div");
+      header.className = "flex flex-wrap items-start justify-between gap-3";
+      const titleBlock = document.createElement("div");
+      titleBlock.appendChild(textDiv(item.subject || "Email", "font-semibold text-gray-900"));
+      titleBlock.appendChild(textDiv("EMAIL · OUTBOUND", "mt-1 text-xs font-medium uppercase tracking-wide text-gray-500"));
+      header.appendChild(titleBlock);
+      header.appendChild(textDiv(new Date(item.occurredAt).toLocaleString(), "text-xs text-gray-500"));
+      conversation.appendChild(header);
 
-  const countNode = Array.from(section.querySelectorAll<HTMLElement>("div")).find((element) => /^\d+ messages? · \d+ conversations?$/.test(element.textContent?.trim() || ""));
-  if (countNode) {
-    const current = countNode.textContent?.trim().match(/^(\d+) messages? · (\d+) conversations?$/);
-    const nativeMessages = current ? Number(current[1]) : 0;
-    const nativeConversations = current ? Number(current[2]) : 0;
-    const messages = nativeMessages + items.length;
-    const conversations = nativeConversations + items.length;
-    countNode.textContent = `${messages} message${messages === 1 ? "" : "s"} · ${conversations} conversation${conversations === 1 ? "" : "s"}`;
+      const route = document.createElement("div");
+      route.className = "mt-3 rounded-md border border-gray-200 bg-white p-3";
+      const intended = item.intendedContactName || "Named contact";
+      const actualRoute = item.actualContactEmail
+        ? `${item.actualContactName || "General inbox"} <${item.actualContactEmail}>`
+        : item.actualContactName || "general company route";
+      route.appendChild(textDiv(`To: ${intended} · sent via ${actualRoute}`, "text-xs font-medium text-gray-600"));
+      route.appendChild(textDiv(item.summary, "mt-2 whitespace-pre-wrap text-sm text-gray-700"));
+      if (item.externalReference) route.appendChild(textDiv(item.externalReference, "mt-2 text-xs text-gray-400"));
+      conversation.appendChild(route);
+      wrapper.appendChild(conversation);
+    }
+
+    const historyBody = Array.from(section.querySelectorAll<HTMLElement>("div")).find((element) => element.classList.contains("space-y-6"));
+    (historyBody || section).appendChild(wrapper);
+
+    const emptyMessage = Array.from(section.querySelectorAll<HTMLParagraphElement>("p")).find((element) => element.textContent?.trim() === "No conversations yet.");
+    if (emptyMessage) emptyMessage.style.display = "none";
+
+    setHistoryCount(countNode, base.messages + items.length, base.conversations + items.length);
+  } finally {
+    section.removeAttribute(ATTRIBUTION_RENDERING_ATTR);
   }
 }
 
