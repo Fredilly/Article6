@@ -40,7 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const row = pair.rows[0];
     if (!row) return res.status(404).json({ error: "Interaction or contact not found." });
     if (String(row.organization_id) !== String(row.contact_organization_id)) return res.status(400).json({ error: "Interaction and contact belong to different organizations." });
-    if (row.existing_contact_id && String(row.existing_contact_id) !== contactId) return res.status(409).json({ error: "Interaction is already linked to a different contact." });
+
+    const previousContactId = row.existing_contact_id ? String(row.existing_contact_id) : null;
     await db.query("UPDATE sales_interactions SET contact_id = $2 WHERE id = $1", [interactionId, contactId]);
     const verified = await db.query(
       `SELECT i.id, i.organization_id, i.contact_id, i.external_reference, c.name AS contact_name
@@ -51,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!verified.rows[0]) throw new Error("CRM interaction-contact linkage verification failed.");
     return res.status(200).json({ ok: true, operation: "link_interaction_contact_v2", result: {
       interactionId: String(verified.rows[0].id), organizationId: String(verified.rows[0].organization_id),
-      contactId: String(verified.rows[0].contact_id), contactName: String(verified.rows[0].contact_name),
+      previousContactId, contactId: String(verified.rows[0].contact_id), contactName: String(verified.rows[0].contact_name),
       externalReference: verified.rows[0].external_reference || null,
     }});
   } catch (error) {
