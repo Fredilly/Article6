@@ -1,0 +1,68 @@
+name: CRM link interaction contact
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+
+jobs:
+  execute:
+    if: github.event.issue.user.login == 'Fredilly' && startsWith(github.event.issue.title, '[CRM]') && contains(github.event.issue.body, '"operation":"link_interaction_contact"')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request GitHub OIDC token
+        id: oidc
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --fail-with-body -sS \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=article6-crm-automation")"
+          token="$(printf '%s' "$response" | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])')"
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+
+      - name: Link interaction to contact
+        id: crm
+        env:
+          OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
+          CRM_COMMAND: ${{ github.event.issue.body }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          status="$(curl -sS -o "$response_file" -w '%{http_code}' \
+            -X POST 'https://www.article6.org/api/internal/crm-link-interaction-contact-automation' \
+            -H "Authorization: Bearer ${OIDC_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            --data-binary "$CRM_COMMAND")"
+          response="$(cat "$response_file")"
+          echo "response<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$response" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          if [[ "$status" -lt 200 || "$status" -ge 300 ]]; then
+            echo "CRM command failed with HTTP $status: $response" >&2
+            exit 1
+          fi
+
+      - name: Publish result comment
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          BODY: ${{ job.status == 'success' && format('CRM interaction relink succeeded.\n\n```json\n{0}\n```', steps.crm.outputs.response) || 'CRM interaction relink failed. Check the workflow run logs for details.' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          payload="$(python3 -c 'import json,os; print(json.dumps({"body": os.environ["BODY"]}))')"
+          curl --fail-with-body -sS \
+            -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" \
+            -d "$payload" >/dev/null
