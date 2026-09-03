@@ -101,13 +101,22 @@ function parseTrackingMonth(month: string): { start: string; end: string } {
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
-export async function clearEmailTrackingHistory(month?: string): Promise<{ trackingDeleted: number; eventsDeleted: number }> {
+function parseTrackingDay(day: string): { start: string; end: string } {
+  if (!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(day)) throw new Error("day must be in YYYY-MM-DD format.");
+  const [year, monthNumber, dayNumber] = day.split("-").map(Number);
+  const start = new Date(Date.UTC(year, monthNumber - 1, dayNumber));
+  if (start.getUTCFullYear() !== year || start.getUTCMonth() !== monthNumber - 1 || start.getUTCDate() !== dayNumber) throw new Error("day is not a valid calendar date.");
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+export async function clearEmailTrackingHistory(month?: string, day?: string): Promise<{ trackingDeleted: number; eventsDeleted: number }> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
 
-    if (month) {
-      const { start, end } = parseTrackingMonth(month);
+    if (month || day) {
+      const { start, end } = day ? parseTrackingDay(day) : parseTrackingMonth(month as string);
       const events = await client.query(
         `DELETE FROM sales_email_tracking_events
          WHERE tracking_id IN (
