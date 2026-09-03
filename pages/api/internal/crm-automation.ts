@@ -265,17 +265,30 @@ async function recordInteraction(command: RecordInteractionCommand) {
 
   const verified = await getSalesOrganizationDetail(organization.id);
   if (!verified || verified.organization.status !== finalStatus) throw new Error("CRM verification failed after update.");
-  const interactionVerified = externalReference
-    ? verified.interactions.some((interaction) => interaction.externalReference === externalReference)
-    : verified.interactions.some((interaction) => interaction.summary === command.interaction.summary.trim() && interaction.occurredAt === occurredAt.toISOString());
-  if (!interactionVerified) throw new Error("CRM interaction verification failed after update.");
+  const verifiedInteraction = externalReference
+    ? verified.interactions.find((interaction) => interaction.externalReference === externalReference)
+    : verified.interactions.find((interaction) => interaction.summary === command.interaction.summary.trim() && interaction.occurredAt === occurredAt.toISOString());
+  if (!verifiedInteraction) throw new Error("CRM interaction verification failed after update.");
+
+  const verifiedContact = verifiedInteraction.contactId
+    ? verified.contacts.find((contact) => contact.id === verifiedInteraction.contactId)
+    : undefined;
+  if (channel === "EMAIL" && (!verifiedInteraction.contactId || !verifiedContact?.email)) {
+    throw new Error("CRM email interaction verification failed: stored interaction is not linked to a contact with an email address.");
+  }
 
   return {
     organizationId: organization.id,
     organizationName: organization.name,
     status: verified.organization.status,
+    interactionId: verifiedInteraction.id,
     interactionRecorded: true,
     interactionWasDuplicate: duplicateInteraction,
+    contactId: verifiedInteraction.contactId || null,
+    contactName: verifiedContact?.name || null,
+    contactEmail: verifiedContact?.email || null,
+    gmailThreadId: verifiedInteraction.gmailThreadId || null,
+    verifiedFromDatabase: true,
   };
 }
 
