@@ -67,6 +67,12 @@ function channelLabel(channel?: string) {
   return channel.charAt(0).toUpperCase() + channel.slice(1).toLowerCase();
 }
 
+function isReply(interaction: SalesInteraction) {
+  if (interaction.direction !== "INBOUND") return false;
+  const channel = interaction.channel.toUpperCase();
+  return channel === "EMAIL" || channel === "WHATSAPP" || channel === "SMS" || /reply|response|message/i.test(interaction.interactionType);
+}
+
 export function getOrganizationStatusSummary(
   organization: SalesOrganization,
   interactions: SalesInteraction[],
@@ -76,6 +82,7 @@ export function getOrganizationStatusSummary(
   const ordered = [...interactions].sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt));
   const outbound = interactions.filter((interaction) => interaction.direction === "OUTBOUND");
   const inbound = interactions.filter((interaction) => interaction.direction === "INBOUND");
+  const replies = interactions.filter(isReply);
   const calls = interactions.filter((interaction) => interaction.channel.toUpperCase() === "CALL");
   const latest = ordered[0];
   const latestInbound = ordered.find((interaction) => interaction.direction === "INBOUND");
@@ -85,12 +92,13 @@ export function getOrganizationStatusSummary(
   const lines: string[] = [];
 
   if (organization.status === "CONTACTED") {
-    lines.push(`${plural(outbound.length, "outbound touch", "outbound touches")}`);
+    lines.push(plural(outbound.length, "outbound touch", "outbound touches"));
     if (latest) lines.push(`Last: ${channelLabel(latest.channel)} · ${shortDate(latest.occurredAt, now)}`);
-    lines.push(inbound.length ? `${plural(inbound.length, "reply")} recorded` : "No reply recorded");
+    lines.push(replies.length ? `${plural(replies.length, "reply")} recorded` : inbound.length ? `${plural(inbound.length, "inbound interaction")} recorded` : "No reply recorded");
   } else if (organization.status === "ENGAGED") {
-    if (inbound.length) lines.push(plural(inbound.length, "reply"));
+    if (replies.length) lines.push(plural(replies.length, "reply"));
     if (calls.length) lines.push(plural(calls.length, "call"));
+    if (!replies.length && !calls.length && inbound.length) lines.push(plural(inbound.length, "inbound interaction"));
     if (latestInbound) lines.push(`Last meaningful engagement: ${shortDate(latestInbound.occurredAt, now)}`);
     if (latestInbound?.summary) lines.push(latestInbound.summary);
   } else if (organization.status === "OPPORTUNITY") {
