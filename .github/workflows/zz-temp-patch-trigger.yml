@@ -1,0 +1,10 @@
+name: Temp patch trigger
+on:
+  push:
+    branches:
+      - fix/crm-interaction-contact-linking
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo noop
