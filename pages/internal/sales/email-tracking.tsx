@@ -7,6 +7,8 @@ import OrganizationFuzzyPicker from "../../../components/OrganizationFuzzyPicker
 import { loadSalesHomepageData } from "../../../lib/sales-homepage-store";
 import { buildSalesMemorySearchEntries } from "../../../lib/sales-search";
 import { listEmailTracking, type EmailTrackingRecord } from "../../../lib/email-tracking";
+import { getTenderDaysRemaining, getTenderUrgency } from "../../../lib/tender-intelligence";
+import type { SalesTenderOpportunity } from "../../../lib/sales-store";
 
 interface Props {
   details: Awaited<ReturnType<typeof loadSalesHomepageData>>["details"];
@@ -68,6 +70,28 @@ function canDeleteDay(items: EmailTrackingRecord[]): boolean {
     return Math.max(createdAt, lastClickedAt);
   }));
   return Number.isFinite(latestActivity) && Date.now() - latestActivity >= DAY_DELETE_IDLE_MS;
+}
+
+function trackingDeadlineClass(tender: SalesTenderOpportunity) {
+  const urgency = getTenderUrgency(tender.submissionDeadline);
+  if (urgency === "GREEN") return "text-emerald-600";
+  if (urgency === "AMBER") return "text-amber-600";
+  if (urgency === "ORANGE") return "text-orange-600";
+  if (urgency === "RED") return "text-red-600";
+  return "text-gray-400";
+}
+
+function trackingDeadlineLabel(tender: SalesTenderOpportunity) {
+  const days = getTenderDaysRemaining(tender.submissionDeadline);
+  if (days == null) return undefined;
+  return days < 0 ? "Expired" : `${days}d`;
+}
+
+function trackingDeadlineTitle(tender: SalesTenderOpportunity) {
+  if (!tender.submissionDeadline) return tender.name;
+  const days = getTenderDaysRemaining(tender.submissionDeadline);
+  const due = new Date(tender.submissionDeadline).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return [`Due ${due}`, days == null ? undefined : days >= 0 ? `${days} days remaining` : `${Math.abs(days)} days overdue`, tender.name].filter(Boolean).join("\n");
 }
 
 export default function EmailTrackingPage({ details, records: initialRecords, searchEntries }: InferGetServerSidePropsType<typeof getServerSideProps>) {
@@ -269,6 +293,8 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
                 const possibleForward = hasPossibleForward(record);
                 const recordOrganization = details.find((item) => item.organization.id === record.organizationId);
                 const recordContact = recordOrganization?.contacts.find((contact) => contact.id === record.contactId);
+                const recordTender = recordOrganization?.tenderOpportunities.find((tender) => tender.id === record.tenderOpportunityId);
+                const deadlineLabel = recordTender ? trackingDeadlineLabel(recordTender) : undefined;
                 const clicked = Boolean(record.clickCount);
                 const hasAction = Boolean(record.replied || record.openCount || record.clickCount || possibleForward);
                 const leadHref = recordOrganization
@@ -281,7 +307,8 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
                         <div className="truncate text-sm font-medium text-gray-900">{record.subject || "Outbound email"}</div>
                         <div className="mt-0.5 truncate text-[11px] text-gray-400">{recordOrganization ? recordOrganization.organization.name : "Unknown organization"}{recordContact ? ` · ${recordContact.name}` : ""} · {timeOnly(record.createdAt)}</div>
                       </div>
-                      <div className="flex shrink-0 flex-wrap justify-end gap-1 text-[10px] font-semibold">
+                      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 text-[10px] font-semibold">
+                        {recordTender && deadlineLabel ? <span title={trackingDeadlineTitle(recordTender)} className={`mr-1 cursor-help text-[10px] font-medium ${trackingDeadlineClass(recordTender)}`}>{deadlineLabel}</span> : null}
                         {record.replied ? <span className="rounded-full bg-green-100 px-2 py-0.5 text-green-800">REPLIED</span> : null}
                         {clicked ? <span className="rounded-full bg-green-600 px-2 py-0.5 text-white">CLICKED · {record.clickCount}</span> : null}
                         {possibleForward ? <span className="rounded-full bg-orange-100 px-2 py-0.5 text-orange-800">POSSIBLE FORWARD</span> : null}
