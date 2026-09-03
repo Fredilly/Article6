@@ -1,0 +1,53 @@
+name: Normalize legacy relationship history cards
+
+on:
+  push:
+    branches:
+      - fix/normalize-legacy-relationship-history
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/normalize-legacy-relationship-history
+
+      - name: Normalize legacy interaction summaries in UI
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('pages/internal/sales/organizations/[id].tsx')
+          text = path.read_text()
+
+          marker = 'const fieldClass = "rounded-md border border-gray-300 px-3 py-2 text-sm";\n'
+          helper = '''const fieldClass = "rounded-md border border-gray-300 px-3 py-2 text-sm";\n\nfunction relationshipHistorySummary(summary: string) {\n  return summary\n    .replace(/^To:[^\\n]*?\\s+[—-]\\s*/i, "")\n    .replace(/\\n\\s*Via:\\s*[^\\n]+$/i, "")\n    .trim();\n}\n'''
+          if marker not in text:
+              raise SystemExit('fieldClass marker not found')
+          text = text.replace(marker, helper, 1)
+
+          old = '<p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-gray-700">{interaction.summary}</p>'
+          new = '<p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-gray-700">{relationshipHistorySummary(interaction.summary)}</p>'
+          if old not in text:
+              raise SystemExit('summary renderer not found')
+          text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/normalize-legacy-relationship-history.yml
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/internal/sales/organizations/'[id].tsx' .github/workflows/normalize-legacy-relationship-history.yml
+          git commit -m "fix: normalize legacy relationship history summaries"
+          git push origin HEAD:fix/normalize-legacy-relationship-history
