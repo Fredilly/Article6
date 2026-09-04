@@ -254,8 +254,8 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
     <Head><title>Email tracking | Sales memory</title><meta name="robots" content="noindex,nofollow" /></Head>
     <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900"><div className="mx-auto max-w-6xl">
       <SalesHeader entries={searchEntries} />
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-        <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+        <section className="min-w-0 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="font-semibold">Generate tracked email</h2>
           <p className="mt-1 text-xs text-gray-500">If the body already contains the visible Article6 website, it becomes the tracked link in place. You can also use {"{{link}}"}. Open signals are probabilistic, not proof of a human read.</p>
           <div className="mt-4 grid gap-3">
@@ -271,17 +271,17 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
           </div>
         </section>
 
-        <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="min-w-0 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div><h2 className="font-semibold">Tracked outbound email</h2><p className="mt-1 text-xs text-gray-500">Grouped by sent date and compact by default. Auto-updates about every 10 seconds. Possible forward is an inference from distinct human-like click clients, not proof.</p></div>
-            {records.length ? <div className="flex flex-wrap items-center justify-end gap-2">
-              <select aria-label="Tracking month to delete" className="rounded border border-gray-300 bg-white px-2 py-2 text-xs" value={deleteMonth} onChange={(event) => setDeleteMonth(event.target.value)}>{monthOptions.map((month) => <option key={month} value={month}>{monthLabel(month)}</option>)}</select>
+            <div className="min-w-0"><h2 className="font-semibold">Tracked outbound email</h2><p className="mt-1 text-xs text-gray-500">Grouped by sent date and compact by default. Auto-updates about every 10 seconds. Possible forward is an inference from distinct human-like click clients, not proof.</p></div>
+            {records.length ? <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+              <select aria-label="Tracking month to delete" className="max-w-full rounded border border-gray-300 bg-white px-2 py-2 text-xs" value={deleteMonth} onChange={(event) => setDeleteMonth(event.target.value)}>{monthOptions.map((month) => <option key={month} value={month}>{monthLabel(month)}</option>)}</select>
               <button type="button" onClick={clearTrackingMonth} disabled={!deleteMonth} className="rounded border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">Delete month</button>
               <button type="button" onClick={clearTrackingHistory} className="rounded border border-gray-200 px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50">Clear all</button>
             </div> : null}
           </div>
-          <div className="mt-4 space-y-3">{records.length ? groupedRecords.map((group, groupIndex) => (
-            <details key={group.key} open={groupIndex === 0} className="rounded-md border border-gray-200 bg-gray-50/60">
+          <div className="mt-4 min-w-0 space-y-3">{records.length ? groupedRecords.map((group, groupIndex) => (
+            <details key={group.key} open={groupIndex === 0} className="min-w-0 rounded-md border border-gray-200 bg-gray-50/60">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-semibold text-gray-700">
                 <span>{dateLabel(group.key)}</span>
                 <span className="flex items-center gap-2">
@@ -289,7 +289,7 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
                   <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-gray-500 ring-1 ring-gray-200">{group.items.length}</span>
                 </span>
               </summary>
-              <div className="space-y-2 border-t border-gray-200 p-2">{group.items.map((record) => {
+              <div className="min-w-0 space-y-2 border-t border-gray-200 p-2">{group.items.map((record) => {
                 const possibleForward = hasPossibleForward(record);
                 const recordOrganization = details.find((item) => item.organization.id === record.organizationId);
                 const recordContact = recordOrganization?.contacts.find((contact) => contact.id === record.contactId);
@@ -300,7 +300,7 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
                 const leadHref = recordOrganization
                   ? `/internal/sales/organizations/${recordOrganization.organization.id}${recordContact ? `?contactId=${encodeURIComponent(recordContact.id)}` : ""}`
                   : undefined;
-                return <details key={record.id} className={`rounded-md border text-sm transition-colors ${clicked ? "border-green-300 bg-green-50/70" : "border-gray-200 bg-white"}`}>
+                return <details key={record.id} className={`min-w-0 rounded-md border text-sm transition-colors ${clicked ? "border-green-300 bg-green-50/70" : "border-gray-200 bg-white"}`}>
                   <summary className="cursor-pointer list-none px-3 py-2.5">
                     <div className="flex min-w-0 items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -318,9 +318,9 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
                       </div>
                     </div>
                   </summary>
-                  <div className={`border-t px-3 pb-3 pt-2 ${clicked ? "border-green-200" : "border-gray-100"}`}>
-                    <div className="grid gap-1 text-xs text-gray-600"><div>SENT · {dt(record.createdAt)}</div><div>First open: {dt(record.firstOpenedAt)} · Last open: {dt(record.lastOpenedAt)}</div><div>First click: {dt(record.firstClickedAt)} · Last click: {dt(record.lastClickedAt)}</div></div>
-                    {record.events.length ? <div className="mt-3 border-t border-gray-100 pt-3"><div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Timeline</div><div className="mt-2 space-y-1 text-xs"><div>{dt(record.createdAt)} · Sent / tracking created</div>{record.events.map((event) => <div key={event.id}>{dt(event.occurredAt)} · {event.eventType === "OPEN" ? "Open detected" : "Link clicked"} · {event.classification.replace(/_/g, " ")}</div>)}{possibleForward ? <div>Possible forward activity · multiple distinct human-like click clients detected</div> : null}{record.replied ? <div>Reply detected by Gmail sync</div> : null}</div></div> : null}
+                  <div className={`min-w-0 border-t px-3 pb-3 pt-2 ${clicked ? "border-green-200" : "border-gray-100"}`}>
+                    <div className="grid min-w-0 gap-1 break-words text-xs text-gray-600"><div>SENT · {dt(record.createdAt)}</div><div>First open: {dt(record.firstOpenedAt)} · Last open: {dt(record.lastOpenedAt)}</div><div>First click: {dt(record.firstClickedAt)} · Last click: {dt(record.lastClickedAt)}</div></div>
+                    {record.events.length ? <div className="mt-3 min-w-0 border-t border-gray-100 pt-3"><div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Timeline</div><div className="mt-2 min-w-0 space-y-1 break-words text-xs"><div>{dt(record.createdAt)} · Sent / tracking created</div>{record.events.map((event) => <div key={event.id}>{dt(event.occurredAt)} · {event.eventType === "OPEN" ? "Open detected" : "Link clicked"} · {event.classification.replace(/_/g, " ")}</div>)}{possibleForward ? <div>Possible forward activity · multiple distinct human-like click clients detected</div> : null}{record.replied ? <div>Reply detected by Gmail sync</div> : null}</div></div> : null}
                   </div>
                 </details>;
               })}</div>
