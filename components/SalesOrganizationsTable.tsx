@@ -11,7 +11,7 @@ import {
   type IndependentReviewFrequency,
   type PrimaryProcurementPain,
   type SalesProcurementProfile,
-} from "../lib/sales-procurement";
+} from "../lib/sales-procurement-domain";
 import {
   getEffectiveTenderLifecycle,
   getNearestRelevantTender,
@@ -120,15 +120,9 @@ export default function SalesOrganizationsTable({ organizations, details, procur
       && (frequencyKnown === "ALL" || (frequencyKnown === "KNOWN" ? hasKnownFrequency : !hasKnownFrequency))
       && (reviewFrequency === "ALL" || (profile?.independentReviewFrequency || "UNKNOWN") === reviewFrequency);
   })].sort((a, b) => {
-    if (sortMode === "NEWEST") {
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    }
-    if (sortMode === "OLDEST") {
-      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-    }
-    if (sortMode === "UPDATED") {
-      return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
-    }
+    if (sortMode === "NEWEST") return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    if (sortMode === "OLDEST") return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+    if (sortMode === "UPDATED") return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
     return new Date(b.lastInteractionAt || 0).getTime() - new Date(a.lastInteractionAt || 0).getTime();
   });
 
