@@ -96,5 +96,5 @@ test("CDG backfill keeps unknown annual volumes unknown and does not touch organ
   assert.match(migration, /annual win count remains unknown/);
   assert.doesNotMatch(migration, /UPDATE sales_organizations/);
   assert.match(migration, /ON CONFLICT \(organization_id\) DO NOTHING/);
-  assert.match(migration, /ARRAY\['BID_NO_BID','REFERENCE_FIT','AI_ALREADY_USED'\]/);
+  assert.match(migration, /ARRAY\['DISCOVERY_GAP','BID_NO_BID','REFERENCE_FIT','AI_ALREADY_USED'\]/);
 });
