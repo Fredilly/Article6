@@ -20,6 +20,17 @@ import {
   type SalesObjectionCode,
   type SalesOrganizationStatus,
 } from "../../../lib/sales-memory";
+import {
+  getSalesInteractionSignals,
+  getSalesProcurementProfile,
+  isProcurementHypothesisKey,
+  isProcurementSignalTag,
+  setSalesInteractionSignals,
+  upsertSalesProcurementProfile,
+  type ProcurementHypothesisKey,
+  type ProcurementSignalTag,
+  type SalesProcurementProfilePatch,
+} from "../../../lib/sales-procurement";
 
 interface OrganizationSelector {
   id?: string;
@@ -44,6 +55,8 @@ interface RecordInteractionCommand {
     contactId?: string;
     contactEmail?: string;
     contactName?: string;
+    signalTags?: ProcurementSignalTag[];
+    hypothesisKey?: ProcurementHypothesisKey;
   };
   organizationUpdate?: {
     status?: SalesOrganizationStatus;
@@ -132,6 +145,20 @@ interface InspectOrganizationCommand {
   organization: OrganizationSelector;
 }
 
+interface InspectProcurementProfileCommand {
+  version: 1;
+  operation: "inspect_procurement_profile";
+  organization: OrganizationSelector;
+}
+
+interface UpsertProcurementProfileCommand {
+  version: 1;
+  operation: "upsert_procurement_profile";
+  organization: OrganizationSelector;
+  profile: SalesProcurementProfilePatch;
+  verified?: boolean;
+}
+
 type CrmAutomationCommand =
   | RecordInteractionCommand
   | CreateOrganizationCommand
@@ -139,7 +166,9 @@ type CrmAutomationCommand =
   | CreateTenderCommand
   | UpdateOrganizationCommand
   | DeleteInteractionCommand
-  | InspectOrganizationCommand;
+  | InspectOrganizationCommand
+  | InspectProcurementProfileCommand
+  | UpsertProcurementProfileCommand;
 
 function bearerToken(req: NextApiRequest): string | null {
   const authorization = req.headers.authorization || "";
@@ -171,11 +200,67 @@ async function resolveOrganization(selector: OrganizationSelector) {
   throw new Error("Organization selector is ambiguous.");
 }
 
+function validatedSignals(interaction: RecordInteractionCommand["interaction"]): {
+  signalTags?: ProcurementSignalTag[];
+  hypothesisKey?: ProcurementHypothesisKey;
+} {
+  if (interaction.signalTags !== undefined) {
+    if (!Array.isArray(interaction.signalTags)) throw new Error("Interaction signalTags must be an array.");
+    for (const tag of interaction.signalTags) {
+      if (!isProcurementSignalTag(tag)) throw new Error(`Invalid procurement signal tag: ${String(tag)}.`);
+    }
+  }
+  if (interaction.hypothesisKey !== undefined && !isProcurementHypothesisKey(interaction.hypothesisKey)) {
+    throw new Error("Invalid procurement hypothesis key.");
+  }
+  return {
+    signalTags: interaction.signalTags,
+    hypothesisKey: interaction.hypothesisKey,
+  };
+}
+
+function normalizeProcurementPatch(raw: SalesProcurementProfilePatch | undefined, verified?: boolean): SalesProcurementProfilePatch {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("Procurement profile patch is required.");
+  const patch: SalesProcurementProfilePatch = {};
+  const keys: Array<keyof SalesProcurementProfilePatch> = [
+    "opportunitiesConsideredBand",
+    "bidsSubmittedBand",
+    "winsBand",
+    "bidDecisionProcess",
+    "bidDecisionOwnerContactId",
+    "discoveryMethods",
+    "discoveryProblems",
+    "bidPreparationModel",
+    "aiUsage",
+    "independentReviewFrequency",
+    "evidenceLibraryMaturity",
+    "primaryProcurementPain",
+    "profileSource",
+    "profileConfidence",
+    "lastVerifiedAt",
+    "notes",
+  ];
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(raw, key)) {
+      const value = raw[key];
+      if (["discoveryMethods", "discoveryProblems", "aiUsage"].includes(key) && value != null) {
+        if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+          throw new Error(`Procurement profile ${String(key)} must be an array of strings.`);
+        }
+      }
+      (patch as Record<string, unknown>)[key] = value;
+    }
+  }
+  if (verified === true) patch.lastVerifiedAt = new Date().toISOString();
+  return patch;
+}
+
 async function recordInteraction(command: RecordInteractionCommand) {
   const organization = await resolveOrganization(command.organization);
   const occurredAt = new Date(command.interaction.occurredAt);
   if (Number.isNaN(occurredAt.getTime())) throw new Error("Interaction date is invalid.");
   if (!command.interaction.summary?.trim()) throw new Error("Interaction summary is required.");
+  const signals = validatedSignals(command.interaction);
 
   const patch = command.organizationUpdate;
   const finalStatus = patch?.status || organization.status;
@@ -270,6 +355,25 @@ async function recordInteraction(command: RecordInteractionCommand) {
     : verified.interactions.find((interaction) => interaction.summary === command.interaction.summary.trim() && interaction.occurredAt === occurredAt.toISOString());
   if (!verifiedInteraction) throw new Error("CRM interaction verification failed after update.");
 
+  if (signals.signalTags !== undefined || signals.hypothesisKey !== undefined) {
+    await setSalesInteractionSignals({
+      organizationId: organization.id,
+      interactionId: verifiedInteraction.id,
+      signalTags: signals.signalTags,
+      hypothesisKey: signals.hypothesisKey,
+    });
+  }
+  const verifiedSignals = await getSalesInteractionSignals(organization.id, verifiedInteraction.id);
+  if (!verifiedSignals) throw new Error("CRM interaction signal verification failed after update.");
+  if (signals.signalTags !== undefined) {
+    const expected = [...signals.signalTags].sort().join("|");
+    const actual = [...verifiedSignals.signalTags].sort().join("|");
+    if (expected !== actual) throw new Error("CRM interaction signal-tag verification failed after update.");
+  }
+  if (signals.hypothesisKey !== undefined && verifiedSignals.hypothesisKey !== signals.hypothesisKey) {
+    throw new Error("CRM interaction hypothesis verification failed after update.");
+  }
+
   const verifiedContact = verifiedInteraction.contactId
     ? verified.contacts.find((contact) => contact.id === verifiedInteraction.contactId)
     : undefined;
@@ -288,6 +392,8 @@ async function recordInteraction(command: RecordInteractionCommand) {
     contactName: verifiedContact?.name || null,
     contactEmail: verifiedContact?.email || null,
     gmailThreadId: verifiedInteraction.gmailThreadId || null,
+    signalTags: verifiedSignals.signalTags,
+    hypothesisKey: verifiedSignals.hypothesisKey || null,
     verifiedFromDatabase: true,
   };
 }
@@ -492,6 +598,43 @@ async function inspectOrganization(command: InspectOrganizationCommand) {
   };
 }
 
+async function inspectProcurementProfile(command: InspectProcurementProfileCommand) {
+  const organization = await resolveOrganization(command.organization);
+  const profile = await getSalesProcurementProfile(organization.id);
+  return {
+    organizationId: organization.id,
+    organizationName: organization.name,
+    profile,
+    verifiedFromDatabase: true,
+  };
+}
+
+async function upsertProcurementProfile(command: UpsertProcurementProfileCommand) {
+  const organization = await resolveOrganization(command.organization);
+  const before = await getSalesOrganizationDetail(organization.id);
+  if (!before) throw new Error("Organization disappeared before procurement profile update.");
+  const statusBefore = before.organization.status;
+  const patch = normalizeProcurementPatch(command.profile, command.verified);
+  await upsertSalesProcurementProfile(organization.id, patch);
+
+  const [verifiedProfile, verifiedOrganization] = await Promise.all([
+    getSalesProcurementProfile(organization.id),
+    getSalesOrganizationDetail(organization.id),
+  ]);
+  if (!verifiedProfile) throw new Error("CRM procurement profile verification failed after update.");
+  if (!verifiedOrganization || verifiedOrganization.organization.status !== statusBefore) {
+    throw new Error("CRM procurement profile update unexpectedly changed organization status.");
+  }
+
+  return {
+    organizationId: organization.id,
+    organizationName: organization.name,
+    profile: verifiedProfile,
+    organizationStatus: verifiedOrganization.organization.status,
+    verifiedFromDatabase: true,
+  };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).setHeader("Allow", "POST").json({ error: "Method not allowed." });
 
@@ -519,7 +662,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 ? await deleteInteraction(command)
                 : command.operation === "inspect_organization"
                   ? await inspectOrganization(command)
-                  : null;
+                  : command.operation === "inspect_procurement_profile"
+                    ? await inspectProcurementProfile(command)
+                    : command.operation === "upsert_procurement_profile"
+                      ? await upsertProcurementProfile(command)
+                      : null;
 
     if (!result) return res.status(400).json({ error: "Unsupported CRM automation operation." });
     return res.status(200).json({ ok: true, operation: command.operation, result });
