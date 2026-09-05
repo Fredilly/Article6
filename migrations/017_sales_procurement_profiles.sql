@@ -106,7 +106,7 @@ WHERE LOWER(TRIM(o.name)) = LOWER('Creative Driven Goals (CDG)')
 ON CONFLICT (organization_id) DO NOTHING;
 
 UPDATE sales_interactions i
-SET signal_tags = ARRAY['BID_NO_BID','REFERENCE_FIT','AI_ALREADY_USED']::TEXT[],
+SET signal_tags = ARRAY['DISCOVERY_GAP','BID_NO_BID','REFERENCE_FIT','AI_ALREADY_USED']::TEXT[],
     hypothesis_key = 'bid_no_bid_assist'
 FROM sales_organizations o
 WHERE i.organization_id = o.id
