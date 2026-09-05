@@ -13,7 +13,7 @@ import {
   PROCUREMENT_PROFILE_SOURCES,
   PROCUREMENT_WINS_BANDS,
   type SalesProcurementProfile,
-} from "../lib/sales-procurement";
+} from "../lib/sales-procurement-domain";
 
 type ContactOption = { id: string; name: string; title?: string };
 type Payload = { ok: boolean; profile: SalesProcurementProfile | null; contacts: ContactOption[] };
@@ -68,9 +68,7 @@ export default function ProcurementProfilePanel({ organizationId }: { organizati
             <h2 className="text-sm font-semibold text-gray-900">Procurement profile</h2>
             <p className="mt-0.5 text-xs text-gray-500">Structured bidder behavior and procurement context.</p>
           </div>
-          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${profile?.bidderSegment && profile.bidderSegment !== "UNKNOWN" ? "bg-gray-100 text-gray-700" : "bg-gray-50 text-gray-400"}`}>
-            {label(profile?.bidderSegment)}
-          </span>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${profile?.bidderSegment && profile.bidderSegment !== "UNKNOWN" ? "bg-gray-100 text-gray-700" : "bg-gray-50 text-gray-400"}`}>{label(profile?.bidderSegment)}</span>
         </div>
       </summary>
 
@@ -103,9 +101,9 @@ export default function ProcurementProfilePanel({ organizationId }: { organizati
               </div>
 
               <div className="grid gap-3 md:grid-cols-3">
-                <label className="text-xs text-gray-600">Discovery methods<select multiple name="discoveryMethods" defaultValue={profile?.discoveryMethods || []} className={`mt-1 min-h-32 ${fieldClass}`}>{discoveryMethodOptions.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
-                <label className="text-xs text-gray-600">Discovery problems<select multiple name="discoveryProblems" defaultValue={profile?.discoveryProblems || []} className={`mt-1 min-h-32 ${fieldClass}`}>{discoveryProblemOptions.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
-                <label className="text-xs text-gray-600">AI usage<select multiple name="aiUsage" defaultValue={profile?.aiUsage || []} className={`mt-1 min-h-32 ${fieldClass}`}>{aiOptions.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
+                <label className="text-xs text-gray-600">Discovery methods<input type="hidden" name="discoveryMethods" value="" /><select multiple name="discoveryMethods" defaultValue={profile?.discoveryMethods || []} className={`mt-1 min-h-32 ${fieldClass}`}>{discoveryMethodOptions.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
+                <label className="text-xs text-gray-600">Discovery problems<input type="hidden" name="discoveryProblems" value="" /><select multiple name="discoveryProblems" defaultValue={profile?.discoveryProblems || []} className={`mt-1 min-h-32 ${fieldClass}`}>{discoveryProblemOptions.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
+                <label className="text-xs text-gray-600">AI usage<input type="hidden" name="aiUsage" value="" /><select multiple name="aiUsage" defaultValue={profile?.aiUsage || []} className={`mt-1 min-h-32 ${fieldClass}`}>{aiOptions.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
