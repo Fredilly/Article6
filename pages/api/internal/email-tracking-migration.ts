@@ -5,6 +5,7 @@ import {
   applySalesInteractionThreadMigration,
 } from "../../../lib/email-tracking-migration";
 import { applySalesCollateralMigration } from "../../../lib/sales-collateral-migration";
+import { applySalesProcurementMigration } from "../../../lib/sales-procurement-migration";
 
 function bearerToken(req: NextApiRequest): string | null {
   const authorization = req.headers.authorization || "";
@@ -26,6 +27,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (migration === "016_sales_collateral") {
       const result = await applySalesCollateralMigration();
+      return res.status(200).json({ ok: true, migration, result });
+    }
+    if (migration === "017_sales_procurement_profiles") {
+      const result = await applySalesProcurementMigration();
       return res.status(200).json({ ok: true, migration, result });
     }
     if (migration === "015_email_tracking" || migration === undefined) {
