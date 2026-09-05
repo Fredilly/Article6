@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateGitHubActionsClaims, type GitHubActionsClaims } from "../lib/github-actions-oidc";
+import { validateGitHubActionsClaims, type GitHubActionsClaims } from "../lib/github-actions-oidc.ts";
 
 const now = 1_800_000_000;
 

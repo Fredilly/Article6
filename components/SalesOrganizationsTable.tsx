@@ -1,8 +1,17 @@
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import SalesHeader, { type SalesStatusFilter } from "./SalesHeader";
 import type { SalesMemorySearchEntry } from "./SalesMemorySearch";
 import type { SalesOrganization, SalesOrganizationDetail, SalesTenderOpportunity } from "../lib/sales-store";
+import {
+  BIDDER_SEGMENTS,
+  INDEPENDENT_REVIEW_FREQUENCIES,
+  PRIMARY_PROCUREMENT_PAINS,
+  type BidderSegment,
+  type IndependentReviewFrequency,
+  type PrimaryProcurementPain,
+  type SalesProcurementProfile,
+} from "../lib/sales-procurement-domain";
 import {
   getEffectiveTenderLifecycle,
   getNearestRelevantTender,
@@ -25,6 +34,10 @@ function experimentLabel(value: string) {
   if (value === "TENDER_READINESS") return "Tender Readiness";
   if (value === "ECOVADIS_SUPPLIER_COMPLIANCE") return "EcoVadis / Supplier Compliance";
   return "Other";
+}
+
+function enumLabel(value: string) {
+  return value.toLowerCase().replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function formatDate(value?: string) {
@@ -74,36 +87,59 @@ function statusTooltip(detail?: SalesOrganizationDetail) {
 
 type ExperimentFilter = "ALL" | SalesOrganization["experiment"];
 type SortMode = "NEWEST" | "OLDEST" | "UPDATED" | "CONTACTED";
+type FrequencyKnownFilter = "ALL" | "KNOWN" | "UNKNOWN";
+type BidderSegmentFilter = "ALL" | BidderSegment;
+type PainFilter = "ALL" | PrimaryProcurementPain;
+type ReviewFilter = "ALL" | IndependentReviewFrequency;
 
-export default function SalesOrganizationsTable({ organizations, details, searchEntries, initialQuery, initialStatus }: { organizations: SalesOrganization[]; details: SalesOrganizationDetail[]; searchEntries: SalesMemorySearchEntry[]; initialQuery?: string; initialStatus?: SalesStatusFilter }) {
+export default function SalesOrganizationsTable({ organizations, details, procurementProfiles, searchEntries, initialQuery, initialStatus }: { organizations: SalesOrganization[]; details: SalesOrganizationDetail[]; procurementProfiles: SalesProcurementProfile[]; searchEntries: SalesMemorySearchEntry[]; initialQuery?: string; initialStatus?: SalesStatusFilter }) {
   const [activeQuery, setActiveQuery] = useState(initialQuery || "");
   const [activeStatus, setActiveStatus] = useState<SalesStatusFilter>(initialStatus || "ALL");
   const [experiment, setExperiment] = useState<ExperimentFilter>("ALL");
   const [sortMode, setSortMode] = useState<SortMode>("NEWEST");
+  const [bidderSegment, setBidderSegment] = useState<BidderSegmentFilter>("ALL");
+  const [pain, setPain] = useState<PainFilter>("ALL");
+  const [country, setCountry] = useState("ALL");
+  const [frequencyKnown, setFrequencyKnown] = useState<FrequencyKnownFilter>("ALL");
+  const [reviewFrequency, setReviewFrequency] = useState<ReviewFilter>("ALL");
   const detailsByOrganization = new Map(details.map((detail) => [detail.organization.id, detail]));
+  const profilesByOrganization = new Map(procurementProfiles.map((profile) => [profile.organizationId, profile]));
+  const countries = useMemo(() => Array.from(new Set(organizations.map((organization) => organization.country).filter((value): value is string => Boolean(value)))).sort(), [organizations]);
 
   const visibleOrganizations = [...organizations.filter((o) => {
     const needle = activeQuery.trim().toLowerCase();
     const matchesSearch = needle.length < 2 || searchEntries.some((e) => e.organizationId === o.id && e.searchText.includes(needle));
-    return matchesSearch && (activeStatus === "ALL" || o.status === activeStatus) && (experiment === "ALL" || o.experiment === experiment);
+    const profile = profilesByOrganization.get(o.id);
+    const hasKnownFrequency = Boolean(profile?.bidsSubmittedBand && profile.bidsSubmittedBand !== "UNKNOWN");
+    return matchesSearch
+      && (activeStatus === "ALL" || o.status === activeStatus)
+      && (experiment === "ALL" || o.experiment === experiment)
+      && (bidderSegment === "ALL" || (profile?.bidderSegment || "UNKNOWN") === bidderSegment)
+      && (pain === "ALL" || (profile?.primaryProcurementPain || "UNKNOWN") === pain)
+      && (country === "ALL" || o.country === country)
+      && (frequencyKnown === "ALL" || (frequencyKnown === "KNOWN" ? hasKnownFrequency : !hasKnownFrequency))
+      && (reviewFrequency === "ALL" || (profile?.independentReviewFrequency || "UNKNOWN") === reviewFrequency);
   })].sort((a, b) => {
-    if (sortMode === "NEWEST") {
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    }
-    if (sortMode === "OLDEST") {
-      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-    }
-    if (sortMode === "UPDATED") {
-      return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
-    }
+    if (sortMode === "NEWEST") return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    if (sortMode === "OLDEST") return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+    if (sortMode === "UPDATED") return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
     return new Date(b.lastInteractionAt || 0).getTime() - new Date(a.lastInteractionAt || 0).getTime();
   });
 
   return <>
     <SalesHeader entries={searchEntries} initialQuery={initialQuery} initialStatus={initialStatus} onChange={(q, s) => { setActiveQuery(q); setActiveStatus(s); }} sectionTitle="Organizations" sectionCount={visibleOrganizations.length} />
-    <div className="mt-3 flex gap-3 rounded-lg border bg-white p-3">
-      <select value={experiment} onChange={(e) => setExperiment(e.target.value as ExperimentFilter)}><option value="ALL">All Experiments</option><option value="ARTICLE6_CARBON">Article6 Carbon</option><option value="TENDER_READINESS">Tender Readiness</option></select>
-      <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}><option value="NEWEST">Newest First</option><option value="OLDEST">Oldest First</option><option value="UPDATED">Recently Updated</option><option value="CONTACTED">Recently Contacted</option></select>
+    <div className="mt-3 rounded-lg border bg-white p-3">
+      <div className="flex flex-wrap gap-3">
+        <select value={experiment} onChange={(e) => setExperiment(e.target.value as ExperimentFilter)}><option value="ALL">All Experiments</option><option value="ARTICLE6_CARBON">Article6 Carbon</option><option value="TENDER_READINESS">Tender Readiness</option></select>
+        <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}><option value="NEWEST">Newest First</option><option value="OLDEST">Oldest First</option><option value="UPDATED">Recently Updated</option><option value="CONTACTED">Recently Contacted</option></select>
+        <details className="relative"><summary className="cursor-pointer list-none rounded border border-gray-200 px-2 py-1 text-sm text-gray-600">Procurement filters</summary><div className="mt-2 grid gap-2 rounded border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2 lg:grid-cols-5">
+          <select value={bidderSegment} onChange={(e) => setBidderSegment(e.target.value as BidderSegmentFilter)}><option value="ALL">All bidder segments</option>{BIDDER_SEGMENTS.map((value) => <option key={value} value={value}>{enumLabel(value)}</option>)}</select>
+          <select value={pain} onChange={(e) => setPain(e.target.value as PainFilter)}><option value="ALL">All procurement pains</option>{PRIMARY_PROCUREMENT_PAINS.map((value) => <option key={value} value={value}>{enumLabel(value)}</option>)}</select>
+          <select value={country} onChange={(e) => setCountry(e.target.value)}><option value="ALL">All countries</option>{countries.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+          <select value={frequencyKnown} onChange={(e) => setFrequencyKnown(e.target.value as FrequencyKnownFilter)}><option value="ALL">Bid frequency: any</option><option value="KNOWN">Bid frequency known</option><option value="UNKNOWN">Bid frequency unknown</option></select>
+          <select value={reviewFrequency} onChange={(e) => setReviewFrequency(e.target.value as ReviewFilter)}><option value="ALL">Review frequency: any</option>{INDEPENDENT_REVIEW_FREQUENCIES.map((value) => <option key={value} value={value}>{enumLabel(value)}</option>)}</select>
+        </div></details>
+      </div>
     </div>
     <div className="mt-3 overflow-x-auto rounded-lg border border-gray-200 bg-white">
       <table className="w-full min-w-[760px] text-left text-sm"><thead><tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wide text-gray-500"><th className="w-[30%] px-5 py-3 font-medium">Organization</th><th className="w-[25%] px-5 py-3 font-medium">Experiment</th><th className="px-5 py-3 font-medium">Status</th><th className="whitespace-nowrap px-5 py-3 font-medium">Last interaction</th><th className="px-5 py-3" /></tr></thead><tbody className="divide-y divide-gray-100">{visibleOrganizations.map((o) => {

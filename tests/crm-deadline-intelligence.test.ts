@@ -32,5 +32,5 @@ test("tracked email deadline uses tender linkage but does not change engagement 
   assert.match(tracking, /record\.tenderOpportunityId/);
   assert.match(tracking, /trackingDeadlineLabel/);
   assert.match(tracking, /Expired/);
-  assert.doesNotMatch(tracking, /CONTACTED.*ENGAGED|ENGAGED.*CLICKED/s);
+  assert.doesNotMatch(tracking, /CONTACTED[\s\S]*ENGAGED|ENGAGED[\s\S]*CLICKED/);
 });
