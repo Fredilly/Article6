@@ -46,6 +46,10 @@ function getPool(): Pool {
   return pool;
 }
 
+function isUndefinedTable(error: unknown): boolean {
+  return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "42P01");
+}
+
 function iso(value: unknown): string {
   return new Date(String(value)).toISOString();
 }
@@ -86,13 +90,23 @@ function toProfile(row: QueryResultRow): SalesProcurementProfile {
 }
 
 export async function getSalesProcurementProfile(organizationId: string): Promise<SalesProcurementProfile | null> {
-  const result = await getPool().query("SELECT * FROM sales_procurement_profiles WHERE organization_id = $1", [organizationId]);
-  return result.rows[0] ? toProfile(result.rows[0]) : null;
+  try {
+    const result = await getPool().query("SELECT * FROM sales_procurement_profiles WHERE organization_id = $1", [organizationId]);
+    return result.rows[0] ? toProfile(result.rows[0]) : null;
+  } catch (error) {
+    if (isUndefinedTable(error)) return null;
+    throw error;
+  }
 }
 
 export async function listSalesProcurementProfiles(): Promise<SalesProcurementProfile[]> {
-  const result = await getPool().query("SELECT * FROM sales_procurement_profiles ORDER BY updated_at DESC, organization_id ASC");
-  return result.rows.map(toProfile);
+  try {
+    const result = await getPool().query("SELECT * FROM sales_procurement_profiles ORDER BY updated_at DESC, organization_id ASC");
+    return result.rows.map(toProfile);
+  } catch (error) {
+    if (isUndefinedTable(error)) return [];
+    throw error;
+  }
 }
 
 function validatePatch(patch: SalesProcurementProfilePatch) {
