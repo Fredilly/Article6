@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
+import { getSalesOrganizationDetail } from "../../../lib/sales-store";
 import {
   getSalesProcurementProfile,
   upsertSalesProcurementProfile,
@@ -44,8 +45,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === "GET") {
       const organizationId = stringValue(req.query.organizationId);
       if (!organizationId) return res.status(400).json({ error: "Organization id is required." });
-      const profile = await getSalesProcurementProfile(organizationId);
-      return res.status(200).json({ ok: true, profile });
+      const [profile, detail] = await Promise.all([
+        getSalesProcurementProfile(organizationId),
+        getSalesOrganizationDetail(organizationId),
+      ]);
+      if (!detail) return res.status(404).json({ error: "Organization not found." });
+      return res.status(200).json({
+        ok: true,
+        profile,
+        contacts: detail.contacts.map((contact) => ({ id: contact.id, name: contact.name, title: contact.title })),
+      });
     }
 
     if (req.method !== "POST") return res.status(405).setHeader("Allow", "GET, POST").json({ error: "Method not allowed." });
