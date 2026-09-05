@@ -46,8 +46,10 @@ function getPool(): Pool {
   return pool;
 }
 
-function isUndefinedTable(error: unknown): boolean {
-  return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "42P01");
+function isMissingProcurementSchema(error: unknown): boolean {
+  if (!error || typeof error !== "object" || !("code" in error)) return false;
+  const code = (error as { code?: string }).code;
+  return code === "42P01" || code === "42703";
 }
 
 function iso(value: unknown): string {
@@ -94,7 +96,7 @@ export async function getSalesProcurementProfile(organizationId: string): Promis
     const result = await getPool().query("SELECT * FROM sales_procurement_profiles WHERE organization_id = $1", [organizationId]);
     return result.rows[0] ? toProfile(result.rows[0]) : null;
   } catch (error) {
-    if (isUndefinedTable(error)) return null;
+    if (isMissingProcurementSchema(error)) return null;
     throw error;
   }
 }
@@ -104,7 +106,7 @@ export async function listSalesProcurementProfiles(): Promise<SalesProcurementPr
     const result = await getPool().query("SELECT * FROM sales_procurement_profiles ORDER BY updated_at DESC, organization_id ASC");
     return result.rows.map(toProfile);
   } catch (error) {
-    if (isUndefinedTable(error)) return [];
+    if (isMissingProcurementSchema(error)) return [];
     throw error;
   }
 }
@@ -217,13 +219,18 @@ export async function setSalesInteractionSignals(input: {
 }
 
 export async function getSalesInteractionSignals(organizationId: string, interactionId: string): Promise<{ signalTags: ProcurementSignalTag[]; hypothesisKey?: ProcurementHypothesisKey } | null> {
-  const result = await getPool().query(
-    "SELECT signal_tags, hypothesis_key FROM sales_interactions WHERE id = $1 AND organization_id = $2",
-    [interactionId, organizationId],
-  );
-  if (!result.rows[0]) return null;
-  return {
-    signalTags: (optionalArray(result.rows[0].signal_tags) || []) as ProcurementSignalTag[],
-    hypothesisKey: optionalText(result.rows[0].hypothesis_key) as ProcurementHypothesisKey | undefined,
-  };
+  try {
+    const result = await getPool().query(
+      "SELECT signal_tags, hypothesis_key FROM sales_interactions WHERE id = $1 AND organization_id = $2",
+      [interactionId, organizationId],
+    );
+    if (!result.rows[0]) return null;
+    return {
+      signalTags: (optionalArray(result.rows[0].signal_tags) || []) as ProcurementSignalTag[],
+      hypothesisKey: optionalText(result.rows[0].hypothesis_key) as ProcurementHypothesisKey | undefined,
+    };
+  } catch (error) {
+    if (isMissingProcurementSchema(error)) return { signalTags: [] };
+    throw error;
+  }
 }
