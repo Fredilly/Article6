@@ -8,7 +8,7 @@ import {
   isProcurementHypothesisKey,
   isProcurementSignalTag,
   isProcurementWinsBand,
-} from "../lib/sales-procurement.ts";
+} from "../lib/sales-procurement-domain.ts";
 
 const migration = fs.readFileSync(new URL("../migrations/017_sales_procurement_profiles.sql", import.meta.url), "utf8");
 const store = fs.readFileSync(new URL("../lib/sales-procurement.ts", import.meta.url), "utf8");
