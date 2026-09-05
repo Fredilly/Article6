@@ -33,11 +33,12 @@ test("tender intake rejects unsupported types and enforces package limits", () =
   }) || "", /no more than/i);
   assert.match(validateTenderIntake({
     ...baseMetadata,
-    files: [
-      { fileName: "one.pdf", fileSize: TENDER_MAX_TOTAL_SIZE / 2 + 1 },
-      { fileName: "two.pdf", fileSize: TENDER_MAX_TOTAL_SIZE / 2 + 1 },
-    ],
+    files: Array.from({ length: 6 }, (_, index) => ({
+      fileName: `package-${index}.pdf`,
+      fileSize: TENDER_MAX_FILE_SIZE * 0.9,
+    })),
   }) || "", /total upload package/i);
+  assert.equal(TENDER_MAX_TOTAL_SIZE, 500 * 1024 * 1024);
 });
 
 test("stored tender documents must exist and match declared size and canonical type", () => {
@@ -50,7 +51,7 @@ test("stored tender documents must exist and match declared size and canonical t
 test("opaque submission keys support tender formats without weakening path validation", () => {
   const submissions = fs.readFileSync(new URL("../lib/submissions.ts", import.meta.url), "utf8");
   assert.match(submissions, /pdf\|docx\|xlsx\|pptx/);
-  assert.match(submissions, /submissions\\\/\\d\{4\}\\\/\\d\{2\}\\\/\\d\{2\}\\\//);
+  assert.match(submissions, /submissions\\\/\\d\{4\}-\\d\{2\}-\\d\{2\}\\\//);
 });
 
 test("Carbon upload endpoints retain their existing PDF-only contract", () => {
