@@ -56,64 +56,42 @@ ALTER TABLE sales_interactions
 
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'sales_interactions_signal_tags_check'
-  ) THEN
-    ALTER TABLE sales_interactions
-      ADD CONSTRAINT sales_interactions_signal_tags_check CHECK (
-        signal_tags IS NULL OR signal_tags <@ ARRAY[
-          'DISCOVERY_GAP','BID_NO_BID','REFERENCE_FIT','EVIDENCE_REUSE','FINAL_REVIEW',
-          'AI_ALREADY_USED','PRICE_PER_BID_RESISTANCE','RECURRING_SUPPORT_INTEREST',
-          'PAID_PILOT_SIGNAL','REPEAT_USAGE_SIGNAL'
-        ]::TEXT[]
-      );
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'sales_interactions_signal_tags_check') THEN
+    ALTER TABLE sales_interactions ADD CONSTRAINT sales_interactions_signal_tags_check CHECK (
+      signal_tags IS NULL OR signal_tags <@ ARRAY[
+        'DISCOVERY_GAP','BID_NO_BID','REFERENCE_FIT','EVIDENCE_REUSE','FINAL_REVIEW',
+        'AI_ALREADY_USED','PRICE_PER_BID_RESISTANCE','RECURRING_SUPPORT_INTEREST',
+        'PAID_PILOT_SIGNAL','REPEAT_USAGE_SIGNAL'
+      ]::TEXT[]
+    );
   END IF;
 END $$;
 
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'sales_interactions_hypothesis_key_check'
-  ) THEN
-    ALTER TABLE sales_interactions
-      ADD CONSTRAINT sales_interactions_hypothesis_key_check CHECK (
-        hypothesis_key IS NULL OR hypothesis_key IN (
-          'tender_discovery_assist','bid_no_bid_assist','reusable_evidence_profile',
-          'premium_final_review','recurring_bid_desk'
-        )
-      );
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'sales_interactions_hypothesis_key_check') THEN
+    ALTER TABLE sales_interactions ADD CONSTRAINT sales_interactions_hypothesis_key_check CHECK (
+      hypothesis_key IS NULL OR hypothesis_key IN (
+        'tender_discovery_assist','bid_no_bid_assist','reusable_evidence_profile',
+        'premium_final_review','recurring_bid_desk'
+      )
+    );
   END IF;
 END $$;
 
-CREATE INDEX IF NOT EXISTS idx_sales_procurement_profiles_primary_pain
-  ON sales_procurement_profiles(primary_procurement_pain);
-CREATE INDEX IF NOT EXISTS idx_sales_procurement_profiles_review_frequency
-  ON sales_procurement_profiles(independent_review_frequency);
-CREATE INDEX IF NOT EXISTS idx_sales_procurement_profiles_bids_band
-  ON sales_procurement_profiles(bids_submitted_band);
+CREATE INDEX IF NOT EXISTS idx_sales_procurement_profiles_primary_pain ON sales_procurement_profiles(primary_procurement_pain);
+CREATE INDEX IF NOT EXISTS idx_sales_procurement_profiles_review_frequency ON sales_procurement_profiles(independent_review_frequency);
+CREATE INDEX IF NOT EXISTS idx_sales_procurement_profiles_bids_band ON sales_procurement_profiles(bids_submitted_band);
 
 INSERT INTO sales_procurement_profiles (
-  organization_id,
-  bid_decision_process,
-  bid_decision_owner_contact_id,
-  discovery_problems,
-  ai_usage,
-  primary_procurement_pain,
-  profile_source,
-  profile_confidence,
-  last_verified_at,
-  notes,
-  created_at,
-  updated_at
+  organization_id, bid_decision_process, bid_decision_owner_contact_id, discovery_problems, ai_usage,
+  primary_procurement_pain, profile_source, profile_confidence, last_verified_at, notes, created_at, updated_at
 )
 SELECT
   o.id,
   'FORMAL',
   c.id,
-  ARRAY[
-    'Tenderers sometimes use incorrect categories',
-    'Current category configuration may not capture everything'
-  ]::TEXT[],
+  ARRAY['Tenderers sometimes use incorrect categories','Current category configuration may not capture everything']::TEXT[],
   ARRAY['ChatGPT','Claude']::TEXT[],
   'UNKNOWN',
   'CLIENT_REPORTED',
@@ -123,20 +101,9 @@ SELECT
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 FROM sales_organizations o
-LEFT JOIN sales_contacts c
-  ON c.organization_id = o.id AND LOWER(TRIM(c.name)) = LOWER('Dr Paul Mc Cann')
+LEFT JOIN sales_contacts c ON c.organization_id = o.id AND LOWER(TRIM(c.name)) = LOWER('Dr Paul Mc Cann')
 WHERE LOWER(TRIM(o.name)) = LOWER('Creative Driven Goals (CDG)')
-ON CONFLICT (organization_id) DO UPDATE SET
-  bid_decision_process = EXCLUDED.bid_decision_process,
-  bid_decision_owner_contact_id = EXCLUDED.bid_decision_owner_contact_id,
-  discovery_problems = EXCLUDED.discovery_problems,
-  ai_usage = EXCLUDED.ai_usage,
-  primary_procurement_pain = EXCLUDED.primary_procurement_pain,
-  profile_source = EXCLUDED.profile_source,
-  profile_confidence = EXCLUDED.profile_confidence,
-  last_verified_at = EXCLUDED.last_verified_at,
-  notes = EXCLUDED.notes,
-  updated_at = CURRENT_TIMESTAMP;
+ON CONFLICT (organization_id) DO NOTHING;
 
 UPDATE sales_interactions i
 SET signal_tags = ARRAY['BID_NO_BID','REFERENCE_FIT','AI_ALREADY_USED']::TEXT[],
