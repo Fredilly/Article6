@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import {
-  MAX_TENDER_FILE_BYTES,
-  MAX_TENDER_FILE_COUNT,
-  MAX_TENDER_PACKAGE_BYTES,
+  TENDER_MAX_FILE_SIZE,
+  TENDER_MAX_FILES,
+  TENDER_MAX_TOTAL_SIZE,
   tenderDocumentDescriptor,
   validateTenderIntake,
   validateVerifiedTenderObject,
@@ -18,7 +18,7 @@ const baseMetadata = {
 };
 
 test("tender intake accepts the supported bid document formats", () => {
-  for (const name of ["bid.pdf", "response.docx", "pricing.xlsx", "schedule.xls", "notes.doc", "appendix.txt", "pricing.csv", "slides.pptx", "slides.ppt"]) {
+  for (const name of ["bid.pdf", "response.docx", "pricing.xlsx", "slides.pptx"]) {
     assert.ok(tenderDocumentDescriptor(name), name);
   }
 });
@@ -26,29 +26,30 @@ test("tender intake accepts the supported bid document formats", () => {
 test("tender intake rejects unsupported types and enforces package limits", () => {
   assert.equal(tenderDocumentDescriptor("payload.exe"), null);
   assert.match(validateTenderIntake({ ...baseMetadata, files: [] }) || "", /at least one tender document/i);
-  assert.match(validateTenderIntake({ ...baseMetadata, files: [{ fileName: "bid.pdf", fileSize: MAX_TENDER_FILE_BYTES + 1 }] }) || "", /150 MB/i);
+  assert.match(validateTenderIntake({ ...baseMetadata, files: [{ fileName: "bid.pdf", fileSize: TENDER_MAX_FILE_SIZE + 1 }] }) || "", /100 MB/i);
   assert.match(validateTenderIntake({
     ...baseMetadata,
-    files: Array.from({ length: MAX_TENDER_FILE_COUNT + 1 }, (_, index) => ({ fileName: `bid-${index}.pdf`, fileSize: 10 })),
-  }) || "", /up to/i);
+    files: Array.from({ length: TENDER_MAX_FILES + 1 }, (_, index) => ({ fileName: `bid-${index}.pdf`, fileSize: 10 })),
+  }) || "", /no more than/i);
   assert.match(validateTenderIntake({
     ...baseMetadata,
     files: [
-      { fileName: "one.pdf", fileSize: MAX_TENDER_PACKAGE_BYTES / 2 + 1 },
-      { fileName: "two.pdf", fileSize: MAX_TENDER_PACKAGE_BYTES / 2 + 1 },
+      { fileName: "one.pdf", fileSize: TENDER_MAX_TOTAL_SIZE / 2 + 1 },
+      { fileName: "two.pdf", fileSize: TENDER_MAX_TOTAL_SIZE / 2 + 1 },
     ],
-  }) || "", /total package/i);
+  }) || "", /total upload package/i);
 });
 
-test("stored tender documents must match declared size and canonical type", () => {
-  assert.match(validateVerifiedTenderObject({ size: 12, contentType: "application/pdf" }, { fileName: "bid.pdf", fileSize: 10 }) || "", /size/i);
-  assert.match(validateVerifiedTenderObject({ size: 10, contentType: "application/zip" }, { fileName: "bid.pdf", fileSize: 10 }) || "", /content type/i);
-  assert.equal(validateVerifiedTenderObject({ size: 10, contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }, { fileName: "bid.docx", fileSize: 10 }), null);
+test("stored tender documents must exist and match declared size and canonical type", () => {
+  assert.match(validateVerifiedTenderObject({ exists: false, size: 10, contentType: "application/pdf" }, { fileName: "bid.pdf", fileSize: 10 }) || "", /not found/i);
+  assert.match(validateVerifiedTenderObject({ exists: true, size: 12, contentType: "application/pdf" }, { fileName: "bid.pdf", fileSize: 10 }) || "", /upload completely/i);
+  assert.match(validateVerifiedTenderObject({ exists: true, size: 10, contentType: "application/zip" }, { fileName: "bid.pdf", fileSize: 10 }) || "", /content type/i);
+  assert.equal(validateVerifiedTenderObject({ exists: true, size: 10, contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }, { fileName: "bid.docx", fileSize: 10 }), null);
 });
 
 test("opaque submission keys support tender formats without weakening path validation", () => {
   const submissions = fs.readFileSync(new URL("../lib/submissions.ts", import.meta.url), "utf8");
-  assert.match(submissions, /pdf\|docx\|doc\|xlsx\|xls\|txt\|csv\|pptx\|ppt/);
+  assert.match(submissions, /pdf\|docx\|xlsx\|pptx/);
   assert.match(submissions, /submissions\\\/\\d\{4\}\\\/\\d\{2\}\\\/\\d\{2\}\\\//);
 });
 
