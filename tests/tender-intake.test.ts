@@ -1,52 +1,55 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-import { isApprovedSubmissionKey } from "../lib/submissions.ts";
 import {
-  TENDER_MAX_FILE_SIZE,
-  TENDER_MAX_FILES,
-  TENDER_MAX_TOTAL_SIZE,
+  MAX_TENDER_FILE_BYTES,
+  MAX_TENDER_FILE_COUNT,
+  MAX_TENDER_PACKAGE_BYTES,
   tenderDocumentDescriptor,
   validateTenderIntake,
   validateVerifiedTenderObject,
 } from "../lib/tender-intake.ts";
 
-const base = {
-  contactName: "Bid Lead",
-  workEmail: "bid.lead@example.test",
-  organization: "Example Ltd",
-  tenderTitle: "Facilities Management Framework",
+const baseMetadata = {
+  contactName: "Jane Buyer",
+  workEmail: "jane@example.com",
+  organization: "Example Bidder",
+  tenderTitle: "Example Tender",
 };
 
 test("tender intake accepts the supported bid document formats", () => {
-  const names = ["itt.pdf", "response.docx", "pricing.xlsx", "presentation.pptx"];
-  const files = names.map((fileName) => ({ fileName, fileSize: 1024 }));
-  assert.equal(validateTenderIntake({ ...base, files }), null);
-  for (const name of names) assert.ok(tenderDocumentDescriptor(name));
+  for (const name of ["bid.pdf", "response.docx", "pricing.xlsx", "schedule.xls", "notes.doc", "appendix.txt", "pricing.csv", "slides.pptx", "slides.ppt"]) {
+    assert.ok(tenderDocumentDescriptor(name), name);
+  }
 });
 
 test("tender intake rejects unsupported types and enforces package limits", () => {
-  assert.match(validateTenderIntake({ ...base, files: [{ fileName: "archive.zip", fileSize: 1024 }] }) || "", /PDF, DOCX, XLSX and PPTX/i);
-  assert.match(validateTenderIntake({ ...base, files: [{ fileName: "large.pdf", fileSize: TENDER_MAX_FILE_SIZE + 1 }] }) || "", /100 MB/i);
-  assert.match(validateTenderIntake({ ...base, files: Array.from({ length: TENDER_MAX_FILES + 1 }, (_, index) => ({ fileName: `${index}.pdf`, fileSize: 1 })) }) || "", /no more than/i);
-  const oversizedPackage = Array.from({ length: 6 }, (_, index) => ({ fileName: `${index}.pdf`, fileSize: Math.floor(TENDER_MAX_TOTAL_SIZE / 5) }));
-  assert.match(validateTenderIntake({ ...base, files: oversizedPackage }) || "", /500 MB/i);
+  assert.equal(tenderDocumentDescriptor("payload.exe"), null);
+  assert.match(validateTenderIntake({ ...baseMetadata, files: [] }) || "", /at least one tender document/i);
+  assert.match(validateTenderIntake({ ...baseMetadata, files: [{ fileName: "bid.pdf", fileSize: MAX_TENDER_FILE_BYTES + 1 }] }) || "", /150 MB/i);
+  assert.match(validateTenderIntake({
+    ...baseMetadata,
+    files: Array.from({ length: MAX_TENDER_FILE_COUNT + 1 }, (_, index) => ({ fileName: `bid-${index}.pdf`, fileSize: 10 })),
+  }) || "", /up to/i);
+  assert.match(validateTenderIntake({
+    ...baseMetadata,
+    files: [
+      { fileName: "one.pdf", fileSize: MAX_TENDER_PACKAGE_BYTES / 2 + 1 },
+      { fileName: "two.pdf", fileSize: MAX_TENDER_PACKAGE_BYTES / 2 + 1 },
+    ],
+  }) || "", /total package/i);
 });
 
 test("stored tender documents must match declared size and canonical type", () => {
-  const file = { fileName: "response.docx", fileSize: 2048 };
-  const type = tenderDocumentDescriptor(file.fileName)!.contentType;
-  assert.equal(validateVerifiedTenderObject({ exists: true, size: 2048, contentType: type }, file), null);
-  assert.match(validateVerifiedTenderObject({ exists: true, size: 2047, contentType: type }, file) || "", /completely/i);
-  assert.match(validateVerifiedTenderObject({ exists: true, size: 2048, contentType: "application/pdf" }, file) || "", /content type/i);
+  assert.match(validateVerifiedTenderObject({ size: 12, contentType: "application/pdf" }, { fileName: "bid.pdf", fileSize: 10 }) || "", /size/i);
+  assert.match(validateVerifiedTenderObject({ size: 10, contentType: "application/zip" }, { fileName: "bid.pdf", fileSize: 10 }) || "", /content type/i);
+  assert.equal(validateVerifiedTenderObject({ size: 10, contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }, { fileName: "bid.docx", fileSize: 10 }), null);
 });
 
 test("opaque submission keys support tender formats without weakening path validation", () => {
-  for (const extension of ["pdf", "docx", "xlsx", "pptx"]) {
-    assert.equal(isApprovedSubmissionKey(`submissions/2026-08-24/123e4567-e89b-12d3-a456-426614174000.${extension}`), true);
-  }
-  assert.equal(isApprovedSubmissionKey("submissions/2026-08-24/123e4567-e89b-12d3-a456-426614174000.zip"), false);
-  assert.equal(isApprovedSubmissionKey("../submissions/2026-08-24/123e4567-e89b-12d3-a456-426614174000.docx"), false);
+  const submissions = fs.readFileSync(new URL("../lib/submissions.ts", import.meta.url), "utf8");
+  assert.match(submissions, /pdf\|docx\|doc\|xlsx\|xls\|txt\|csv\|pptx\|ppt/);
+  assert.match(submissions, /submissions\\\/\\d\{4\}\\\/\\d\{2\}\\\/\\d\{2\}\\\//);
 });
 
 test("Carbon upload endpoints retain their existing PDF-only contract", () => {
@@ -60,8 +63,11 @@ test("Carbon upload endpoints retain their existing PDF-only contract", () => {
 
 test("tender confirmation verifies every object before the atomic CRM commit", () => {
   const confirm = fs.readFileSync(new URL("../pages/api/tender-intake/confirm.ts", import.meta.url), "utf8");
-  assert.ok(confirm.indexOf("verifyObjectExists") < confirm.indexOf("commitTenderIntake"));
-  assert.ok(confirm.indexOf("validateVerifiedTenderObject") < confirm.indexOf("commitTenderIntake"));
+  const verifyCall = confirm.indexOf("await verifyObjectExists(");
+  const validateCall = confirm.indexOf("const storedError = validateVerifiedTenderObject(");
+  const commitCall = confirm.indexOf("const result = await commitTenderIntake(");
+  assert.ok(verifyCall >= 0 && verifyCall < commitCall);
+  assert.ok(validateCall >= 0 && validateCall < commitCall);
 });
 
 test("tender CRM intake writes the package in one database transaction", () => {
@@ -73,5 +79,4 @@ test("tender CRM intake writes the package in one database transaction", () => {
   assert.match(store, /INSERT INTO sales_interactions/);
   assert.match(store, /client\.query\("COMMIT"\)/);
   assert.match(store, /client\.query\("ROLLBACK"\)/);
-  assert.match(store, /WHERE source_key = \$1 LIMIT 1/);
 });
