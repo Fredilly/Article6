@@ -47,7 +47,7 @@ export default function ParentHome() {
               ARTICLE6
             </Link>
             <nav className={styles.nav} aria-label="Primary navigation">
-              <a href="#approach">Approach</a>
+              <Link href="/approach">Approach</Link>
               <Link href="/contact">Contact</Link>
             </nav>
           </header>
