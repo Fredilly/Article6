@@ -15,6 +15,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
     <>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="msvalidate.01" content="ACFFD08B0553108B3DA01F18878F6F40" />
         {layoutKind === 'preview' && <meta name="robots" content="noindex,nofollow" />}
       </Head>
       {layoutKind === 'preview' || layoutKind === 'readiness' ? (
