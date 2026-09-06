@@ -48,7 +48,7 @@ export default function ParentHome() {
             </Link>
             <nav className={styles.nav} aria-label="Primary navigation">
               <a href="#approach">Approach</a>
-              <a href="mailto:contact@article6.org">Contact</a>
+              <Link href="/contact">Contact</Link>
             </nav>
           </header>
 
@@ -80,6 +80,21 @@ export default function ParentHome() {
           </p>
         </section>
 
+        <section className={styles.definition} aria-labelledby="what-article6-does">
+          <div className={styles.reveal} data-reveal>
+            <p className={styles.kicker}>WHAT ARTICLE6 DOES</p>
+            <h2 id="what-article6-does">Independent review for high-consequence decisions.</h2>
+          </div>
+          <div className={`${styles.definitionBody} ${styles.reveal}`} data-reveal>
+            <p>
+              Article6 builds specialist review services for teams working with complex requirements, evidence-heavy documents, and decisions where avoidable mistakes are expensive.
+            </p>
+            <p>
+              We independently test what is required, what the document claims, what evidence supports it, and what still needs attention before an external reviewer sees it.
+            </p>
+          </div>
+        </section>
+
         <section className={styles.pillars} aria-label="Article6 review principles">
           {[
             ['01', 'Requirements.', 'We identify what must be true, and why it matters.'],
@@ -101,7 +116,7 @@ export default function ParentHome() {
           </div>
           <div className={`${styles.closingAction} ${styles.reveal}`} data-reveal>
             <p>Article6 builds focused review services for specialist domains where the cost of error is high and the rules are complex.</p>
-            <a href="mailto:contact@article6.org">Work with Article6 <span aria-hidden="true">→</span></a>
+            <Link href="/contact">Work with Article6 <span aria-hidden="true">→</span></Link>
           </div>
         </section>
       </main>
