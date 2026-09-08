@@ -21,6 +21,8 @@ export interface SalesWebServiceProfile {
   problemConfirmed: WebServiceProblemStatus;
   priceDiscussed: boolean;
   caseStudySent: boolean;
+  nextAction?: string;
+  nextActionDate?: string;
 }
 
 export interface SalesWebServiceProfilePatch {
@@ -36,6 +38,8 @@ export interface SalesWebServiceProfilePatch {
   problemConfirmed?: WebServiceProblemStatus;
   priceDiscussed?: boolean;
   caseStudySent?: boolean;
+  nextAction?: string | null;
+  nextActionDate?: string | null;
 }
 
 let pool: Pool | undefined;
@@ -82,6 +86,8 @@ function toProfile(row: QueryResultRow): SalesWebServiceProfile {
     problemConfirmed: (row.problem_confirmed || "UNKNOWN") as WebServiceProblemStatus,
     priceDiscussed: Boolean(row.price_discussed),
     caseStudySent: Boolean(row.case_study_sent),
+    nextAction: optionalText(row.next_action),
+    nextActionDate: row.next_action_date ? iso(row.next_action_date) : undefined,
   };
 }
 
@@ -105,6 +111,7 @@ function validatePatch(patch: SalesWebServiceProfilePatch) {
   if (patch.primaryService && !WEB_SERVICE_PRIMARY_SERVICES.includes(patch.primaryService)) throw new Error("Invalid primary service.");
   if (patch.problemConfirmed && !WEB_SERVICE_PROBLEM_STATUSES.includes(patch.problemConfirmed)) throw new Error("Invalid problem-confirmed value.");
   if (patch.lastVerifiedAt && Number.isNaN(Date.parse(patch.lastVerifiedAt))) throw new Error("Invalid last checked date.");
+  if (patch.nextActionDate && Number.isNaN(Date.parse(patch.nextActionDate))) throw new Error("Invalid next action date.");
   if (patch.commercialValue != null && (!Number.isFinite(patch.commercialValue) || patch.commercialValue < 0)) throw new Error("Invalid commercial value.");
 }
 
@@ -137,6 +144,8 @@ export async function upsertSalesWebServiceProfile(organizationId: string, patch
       problemConfirmed: "problem_confirmed",
       priceDiscussed: "price_discussed",
       caseStudySent: "case_study_sent",
+      nextAction: "next_action",
+      nextActionDate: "next_action_date",
     };
     const keys = (Object.keys(patch) as Array<keyof SalesWebServiceProfilePatch>).filter((key) => patch[key] !== undefined);
     if (keys.length) {
