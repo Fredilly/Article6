@@ -29,7 +29,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const token = bearerToken(req);
     if (!token) return res.status(401).json({ error: "Bearer token required." });
     await verifyGitHubActionsOidc(token);
-    const sql = fs.readFileSync(new URL("../../../migrations/018_sales_web_services.sql", import.meta.url), "utf8");
+    const migrations = ["018_sales_web_services.sql", "019_sales_web_services_opportunity.sql"];
+    const sql = migrations.map((name) => fs.readFileSync(new URL(`../../../migrations/${name}`, import.meta.url), "utf8")).join("\n\n");
     const client = await getPool().connect();
     try {
       await client.query("BEGIN");
@@ -38,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const cohortCount = await client.query<{ count: string }>("SELECT COUNT(*)::text AS count FROM sales_organizations WHERE experiment = 'WEB_SERVICES'");
       const contactCount = await client.query<{ count: string }>("SELECT COUNT(*)::text AS count FROM sales_contacts c JOIN sales_organizations o ON o.id = c.organization_id WHERE o.experiment = 'WEB_SERVICES'");
       await client.query("COMMIT");
-      return res.status(200).json({ ok: true, migration: "018_sales_web_services", profiles: Number(profileCount.rows[0].count), organizations: Number(cohortCount.rows[0].count), contacts: Number(contactCount.rows[0].count) });
+      return res.status(200).json({ ok: true, migration: "019_sales_web_services_opportunity", profiles: Number(profileCount.rows[0].count), organizations: Number(cohortCount.rows[0].count), contacts: Number(contactCount.rows[0].count) });
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
