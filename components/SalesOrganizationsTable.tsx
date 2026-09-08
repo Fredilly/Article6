@@ -32,6 +32,7 @@ function rowClass(status: string, doNotContact: boolean) {
 function experimentLabel(value: string) {
   if (value === "ARTICLE6_CARBON") return "Article6 Carbon";
   if (value === "TENDER_READINESS") return "Tender Readiness";
+  if (value === "WEB_SERVICES") return "Web Services";
   if (value === "ECOVADIS_SUPPLIER_COMPLIANCE") return "EcoVadis / Supplier Compliance";
   return "Other";
 }
@@ -130,7 +131,7 @@ export default function SalesOrganizationsTable({ organizations, details, procur
     <SalesHeader entries={searchEntries} initialQuery={initialQuery} initialStatus={initialStatus} onChange={(q, s) => { setActiveQuery(q); setActiveStatus(s); }} sectionTitle="Organizations" sectionCount={visibleOrganizations.length} />
     <div className="mt-3 rounded-lg border bg-white p-3">
       <div className="flex flex-wrap gap-3">
-        <select value={experiment} onChange={(e) => setExperiment(e.target.value as ExperimentFilter)}><option value="ALL">All Experiments</option><option value="ARTICLE6_CARBON">Article6 Carbon</option><option value="TENDER_READINESS">Tender Readiness</option></select>
+        <select value={experiment} onChange={(e) => setExperiment(e.target.value as ExperimentFilter)}><option value="ALL">All Experiments</option><option value="ARTICLE6_CARBON">Article6 Carbon</option><option value="TENDER_READINESS">Tender Readiness</option><option value="WEB_SERVICES">Web Services</option></select>
         <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}><option value="NEWEST">Newest First</option><option value="OLDEST">Oldest First</option><option value="UPDATED">Recently Updated</option><option value="CONTACTED">Recently Contacted</option></select>
         <details className="relative"><summary className="cursor-pointer list-none rounded border border-gray-200 px-2 py-1 text-sm text-gray-600">Procurement filters</summary><div className="mt-2 grid gap-2 rounded border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2 lg:grid-cols-5">
           <select value={bidderSegment} onChange={(e) => setBidderSegment(e.target.value as BidderSegmentFilter)}><option value="ALL">All bidder segments</option>{BIDDER_SEGMENTS.map((value) => <option key={value} value={value}>{enumLabel(value)}</option>)}</select>
