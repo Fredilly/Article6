@@ -34,8 +34,8 @@ test("Web Services replaces project workflow with minimal sales opportunity fiel
     assert.match(webOverview, new RegExp(label));
   }
   assert.match(organizationPage, /isWebServices \? <WebServicesSalesOpportunity/);
-  assert.match(organizationPage, /\{isCarbon \? <section[^>]*>.*Carbon evidence/s);
-  assert.match(organizationPage, /\{isCarbon \? <section[^>]*>.*Carbon project workflow/s);
+  assert.match(organizationPage, /\{isCarbon \? <section[^>]*>[\s\S]*Carbon evidence/);
+  assert.match(organizationPage, /\{isCarbon \? <section[^>]*>[\s\S]*Carbon project workflow/);
   assert.match(genericOverview, /ProcurementProfilePanel/);
 });
 
