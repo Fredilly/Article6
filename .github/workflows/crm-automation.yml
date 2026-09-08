@@ -54,6 +54,9 @@ jobs:
           elif [[ "$ISSUE_TITLE" == '[CRM] migrate-sales-procurement-017' ]]; then
             endpoint='https://www.article6.org/api/internal/email-tracking-migration'
             payload='{"migration":"017_sales_procurement_profiles"}'
+          elif [[ "$ISSUE_TITLE" == '[CRM] migrate-sales-web-services-018' ]]; then
+            endpoint='https://www.article6.org/api/internal/crm-web-services-migration'
+            payload='{}'
           elif [[ "$ISSUE_TITLE" == '[CRM] update-domain' ]]; then
             endpoint='https://www.article6.org/api/internal/crm-domain-update'
           fi

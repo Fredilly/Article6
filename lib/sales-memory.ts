@@ -15,6 +15,7 @@ export type SalesOrganizationStatus = (typeof SALES_ORGANIZATION_STATUSES)[numbe
 export const SALES_EXPERIMENTS = [
   "ARTICLE6_CARBON",
   "TENDER_READINESS",
+  "WEB_SERVICES",
   "ECOVADIS_SUPPLIER_COMPLIANCE",
   "OTHER",
 ] as const;
