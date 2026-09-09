@@ -34,6 +34,28 @@ function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
+function trackingCategoryLabel(experiment?: string): string {
+  if (experiment === "ARTICLE6_CARBON") return "Article6 Carbon";
+  if (experiment === "TENDER_READINESS") return "Tender Readiness";
+  if (experiment === "WEB_SERVICES") return "Web Services";
+  if (experiment === "ECOVADIS_SUPPLIER_COMPLIANCE") return "EcoVadis / Supplier Compliance";
+  return "Other";
+}
+
+function trackingCampaignSource(experiment?: string): string {
+  if (experiment === "ARTICLE6_CARBON") return "ARTICLE6_CARBON_MANUAL_GMAIL";
+  if (experiment === "WEB_SERVICES") return "WEB_SERVICES_MANUAL_GMAIL";
+  if (experiment === "ECOVADIS_SUPPLIER_COMPLIANCE") return "ECOVADIS_SUPPLIER_COMPLIANCE_MANUAL_GMAIL";
+  if (experiment === "OTHER") return "OTHER_MANUAL_GMAIL";
+  return "TENDER_READINESS_MANUAL_GMAIL";
+}
+
+function trackingLinkDefaults(experiment?: string) {
+  if (experiment === "TENDER_READINESS") return { trackClicks: true, destination: "https://bids.article6.org", linkText: "bids.article6.org" };
+  if (experiment === "ARTICLE6_CARBON") return { trackClicks: true, destination: "https://carbon.article6.org", linkText: "carbon.article6.org" };
+  return { trackClicks: false, destination: "", linkText: "" };
+}
+
 function clientSignature(userAgent?: string): string | undefined {
   if (!userAgent) return undefined;
   const browser = /edg\//i.test(userAgent) ? "EDGE"
@@ -95,13 +117,15 @@ function trackingDeadlineTitle(tender: SalesTenderOpportunity) {
 }
 
 export default function EmailTrackingPage({ details, records: initialRecords, searchEntries }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const initialTracking = trackingLinkDefaults(details[0]?.organization.experiment);
   const [organizationId, setOrganizationId] = useState(details[0]?.organization.id || "");
   const [contactId, setContactId] = useState("");
   const [tenderOpportunityId, setTenderOpportunityId] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [destination, setDestination] = useState("https://bids.article6.org");
-  const [linkText, setLinkText] = useState("bids.article6.org");
+  const [trackClicks, setTrackClicks] = useState(initialTracking.trackClicks);
+  const [destination, setDestination] = useState(initialTracking.destination);
+  const [linkText, setLinkText] = useState(initialTracking.linkText);
   const [generated, setGenerated] = useState<{ token: string; openUrl: string; clickUrl?: string } | null>(null);
   const [message, setMessage] = useState("");
   const [records, setRecords] = useState(initialRecords);
@@ -152,19 +176,19 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
 
   async function createTrackedEmail() {
     setMessage("");
-    const response = await fetch("/api/internal/email-tracking", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", organizationId, contactId: contactId || undefined, tenderOpportunityId: tenderOpportunityId || undefined, subject, approvedDestination: destination || undefined }) });
+    const response = await fetch("/api/internal/email-tracking", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", organizationId, contactId: contactId || undefined, tenderOpportunityId: selected?.organization.experiment === "TENDER_READINESS" ? tenderOpportunityId || undefined : undefined, campaignSource: trackingCampaignSource(selected?.organization.experiment), subject, approvedDestination: trackClicks ? destination || undefined : undefined }) });
     const data = await response.json();
     if (!response.ok) { setMessage(data.error || "Unable to create tracking."); return; }
     setGenerated({ token: data.token, openUrl: data.openUrl, clickUrl: data.clickUrl });
     setRecords((current) => [data.record, ...current]);
-    setMessage("Tracking created. Copy the rich email, paste into Gmail, then send normally.");
+    setMessage(trackClicks ? "Tracking created. Copy the rich email, paste into Gmail, then send normally." : "Open tracking created. No visible link will be added to the email.");
   }
 
   async function copyRichEmail() {
     if (!generated) return;
     const safeBody = escapeHtml(body).replace(/\n/g, "<br>");
     const visibleLinkText = escapeHtml(linkText || destination);
-    const trackedLink = generated.clickUrl ? `<a href="${generated.clickUrl}">${visibleLinkText}</a>` : "";
+    const trackedLink = trackClicks && generated.clickUrl ? `<a href="${generated.clickUrl}">${visibleLinkText}</a>` : "";
 
     let withLink = safeBody;
     if (trackedLink) {
@@ -176,10 +200,12 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
       } else {
         withLink = `${safeBody}<br><br>${trackedLink}`;
       }
+    } else {
+      withLink = safeBody.replace(/\{\{link\}\}/g, "");
     }
 
     const html = `${withLink}<img src="${generated.openUrl}" width="1" height="1" style="display:none;width:1px;height:1px" alt="">`;
-    const plainLink = destination || linkText;
+    const plainLink = trackClicks ? destination || linkText : "";
     let plain = body;
     if (body.includes("{{link}}")) {
       plain = body.replace(/\{\{link\}\}/g, plainLink);
@@ -192,7 +218,7 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
     } else {
       await navigator.clipboard.writeText(plain);
     }
-    setMessage("Copied. Existing signature website is used as the tracked link; it is not duplicated.");
+    setMessage(trackClicks ? "Copied. Existing signature website is used as the tracked link; it is not duplicated." : "Copied with open tracking only. No visible tracking link was added.");
   }
 
   async function attachGmail() {
@@ -257,15 +283,30 @@ export default function EmailTrackingPage({ details, records: initialRecords, se
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="font-semibold">Generate tracked email</h2>
-          <p className="mt-1 text-xs text-gray-500">If the body already contains the visible Article6 website, it becomes the tracked link in place. You can also use {"{{link}}"}. Open signals are probabilistic, not proof of a human read.</p>
+          <p className="mt-1 text-xs text-gray-500">Open tracking works without a visible link. Turn on click tracking only when you want an Article6 link in the email. Open signals are probabilistic, not proof of a human read.</p>
           <div className="mt-4 grid gap-3">
-            <OrganizationFuzzyPicker items={organizationOptions} value={organizationId} onChange={(id) => { setOrganizationId(id); setContactId(""); setTenderOpportunityId(""); }} />
+            <OrganizationFuzzyPicker items={organizationOptions} value={organizationId} onChange={(id) => {
+              setOrganizationId(id);
+              setContactId("");
+              setTenderOpportunityId("");
+              setGenerated(null);
+              const next = details.find((item) => item.organization.id === id);
+              const defaults = trackingLinkDefaults(next?.organization.experiment);
+              setTrackClicks(defaults.trackClicks);
+              setDestination(defaults.destination);
+              setLinkText(defaults.linkText);
+            }} />
             <select className={fieldClass} value={contactId} onChange={(e) => setContactId(e.target.value)}><option value="">Contact (optional)</option>{selected?.contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}{contact.email ? ` · ${contact.email}` : ""}</option>)}</select>
-            <select className={fieldClass} value={tenderOpportunityId} onChange={(e) => setTenderOpportunityId(e.target.value)}><option value="">Tender (optional)</option>{selected?.tenderOpportunities.map((tender) => <option key={tender.id} value={tender.id}>{tender.name}</option>)}</select>
+            {selected?.organization.experiment === "TENDER_READINESS"
+              ? <select className={fieldClass} value={tenderOpportunityId} onChange={(e) => setTenderOpportunityId(e.target.value)}><option value="">Tender (optional)</option>{selected.tenderOpportunities.map((tender) => <option key={tender.id} value={tender.id}>{tender.name}</option>)}</select>
+              : <select className={`${fieldClass} bg-gray-50 text-gray-600`} value={selected?.organization.experiment || "OTHER"} disabled><option value={selected?.organization.experiment || "OTHER"}>{trackingCategoryLabel(selected?.organization.experiment)}</option></select>}
             <input className={fieldClass} value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" />
             <textarea className={`${fieldClass} min-h-48`} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Paste the final email body here" />
-            <input className={fieldClass} value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Tracked Article6 destination" />
-            <input className={fieldClass} value={linkText} onChange={(e) => setLinkText(e.target.value)} placeholder="Visible link text" />
+            <label className="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" checked={trackClicks} onChange={(e) => { setTrackClicks(e.target.checked); setGenerated(null); }} /> Track link clicks</label>
+            {trackClicks ? <>
+              <input className={fieldClass} value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Tracked Article6 destination" />
+              <input className={fieldClass} value={linkText} onChange={(e) => setLinkText(e.target.value)} placeholder="Visible link text" />
+            </> : <p className="text-xs text-gray-500">Open tracking only. No visible Article6 link will be inserted.</p>}
             {!generated ? <button type="button" onClick={createTrackedEmail} className="rounded bg-forest-700 px-4 py-2 text-sm font-medium text-white">Generate tracking</button> : <div className="flex flex-wrap gap-2"><button type="button" onClick={copyRichEmail} className="rounded bg-forest-700 px-4 py-2 text-sm font-medium text-white">Copy rich email</button><button type="button" onClick={attachGmail} className="rounded border border-gray-300 px-4 py-2 text-sm font-medium">Attach Gmail IDs</button><button type="button" onClick={() => setGenerated(null)} className="rounded border border-gray-300 px-4 py-2 text-sm">New token</button></div>}
             {message ? <p className="text-xs text-gray-600">{message}</p> : null}
           </div>
