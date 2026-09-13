@@ -26,6 +26,7 @@ function experimentLabel(value: string) {
   if (value === "ARTICLE6_CARBON") return "Article6 Carbon";
   if (value === "TENDER_READINESS") return "Tender Readiness";
   if (value === "WEB_SERVICES") return "Web Services";
+  if (value === "VISUAL_COMMERCE") return "Visual Commerce";
   if (value === "ECOVADIS_SUPPLIER_COMPLIANCE") return "EcoVadis / Supplier Compliance";
   return "Other";
 }
