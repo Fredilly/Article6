@@ -33,8 +33,15 @@ function experimentLabel(value: string) {
   if (value === "ARTICLE6_CARBON") return "Article6 Carbon";
   if (value === "TENDER_READINESS") return "Tender Readiness";
   if (value === "WEB_SERVICES") return "Web Services";
+  if (value === "VISUAL_COMMERCE") return "Visual Commerce";
   if (value === "ECOVADIS_SUPPLIER_COMPLIANCE") return "EcoVadis / Supplier Compliance";
   return "Other";
+}
+
+function organizationHref(organization: SalesOrganization) {
+  return organization.experiment === "VISUAL_COMMERCE"
+    ? `/internal/sales/visual-commerce/${organization.id}`
+    : `/internal/sales/organizations/${organization.id}`;
 }
 
 function enumLabel(value: string) {
@@ -131,7 +138,7 @@ export default function SalesOrganizationsTable({ organizations, details, procur
     <SalesHeader entries={searchEntries} initialQuery={initialQuery} initialStatus={initialStatus} onChange={(q, s) => { setActiveQuery(q); setActiveStatus(s); }} sectionTitle="Organizations" sectionCount={visibleOrganizations.length} />
     <div className="mt-3 rounded-lg border bg-white p-3">
       <div className="flex flex-wrap gap-3">
-        <select value={experiment} onChange={(e) => setExperiment(e.target.value as ExperimentFilter)}><option value="ALL">All Experiments</option><option value="ARTICLE6_CARBON">Article6 Carbon</option><option value="TENDER_READINESS">Tender Readiness</option><option value="WEB_SERVICES">Web Services</option></select>
+        <select value={experiment} onChange={(e) => setExperiment(e.target.value as ExperimentFilter)}><option value="ALL">All Experiments</option><option value="ARTICLE6_CARBON">Article6 Carbon</option><option value="TENDER_READINESS">Tender Readiness</option><option value="WEB_SERVICES">Web Services</option><option value="VISUAL_COMMERCE">Visual Commerce</option></select>
         <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}><option value="NEWEST">Newest First</option><option value="OLDEST">Oldest First</option><option value="UPDATED">Recently Updated</option><option value="CONTACTED">Recently Contacted</option></select>
         <details className="relative"><summary className="cursor-pointer list-none rounded border border-gray-200 px-2 py-1 text-sm text-gray-600">Procurement filters</summary><div className="mt-2 grid gap-2 rounded border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2 lg:grid-cols-5">
           <select value={bidderSegment} onChange={(e) => setBidderSegment(e.target.value as BidderSegmentFilter)}><option value="ALL">All bidder segments</option>{BIDDER_SEGMENTS.map((value) => <option key={value} value={value}>{enumLabel(value)}</option>)}</select>
@@ -147,7 +154,7 @@ export default function SalesOrganizationsTable({ organizations, details, procur
         const detail = detailsByOrganization.get(o.id);
         const tenders = detail?.tenderOpportunities || [];
         const nearestTender = o.experiment === "TENDER_READINESS" ? getNearestRelevantTender(tenders) : undefined;
-        return <tr key={o.id} className={rowClass(o.status, o.doNotContact)}><td className="px-5 py-4 align-top"><div className="font-semibold text-gray-900">{o.name}</div><div className="mt-1 text-xs text-gray-500">{o.domain || "No domain"}</div></td><td className="px-5 py-4 align-top text-gray-700"><span>{experimentLabel(o.experiment)}</span>{nearestTender?.submissionDeadline ? <span title={deadlineTooltip(nearestTender, tenders)} className={`ml-1.5 cursor-help text-xs font-medium ${urgencyClass(nearestTender)}`}>· {shortDeadline(nearestTender.submissionDeadline)}</span> : null}</td><td className="whitespace-nowrap px-5 py-4 align-top text-gray-700"><span title={statusTooltip(detail)} className="cursor-help border-b border-dotted border-gray-300">{o.status}</span></td><td className="whitespace-nowrap px-5 py-4 align-top text-gray-600">{formatDate(o.lastInteractionAt)}</td><td className="whitespace-nowrap px-5 py-4 text-right"><Link href={`/internal/sales/organizations/${o.id}`} className="font-medium text-forest-700 hover:underline">Open →</Link></td></tr>;
+        return <tr key={o.id} className={rowClass(o.status, o.doNotContact)}><td className="px-5 py-4 align-top"><div className="font-semibold text-gray-900">{o.name}</div><div className="mt-1 text-xs text-gray-500">{o.domain || "No domain"}</div></td><td className="px-5 py-4 align-top text-gray-700"><span>{experimentLabel(o.experiment)}</span>{nearestTender?.submissionDeadline ? <span title={deadlineTooltip(nearestTender, tenders)} className={`ml-1.5 cursor-help text-xs font-medium ${urgencyClass(nearestTender)}`}>· {shortDeadline(nearestTender.submissionDeadline)}</span> : null}</td><td className="whitespace-nowrap px-5 py-4 align-top text-gray-700"><span title={statusTooltip(detail)} className="cursor-help border-b border-dotted border-gray-300">{o.status}</span></td><td className="whitespace-nowrap px-5 py-4 align-top text-gray-600">{formatDate(o.lastInteractionAt)}</td><td className="whitespace-nowrap px-5 py-4 text-right"><Link href={organizationHref(o)} className="font-medium text-forest-700 hover:underline">Open →</Link></td></tr>;
       })}</tbody></table>
     </div>
   </>;
