@@ -144,6 +144,10 @@ async function upsertContact(command: UpsertVisualCommerceContactCommand) {
   const existingByName = before.contacts.find((contact) => contact.name.trim().toLowerCase() === normalizedName);
   const existing = existingByEmail || existingByName;
 
+  if (emailType === "NOT_VERIFIED" && existing?.email) {
+    throw new Error("NOT_VERIFIED contacts cannot replace a contact that already has a verified email address.");
+  }
+
   let contactId: string;
   let created = false;
 
