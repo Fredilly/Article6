@@ -16,7 +16,7 @@ function isoToLocal(value?: string) {
 
 export default function SalesCollateralPanel() {
   const router = useRouter();
-  const isOrg = router.pathname === "/internal/sales/organizations/[id]";
+  const isOrg = router.pathname === "/internal/sales/organizations/[id]" || router.pathname === "/internal/sales/visual-commerce/[id]";
   const isTender = router.pathname === "/internal/sales/tenders/[id]";
   const id = typeof router.query.id === "string" ? router.query.id : "";
   const contactId = isOrg && typeof router.query.contactId === "string" ? router.query.contactId : "";
