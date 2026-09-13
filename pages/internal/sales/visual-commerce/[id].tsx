@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import SalesAutoRefresh from "../../../../../components/SalesAutoRefresh";
 import { getSalesOrganizationDetail, type SalesOrganizationDetail } from "../../../../../lib/sales-store";
@@ -23,7 +24,7 @@ function LinkValue({ value }: { value?: string }) {
   const href = /^https?:\/\//i.test(value) ? value : `https://${value}`;
   return <a href={href} target="_blank" rel="noreferrer" className="text-forest-700 hover:underline">{value}</a>;
 }
-function Field({ name, children }: { name: string; children: React.ReactNode }) {
+function Field({ name, children }: { name: string; children: ReactNode }) {
   return <div><dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{name}</dt><dd className="mt-1 font-medium text-gray-900">{children}</dd></div>;
 }
 
