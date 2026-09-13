@@ -7,6 +7,8 @@ const migration = fs.readFileSync(new URL("../migrations/020_sales_visual_commer
 const store = fs.readFileSync(new URL("../lib/sales-visual-commerce.ts", import.meta.url), "utf8");
 const list = fs.readFileSync(new URL("../components/SalesOrganizationsTable.tsx", import.meta.url), "utf8");
 const detail = fs.readFileSync(new URL("../pages/internal/sales/visual-commerce/[id].tsx", import.meta.url), "utf8");
+const automation = fs.readFileSync(new URL("../pages/api/internal/crm-visual-commerce-automation.ts", import.meta.url), "utf8");
+const workflow = fs.readFileSync(new URL("../.github/workflows/crm-automation.yml", import.meta.url), "utf8");
 
 test("Visual Commerce is a first-class CRM experiment", () => {
   assert.match(memory, /"VISUAL_COMMERCE"/);
@@ -34,4 +36,27 @@ test("Visual Commerce detail does not render Carbon, tender, procurement or Web 
   assert.doesNotMatch(detail, /VVB/);
   assert.doesNotMatch(detail, /Procurement Profile/);
   assert.doesNotMatch(detail, /Website opportunity/);
+});
+
+test("Visual Commerce CRM automation is routed through the existing OIDC workflow", () => {
+  assert.match(workflow, /migrate-sales-visual-commerce-020/);
+  assert.match(workflow, /crm-visual-commerce-migration/);
+  assert.match(workflow, /upsert_visual_commerce_profile/);
+  assert.match(workflow, /upsert_visual_commerce_contact/);
+  assert.match(workflow, /crm-visual-commerce-automation/);
+  assert.match(automation, /verifyGitHubActionsOidc/);
+});
+
+test("Visual Commerce CRM automation preserves experiment and status isolation", () => {
+  assert.match(automation, /organization\.experiment !== "VISUAL_COMMERCE"/);
+  assert.match(automation, /statusBefore/);
+  assert.match(automation, /unexpectedly changed organization status/);
+  assert.doesNotMatch(automation, /addSalesInteraction/);
+});
+
+test("Visual Commerce contact automation enforces verified email semantics", () => {
+  assert.match(automation, /VISUAL_COMMERCE_EMAIL_TYPES/);
+  assert.match(automation, /NOT_VERIFIED contacts must not store an email address/);
+  assert.match(automation, /NOT_VERIFIED contacts cannot replace a contact that already has a verified email address/);
+  assert.match(automation, /updateSalesVisualCommerceContact/);
 });
