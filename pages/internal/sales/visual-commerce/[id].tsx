@@ -2,9 +2,9 @@ import Head from "next/head";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
-import SalesAutoRefresh from "../../../../../components/SalesAutoRefresh";
-import { getSalesOrganizationDetail, type SalesOrganizationDetail } from "../../../../../lib/sales-store";
-import { getSalesVisualCommerceContacts, getSalesVisualCommerceProfile, type SalesVisualCommerceContact, type SalesVisualCommerceProfile } from "../../../../../lib/sales-visual-commerce";
+import SalesAutoRefresh from "../../../../components/SalesAutoRefresh";
+import { getSalesOrganizationDetail, type SalesOrganizationDetail } from "../../../../lib/sales-store";
+import { getSalesVisualCommerceContacts, getSalesVisualCommerceProfile, type SalesVisualCommerceContact, type SalesVisualCommerceProfile } from "../../../../lib/sales-visual-commerce";
 
 interface Props { detail: SalesOrganizationDetail; profile: SalesVisualCommerceProfile | null; contacts: SalesVisualCommerceContact[]; }
 
