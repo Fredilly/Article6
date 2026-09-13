@@ -9,6 +9,7 @@ const list = fs.readFileSync(new URL("../components/SalesOrganizationsTable.tsx"
 const detail = fs.readFileSync(new URL("../pages/internal/sales/visual-commerce/[id].tsx", import.meta.url), "utf8");
 const automation = fs.readFileSync(new URL("../pages/api/internal/crm-visual-commerce-automation.ts", import.meta.url), "utf8");
 const workflow = fs.readFileSync(new URL("../.github/workflows/crm-automation.yml", import.meta.url), "utf8");
+const collateral = fs.readFileSync(new URL("../components/SalesCollateralPanel.tsx", import.meta.url), "utf8");
 
 test("Visual Commerce is a first-class CRM experiment", () => {
   assert.match(memory, /"VISUAL_COMMERCE"/);
@@ -26,7 +27,7 @@ test("Visual Commerce has its own profile schema", () => {
   assert.match(store, /organization\.rows\[0\]\.experiment !== "VISUAL_COMMERCE"/);
 });
 
-test("Visual Commerce detail does not render Carbon, tender, procurement or Web Services panels", () => {
+test("Visual Commerce detail keeps experiment-specific content without Carbon or tender leakage", () => {
   assert.match(detail, /Visual Commerce Opportunity/);
   assert.match(detail, /Existing affiliate activity/);
   assert.match(detail, /Email type/);
@@ -36,6 +37,19 @@ test("Visual Commerce detail does not render Carbon, tender, procurement or Web 
   assert.doesNotMatch(detail, /VVB/);
   assert.doesNotMatch(detail, /Procurement Profile/);
   assert.doesNotMatch(detail, /Website opportunity/);
+});
+
+test("Visual Commerce detail includes shared CRM scaffolding", () => {
+  assert.match(detail, /SalesHeader/);
+  assert.match(detail, /buildSalesMemorySearchEntries/);
+  assert.match(detail, /Contacts/);
+  assert.match(detail, /update_contact/);
+  assert.match(detail, /add_contact/);
+  assert.match(detail, /Relationship history/);
+  assert.match(detail, /Sales workflow/);
+  assert.match(detail, /Log interaction/);
+  assert.match(detail, /add_interaction/);
+  assert.match(collateral, /internal\/sales\/visual-commerce\/\[id\]/);
 });
 
 test("Visual Commerce CRM automation is routed through the existing OIDC workflow", () => {
