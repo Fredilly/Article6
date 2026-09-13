@@ -42,6 +42,8 @@ jobs:
             endpoint='https://www.article6.org/api/internal/crm-collateral-automation'
           elif [[ "$operation" == 'list_email_activity' ]]; then
             endpoint='https://www.article6.org/api/internal/crm-email-activity-automation'
+          elif [[ "$operation" == 'upsert_visual_commerce_profile' || "$operation" == 'upsert_visual_commerce_contact' ]]; then
+            endpoint='https://www.article6.org/api/internal/crm-visual-commerce-automation'
           elif [[ "$ISSUE_TITLE" == '[CRM] migrate-email-tracking-015' ]]; then
             endpoint='https://www.article6.org/api/internal/email-tracking-migration'
             payload='{"migration":"015_email_tracking"}'
@@ -57,6 +59,9 @@ jobs:
           elif [[ "$ISSUE_TITLE" == '[CRM] migrate-sales-web-services-018' ]]; then
             endpoint='https://www.article6.org/api/internal/crm-web-services-migration'
             payload='{}'
+          elif [[ "$ISSUE_TITLE" == '[CRM] migrate-sales-visual-commerce-020' ]]; then
+            endpoint='https://www.article6.org/api/internal/crm-visual-commerce-migration'
+            payload='{}'
           elif [[ "$ISSUE_TITLE" == '[CRM] update-domain' ]]; then
             endpoint='https://www.article6.org/api/internal/crm-domain-update'
           fi
@@ -71,7 +76,7 @@ jobs:
           echo "$response" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
           if [[ "$status" -lt 200 || "$status" -ge 300 ]]; then
-            echo "CRM command failed with HTTP $status: $response" >&2
+            echo "CRM command failed with HTTP $status" >&2
             exit 1
           fi
 
