@@ -60,8 +60,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Please complete your name, email, and role.' });
   }
 
-  if (persona === 'CREATOR' && platform && !SCOOP_WAITLIST_PLATFORMS.includes(platform)) {
-    return res.status(400).json({ error: 'Choose a valid creator platform.' });
+  if ((persona === 'CREATOR' || persona === 'BRAND_RETAILER') && platform && !SCOOP_WAITLIST_PLATFORMS.includes(platform)) {
+    return res.status(400).json({ error: 'Choose a valid platform.' });
   }
 
   if (!EMAIL_RE.test(input.email)) {
