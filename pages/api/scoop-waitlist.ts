@@ -1,9 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   SCOOP_WAITLIST_PERSONAS,
+  SCOOP_WAITLIST_PLATFORMS,
   storeScoopWaitlist,
   type ScoopWaitlistInput,
   type ScoopWaitlistPersona,
+  type ScoopWaitlistPlatform,
 } from '../../lib/scoop-waitlist';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -40,11 +42,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (honeypot) return res.status(200).json({ ok: true });
 
   const persona = clean(req.body?.persona, 40).toUpperCase() as ScoopWaitlistPersona;
+  const platformRaw = clean(req.body?.platform, 40).toUpperCase();
+  const platform = platformRaw ? (platformRaw as ScoopWaitlistPlatform) : undefined;
   const input: ScoopWaitlistInput = {
     name: clean(req.body?.name, 120),
     email: clean(req.body?.email, 254).toLowerCase(),
     persona,
-    handle: clean(req.body?.handle, 160),
+    platform,
+    handle: clean(req.body?.handle, 200),
     organization: clean(req.body?.organization, 180),
     source: clean(req.body?.source, 80) || 'scoop_site',
     sourcePage: clean(req.body?.sourcePage, 120) || 'homepage',
@@ -53,6 +58,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!input.name || !input.email || !SCOOP_WAITLIST_PERSONAS.includes(persona)) {
     return res.status(400).json({ error: 'Please complete your name, email, and role.' });
+  }
+
+  if (persona === 'CREATOR' && platform && !SCOOP_WAITLIST_PLATFORMS.includes(platform)) {
+    return res.status(400).json({ error: 'Choose a valid creator platform.' });
   }
 
   if (!EMAIL_RE.test(input.email)) {
