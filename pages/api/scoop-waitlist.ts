@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   SCOOP_WAITLIST_PERSONAS,
   storeScoopWaitlist,
+  storeScoopWaitlistFeedback,
   type ScoopWaitlistInput,
   type ScoopWaitlistPersona,
 } from '../../lib/scoop-waitlist';
@@ -39,6 +40,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const honeypot = clean(req.body?.companyWebsite, 200);
   if (honeypot) return res.status(200).json({ ok: true });
 
+  if (req.body?.feedbackOnly === true) {
+    const email = clean(req.body?.email, 254).toLowerCase();
+    const triggerForTrying = clean(req.body?.triggerForTrying, 1200);
+
+    if (!EMAIL_RE.test(email) || !triggerForTrying) {
+      return res.status(400).json({ error: 'A valid email and response are required.' });
+    }
+
+    try {
+      await storeScoopWaitlistFeedback({
+        email,
+        triggerForTrying,
+        source: clean(req.body?.source, 80) || 'scoop_site',
+        sourcePage: clean(req.body?.sourcePage, 120) || 'homepage',
+        campaign: clean(req.body?.campaign, 120) || 'founding_100',
+      });
+      return res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error('[scoop-waitlist] Failed to store Founding 100 follow-up', error);
+      return res.status(500).json({ error: 'We could not save your response. Please try again.' });
+    }
+  }
+
   const persona = clean(req.body?.persona, 40).toUpperCase() as ScoopWaitlistPersona;
   const input: ScoopWaitlistInput = {
     name: clean(req.body?.name, 120),
@@ -46,6 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     persona,
     handle: clean(req.body?.handle, 160),
     organization: clean(req.body?.organization, 180),
+    platform: clean(req.body?.platform, 80),
     source: clean(req.body?.source, 80) || 'scoop_site',
     sourcePage: clean(req.body?.sourcePage, 120) || 'homepage',
     campaign: clean(req.body?.campaign, 120) || 'alpha_waitlist',
