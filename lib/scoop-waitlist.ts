@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { Pool } from 'pg';
 import { normalizeOrganizationName } from './sales-memory';
 
-export const SCOOP_WAITLIST_PERSONAS = ['CREATOR', 'SHOPPER', 'BRAND_RETAILER', 'OTHER'] as const;
+export const SCOOP_WAITLIST_PERSONAS = ['CREATOR', 'SHOPPER', 'BRAND_RETAILER', 'DEVELOPER', 'OTHER'] as const;
 export type ScoopWaitlistPersona = (typeof SCOOP_WAITLIST_PERSONAS)[number];
 
 export interface ScoopWaitlistInput {
@@ -11,6 +11,7 @@ export interface ScoopWaitlistInput {
   persona: ScoopWaitlistPersona;
   handle?: string;
   organization?: string;
+  platform?: string;
   source?: string;
   sourcePage?: string;
   campaign?: string;
@@ -44,6 +45,7 @@ function personaLabel(persona: ScoopWaitlistPersona): string {
   if (persona === 'CREATOR') return 'Creator / Influencer';
   if (persona === 'SHOPPER') return 'Shopper';
   if (persona === 'BRAND_RETAILER') return 'Brand / Retailer';
+  if (persona === 'DEVELOPER') return 'Developer';
   return 'Other';
 }
 
@@ -67,6 +69,7 @@ function notesFor(input: ScoopWaitlistInput): string {
   const handle = cleanHandle(input.handle);
   if (handle) lines.push(`Handle: ${handle}`);
   if (input.organization?.trim()) lines.push(`Organization: ${input.organization.trim()}`);
+  if (input.platform?.trim()) lines.push(`Platform: ${input.platform.trim()}`);
   return lines.join('\n');
 }
 
@@ -198,6 +201,7 @@ export async function storeScoopWaitlist(input: ScoopWaitlistInput): Promise<{
       `Email: ${email}`,
       input.handle?.trim() ? `Handle: ${cleanHandle(input.handle)}` : null,
       input.organization?.trim() ? `Organization: ${input.organization.trim()}` : null,
+      input.platform?.trim() ? `Platform: ${input.platform.trim()}` : null,
       `Source: ${input.source || 'scoop_site'}`,
       `Source page: ${input.sourcePage || 'homepage'}`,
       `Campaign: ${input.campaign || 'alpha_waitlist'}`,
@@ -215,6 +219,65 @@ export async function storeScoopWaitlist(input: ScoopWaitlistInput): Promise<{
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
+  } finally {
+    client.release();
+  }
+}
+
+
+export async function storeScoopWaitlistFeedback(input: {
+  email: string;
+  triggerForTrying: string;
+  source?: string;
+  sourcePage?: string;
+  campaign?: string;
+}): Promise<{ interactionId: string }> {
+  const client = await getPool().connect();
+  const now = new Date().toISOString();
+  const email = input.email.trim().toLowerCase();
+  const trigger = input.triggerForTrying.trim();
+
+  try {
+    const existing = await client.query(
+      `SELECT c.id AS contact_id, c.organization_id
+       FROM sales_contacts c
+       JOIN sales_organizations o ON o.id = c.organization_id
+       WHERE LOWER(c.email) = $1
+         AND o.experiment = 'VISUAL_COMMERCE'
+       ORDER BY c.updated_at DESC
+       LIMIT 1`,
+      [email],
+    );
+
+    if (!existing.rows[0]) throw new Error('Scoop waitlist contact not found.');
+
+    const contactId = String(existing.rows[0].contact_id);
+    const organizationId = String(existing.rows[0].organization_id);
+    const interactionId = randomUUID();
+    const summary = [
+      'Founding 100 follow-up',
+      `Trigger for trying Scoop: ${trigger}`,
+      `Source: ${input.source || 'scoop_site'}`,
+      `Source page: ${input.sourcePage || 'homepage'}`,
+      `Campaign: ${input.campaign || 'founding_100'}`,
+    ].join('\n');
+
+    await client.query(
+      `INSERT INTO sales_interactions
+        (id, organization_id, contact_id, channel, direction, interaction_type, occurred_at, subject, summary, created_at, is_imported)
+       VALUES ($1, $2, $3, 'WEBSITE', 'INBOUND', 'CONTACT_FORM', $4, $5, $6, $4, FALSE)`,
+      [interactionId, organizationId, contactId, now, 'Scoop Founding 100 — why they joined', summary],
+    );
+
+    await client.query(
+      `UPDATE sales_contacts
+       SET notes = CONCAT(COALESCE(notes, ''), CASE WHEN COALESCE(notes, '') = '' THEN '' ELSE E'\\n' END, $2),
+           updated_at = $3
+       WHERE id = $1`,
+      [contactId, `Trigger for trying Scoop: ${trigger}`, now],
+    );
+
+    return { interactionId };
   } finally {
     client.release();
   }
