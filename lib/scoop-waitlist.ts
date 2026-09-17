@@ -3,7 +3,9 @@ import { Pool } from 'pg';
 import { normalizeOrganizationName } from './sales-memory';
 
 export const SCOOP_WAITLIST_PERSONAS = ['CREATOR', 'SHOPPER', 'BRAND_RETAILER', 'DEVELOPER', 'OTHER'] as const;
+export const SCOOP_WAITLIST_PLATFORMS = ['YOUTUBE', 'TIKTOK', 'INSTAGRAM', 'OTHER'] as const;
 export type ScoopWaitlistPersona = (typeof SCOOP_WAITLIST_PERSONAS)[number];
+export type ScoopWaitlistPlatform = (typeof SCOOP_WAITLIST_PLATFORMS)[number];
 
 export interface ScoopWaitlistInput {
   name: string;
@@ -11,7 +13,7 @@ export interface ScoopWaitlistInput {
   persona: ScoopWaitlistPersona;
   handle?: string;
   organization?: string;
-  platform?: string;
+  platform?: ScoopWaitlistPlatform;
   source?: string;
   sourcePage?: string;
   campaign?: string;
@@ -38,7 +40,9 @@ function getPool(): Pool {
 
 function cleanHandle(value?: string): string {
   const handle = (value || '').trim();
-  return handle ? (handle.startsWith('@') ? handle : `@${handle}`) : '';
+  if (!handle) return '';
+  if (/^https?:\/\//i.test(handle)) return handle;
+  return handle.startsWith('@') ? handle : `@${handle}`;
 }
 
 function personaLabel(persona: ScoopWaitlistPersona): string {
@@ -47,6 +51,14 @@ function personaLabel(persona: ScoopWaitlistPersona): string {
   if (persona === 'BRAND_RETAILER') return 'Brand / Retailer';
   if (persona === 'DEVELOPER') return 'Developer';
   return 'Other';
+}
+
+function platformLabel(platform?: ScoopWaitlistPlatform): string {
+  if (platform === 'YOUTUBE') return 'YouTube';
+  if (platform === 'TIKTOK') return 'TikTok';
+  if (platform === 'INSTAGRAM') return 'Instagram';
+  if (platform === 'OTHER') return 'Other';
+  return '';
 }
 
 function organizationName(input: ScoopWaitlistInput): string {
@@ -66,10 +78,11 @@ function notesFor(input: ScoopWaitlistInput): string {
     `Source page: ${input.sourcePage || 'homepage'}`,
     `Campaign: ${input.campaign || 'alpha_waitlist'}`,
   ];
+  const platform = platformLabel(input.platform);
+  if (platform) lines.push(`Platform: ${platform}`);
   const handle = cleanHandle(input.handle);
-  if (handle) lines.push(`Handle: ${handle}`);
+  if (handle) lines.push(`Channel / handle: ${handle}`);
   if (input.organization?.trim()) lines.push(`Organization: ${input.organization.trim()}`);
-  if (input.platform?.trim()) lines.push(`Platform: ${input.platform.trim()}`);
   return lines.join('\n');
 }
 
@@ -77,6 +90,15 @@ function profileCustomerType(persona: ScoopWaitlistPersona): 'CREATOR' | 'ECOMME
   if (persona === 'CREATOR') return 'CREATOR';
   if (persona === 'BRAND_RETAILER') return 'ECOMMERCE_BRAND';
   return undefined;
+}
+
+function creatorChannelPatch(input: ScoopWaitlistInput): { youtubeUrl?: string; instagramUrl?: string; tiktokUrl?: string } {
+  const handle = cleanHandle(input.handle);
+  if (!handle || !/^https?:\/\//i.test(handle)) return {};
+  if (input.platform === 'YOUTUBE') return { youtubeUrl: handle };
+  if (input.platform === 'INSTAGRAM') return { instagramUrl: handle };
+  if (input.platform === 'TIKTOK') return { tiktokUrl: handle };
+  return {};
 }
 
 export async function storeScoopWaitlist(input: ScoopWaitlistInput): Promise<{
@@ -172,15 +194,19 @@ export async function storeScoopWaitlist(input: ScoopWaitlistInput): Promise<{
 
     const customerType = profileCustomerType(input.persona);
     if (customerType) {
+      const channelPatch = creatorChannelPatch(input);
       await client.query(
         `INSERT INTO sales_visual_commerce_profiles
-          (organization_id, customer_type, visual_product_fit, priority, vcl_use_case, qualification_notes, source_url, created_at, updated_at)
-         VALUES ($1, $2, 'MEDIUM', 'B', $3, $4, $5, $6, $6)
+          (organization_id, customer_type, visual_product_fit, priority, vcl_use_case, qualification_notes, source_url, youtube_url, instagram_url, tiktok_url, created_at, updated_at)
+         VALUES ($1, $2, 'MEDIUM', 'B', $3, $4, $5, $6, $7, $8, $9, $9)
          ON CONFLICT (organization_id) DO UPDATE SET
            customer_type = EXCLUDED.customer_type,
            vcl_use_case = EXCLUDED.vcl_use_case,
            qualification_notes = EXCLUDED.qualification_notes,
            source_url = EXCLUDED.source_url,
+           youtube_url = COALESCE(EXCLUDED.youtube_url, sales_visual_commerce_profiles.youtube_url),
+           instagram_url = COALESCE(EXCLUDED.instagram_url, sales_visual_commerce_profiles.instagram_url),
+           tiktok_url = COALESCE(EXCLUDED.tiktok_url, sales_visual_commerce_profiles.tiktok_url),
            updated_at = EXCLUDED.updated_at`,
         [
           organizationId,
@@ -188,6 +214,9 @@ export async function storeScoopWaitlist(input: ScoopWaitlistInput): Promise<{
           input.persona === 'CREATOR' ? 'Creator / influencer alpha tester' : 'Brand / retailer visual commerce lead',
           'Inbound Scoop waitlist signup. Self-identified; not yet qualified.',
           sourceUrl,
+          channelPatch.youtubeUrl || null,
+          channelPatch.instagramUrl || null,
+          channelPatch.tiktokUrl || null,
           now,
         ],
       );
@@ -199,9 +228,9 @@ export async function storeScoopWaitlist(input: ScoopWaitlistInput): Promise<{
       `Persona: ${personaLabel(input.persona)}`,
       `Name: ${name}`,
       `Email: ${email}`,
-      input.handle?.trim() ? `Handle: ${cleanHandle(input.handle)}` : null,
+      input.platform ? `Platform: ${platformLabel(input.platform)}` : null,
+      input.handle?.trim() ? `Channel / handle: ${cleanHandle(input.handle)}` : null,
       input.organization?.trim() ? `Organization: ${input.organization.trim()}` : null,
-      input.platform?.trim() ? `Platform: ${input.platform.trim()}` : null,
       `Source: ${input.source || 'scoop_site'}`,
       `Source page: ${input.sourcePage || 'homepage'}`,
       `Campaign: ${input.campaign || 'alpha_waitlist'}`,
