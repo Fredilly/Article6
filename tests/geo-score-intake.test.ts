@@ -11,9 +11,10 @@ test("GEO Score intake is protected by a server-to-server secret", () => {
   assert.match(route, /status\(401\)/);
 });
 
-test("GEO Score intake maps leads into WEB_SERVICES and GEO_VISIBILITY", () => {
-  assert.match(store, /experiment = 'WEB_SERVICES'/);
+test("GEO Score intake creates new WEB_SERVICES leads without reclassifying existing CRM organizations", () => {
   assert.match(store, /'WEB_SERVICES', 'ENGAGED'/);
+  assert.doesNotMatch(store, /SET experiment = 'WEB_SERVICES'/);
+  assert.match(store, /organizationExperiment === "WEB_SERVICES"/);
   assert.match(store, /ARRAY\['GEO_VISIBILITY'\]/);
   assert.match(store, /primary_service = 'GEO_VISIBILITY'/);
 });
