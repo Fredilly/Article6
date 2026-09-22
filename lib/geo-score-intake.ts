@@ -105,8 +105,9 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
     }
 
     const existingContact = await client.query(
-      `SELECT c.id AS contact_id, c.organization_id
+      `SELECT c.id AS contact_id, c.organization_id, o.experiment
        FROM sales_contacts c
+       JOIN sales_organizations o ON o.id = c.organization_id
        WHERE LOWER(c.email) = $1
        LIMIT 1`,
       [email],
@@ -114,10 +115,12 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
 
     let organizationId: string;
     let contactId: string;
+    let organizationExperiment: string;
 
     if (existingContact.rows[0]) {
       organizationId = String(existingContact.rows[0].organization_id);
       contactId = String(existingContact.rows[0].contact_id);
+      organizationExperiment = String(existingContact.rows[0].experiment || "OTHER");
 
       await client.query(
         `UPDATE sales_contacts
@@ -128,8 +131,7 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
 
       await client.query(
         `UPDATE sales_organizations
-         SET experiment = 'WEB_SERVICES',
-             status = CASE WHEN status IN ('NEW','CONTACTED','NURTURE') THEN 'ENGAGED' ELSE status END,
+         SET status = CASE WHEN status IN ('NEW','CONTACTED','NURTURE') THEN 'ENGAGED' ELSE status END,
              domain = COALESCE(domain, $2),
              updated_at = $3
          WHERE id = $1`,
@@ -137,7 +139,7 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
       );
     } else {
       const existingOrganization = await client.query(
-        `SELECT id
+        `SELECT id, experiment
          FROM sales_organizations
          WHERE normalized_name = $1
             OR ($2::text IS NOT NULL AND domain = $2)
@@ -147,10 +149,10 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
 
       if (existingOrganization.rows[0]) {
         organizationId = String(existingOrganization.rows[0].id);
+        organizationExperiment = String(existingOrganization.rows[0].experiment || "OTHER");
         await client.query(
           `UPDATE sales_organizations
-           SET experiment = 'WEB_SERVICES',
-               status = CASE WHEN status IN ('NEW','CONTACTED','NURTURE') THEN 'ENGAGED' ELSE status END,
+           SET status = CASE WHEN status IN ('NEW','CONTACTED','NURTURE') THEN 'ENGAGED' ELSE status END,
                domain = COALESCE(domain, $2),
                updated_at = $3
            WHERE id = $1`,
@@ -158,6 +160,7 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
         );
       } else {
         organizationId = randomUUID();
+        organizationExperiment = "WEB_SERVICES";
         await client.query(
           `INSERT INTO sales_organizations
             (id, name, normalized_name, domain, experiment, status, notes, do_not_contact, created_at, updated_at)
@@ -217,6 +220,52 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
         now,
       ],
     );
+
+    const interactionId = randomUUID();
+    const summary = [
+      "Source: GEO_SCORE / Article6 Signal",
+      `Goal: ${input.mainGoal}`,
+      `Website: ${input.websiteUrl}`,
+      input.overallScore == null ? "Overall score: unavailable" : `Overall score: ${input.overallScore}/100`,
+      input.categoryScores
+        ? `Category scores: ${Object.entries(input.categoryScores)
+            .map(([name, value]) => `${name}=${value == null ? "unavailable" : value}`)
+            .join(", ")}`
+        : null,
+      input.topFindings?.length
+        ? `Top findings: ${input.topFindings.map((finding) => finding.title).join("; ")}`
+        : null,
+      input.scoringVersion ? `Scoring version: ${input.scoringVersion}` : null,
+      input.analyzedAt ? `Analyzed at: ${input.analyzedAt}` : null,
+      input.notes ? `Notes: ${input.notes.trim()}` : null,
+    ].filter(Boolean).join("\n").slice(0, 8000);
+
+    await client.query(
+      `INSERT INTO sales_interactions
+        (id, organization_id, contact_id, channel, direction, interaction_type, occurred_at,
+         subject, summary, external_reference, created_at, is_imported)
+       VALUES ($1, $2, $3, 'WEBSITE', 'INBOUND', 'CONTACT_FORM', $4, $5, $6, $7, $4, FALSE)`,
+      [
+        interactionId,
+        organizationId,
+        contactId,
+        now,
+        `Article6 Signal enquiry — ${input.mainGoal}`.slice(0, 200),
+        summary,
+        idempotencyKey,
+      ],
+    );
+
+    await client.query("COMMIT");
+    return { created: true };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}    if (organizationExperiment === "WEB_SERVICES") {
+      }
 
     const interactionId = randomUUID();
     const summary = [
