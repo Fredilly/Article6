@@ -105,8 +105,9 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
     }
 
     const existingContact = await client.query(
-      `SELECT c.id AS contact_id, c.organization_id
+      `SELECT c.id AS contact_id, c.organization_id, o.experiment
        FROM sales_contacts c
+       JOIN sales_organizations o ON o.id = c.organization_id
        WHERE LOWER(c.email) = $1
        LIMIT 1`,
       [email],
@@ -114,10 +115,12 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
 
     let organizationId: string;
     let contactId: string;
+    let organizationExperiment: string;
 
     if (existingContact.rows[0]) {
       organizationId = String(existingContact.rows[0].organization_id);
       contactId = String(existingContact.rows[0].contact_id);
+      organizationExperiment = String(existingContact.rows[0].experiment || "OTHER");
 
       await client.query(
         `UPDATE sales_contacts
@@ -128,8 +131,7 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
 
       await client.query(
         `UPDATE sales_organizations
-         SET experiment = 'WEB_SERVICES',
-             status = CASE WHEN status IN ('NEW','CONTACTED','NURTURE') THEN 'ENGAGED' ELSE status END,
+         SET status = CASE WHEN status IN ('NEW','CONTACTED','NURTURE') THEN 'ENGAGED' ELSE status END,
              domain = COALESCE(domain, $2),
              updated_at = $3
          WHERE id = $1`,
@@ -137,7 +139,7 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
       );
     } else {
       const existingOrganization = await client.query(
-        `SELECT id
+        `SELECT id, experiment
          FROM sales_organizations
          WHERE normalized_name = $1
             OR ($2::text IS NOT NULL AND domain = $2)
@@ -147,10 +149,11 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
 
       if (existingOrganization.rows[0]) {
         organizationId = String(existingOrganization.rows[0].id);
+        organizationExperiment = String(existingOrganization.rows[0].experiment || "OTHER");
+
         await client.query(
           `UPDATE sales_organizations
-           SET experiment = 'WEB_SERVICES',
-               status = CASE WHEN status IN ('NEW','CONTACTED','NURTURE') THEN 'ENGAGED' ELSE status END,
+           SET status = CASE WHEN status IN ('NEW','CONTACTED','NURTURE') THEN 'ENGAGED' ELSE status END,
                domain = COALESCE(domain, $2),
                updated_at = $3
            WHERE id = $1`,
@@ -158,6 +161,8 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
         );
       } else {
         organizationId = randomUUID();
+        organizationExperiment = "WEB_SERVICES";
+
         await client.query(
           `INSERT INTO sales_organizations
             (id, name, normalized_name, domain, experiment, status, notes, do_not_contact, created_at, updated_at)
@@ -189,34 +194,36 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
       );
     }
 
-    await client.query(
-      `INSERT INTO sales_web_service_profiles
-        (organization_id, website_url, service_hypotheses, website_observation, profile_source,
-         last_verified_at, primary_service, problem_confirmed, next_action, created_at, updated_at)
-       VALUES ($1, $2, ARRAY['GEO_VISIBILITY']::TEXT[], $3, 'CLIENT_REPORTED',
-               $4, 'GEO_VISIBILITY', 'YES', 'Follow up on GEO Score enquiry', $5, $5)
-       ON CONFLICT (organization_id) DO UPDATE SET
-         website_url = EXCLUDED.website_url,
-         service_hypotheses = (
-           SELECT ARRAY(
-             SELECT DISTINCT value
-             FROM unnest(sales_web_service_profiles.service_hypotheses || ARRAY['GEO_VISIBILITY']::TEXT[]) value
-           )
-         ),
-         website_observation = EXCLUDED.website_observation,
-         last_verified_at = EXCLUDED.last_verified_at,
-         primary_service = 'GEO_VISIBILITY',
-         problem_confirmed = 'YES',
-         next_action = EXCLUDED.next_action,
-         updated_at = EXCLUDED.updated_at`,
-      [
-        organizationId,
-        input.websiteUrl,
-        observation || "Article6 Signal analysis submitted by lead.",
-        input.analyzedAt && !Number.isNaN(Date.parse(input.analyzedAt)) ? input.analyzedAt : now,
-        now,
-      ],
-    );
+    if (organizationExperiment === "WEB_SERVICES") {
+      await client.query(
+        `INSERT INTO sales_web_service_profiles
+          (organization_id, website_url, service_hypotheses, website_observation, profile_source,
+           last_verified_at, primary_service, problem_confirmed, next_action, created_at, updated_at)
+         VALUES ($1, $2, ARRAY['GEO_VISIBILITY']::TEXT[], $3, 'CLIENT_REPORTED',
+                 $4, 'GEO_VISIBILITY', 'YES', 'Follow up on GEO Score enquiry', $5, $5)
+         ON CONFLICT (organization_id) DO UPDATE SET
+           website_url = EXCLUDED.website_url,
+           service_hypotheses = (
+             SELECT ARRAY(
+               SELECT DISTINCT value
+               FROM unnest(sales_web_service_profiles.service_hypotheses || ARRAY['GEO_VISIBILITY']::TEXT[]) value
+             )
+           ),
+           website_observation = EXCLUDED.website_observation,
+           last_verified_at = EXCLUDED.last_verified_at,
+           primary_service = 'GEO_VISIBILITY',
+           problem_confirmed = 'YES',
+           next_action = EXCLUDED.next_action,
+           updated_at = EXCLUDED.updated_at`,
+        [
+          organizationId,
+          input.websiteUrl,
+          observation || "Article6 Signal analysis submitted by lead.",
+          input.analyzedAt && !Number.isNaN(Date.parse(input.analyzedAt)) ? input.analyzedAt : now,
+          now,
+        ],
+      );
+    }
 
     const interactionId = randomUUID();
     const summary = [
@@ -234,6 +241,9 @@ export async function storeGeoScoreLead(input: GeoScoreLeadInput): Promise<{ cre
         : null,
       input.scoringVersion ? `Scoring version: ${input.scoringVersion}` : null,
       input.analyzedAt ? `Analyzed at: ${input.analyzedAt}` : null,
+      organizationExperiment === "WEB_SERVICES"
+        ? null
+        : `CRM note: existing organization kept in ${organizationExperiment}; Signal did not reclassify it.`,
       input.notes ? `Notes: ${input.notes.trim()}` : null,
     ].filter(Boolean).join("\n").slice(0, 8000);
 
