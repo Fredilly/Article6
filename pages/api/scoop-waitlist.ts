@@ -30,6 +30,14 @@ function setCors(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
+function isBrowserForm(req: NextApiRequest): boolean {
+  return (req.headers['content-type'] || '').toLowerCase().includes('application/x-www-form-urlencoded');
+}
+
+function redirectToScoop(res: NextApiResponse, ok: boolean) {
+  return res.redirect(303, ok ? 'https://scoop.article6.org/?joined=1' : 'https://scoop.article6.org/?join_error=1');
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   setCors(req, res);
 
@@ -40,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const honeypot = clean(req.body?.companyWebsite, 200);
-  if (honeypot) return res.status(200).json({ ok: true });
+  if (honeypot) return isBrowserForm(req) ? redirectToScoop(res, true) : res.status(200).json({ ok: true });
 
   if (req.body?.feedbackOnly === true || req.body?.feedbackOnly === 'true') {
     const email = clean(req.body?.email, 254).toLowerCase();
@@ -58,10 +66,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         sourcePage: clean(req.body?.sourcePage, 120) || 'homepage',
         campaign: clean(req.body?.campaign, 120) || 'founding_100',
       });
-      return res.status(200).json({ ok: true });
+      return isBrowserForm(req) ? redirectToScoop(res, true) : res.status(200).json({ ok: true });
     } catch (error) {
       console.error('[scoop-waitlist] Failed to store Founding 100 follow-up', error);
-      return res.status(500).json({ error: 'We could not save your response. Please try again.' });
+      return isBrowserForm(req) ? redirectToScoop(res, false) : res.status(500).json({ error: 'We could not save your response. Please try again.' });
     }
   }
 
@@ -81,22 +89,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   if (!input.name || !input.email || !SCOOP_WAITLIST_PERSONAS.includes(persona)) {
-    return res.status(400).json({ error: 'Please complete your name, email, and role.' });
+    return isBrowserForm(req) ? redirectToScoop(res, false) : res.status(400).json({ error: 'Please complete your name, email, and role.' });
   }
 
   if ((persona === 'CREATOR' || persona === 'BRAND_RETAILER') && platform && !SCOOP_WAITLIST_PLATFORMS.includes(platform)) {
-    return res.status(400).json({ error: 'Choose a valid platform.' });
+    return isBrowserForm(req) ? redirectToScoop(res, false) : res.status(400).json({ error: 'Choose a valid platform.' });
   }
 
   if (!EMAIL_RE.test(input.email)) {
-    return res.status(400).json({ error: 'Enter a valid email address.' });
+    return isBrowserForm(req) ? redirectToScoop(res, false) : res.status(400).json({ error: 'Enter a valid email address.' });
   }
 
   try {
     await storeScoopWaitlist(input);
-    return res.status(200).json({ ok: true });
+    return isBrowserForm(req) ? redirectToScoop(res, true) : res.status(200).json({ ok: true });
   } catch (error) {
     console.error('[scoop-waitlist] Failed to store waitlist signup', error);
-    return res.status(500).json({ error: 'We could not add you to the waitlist. Please try again.' });
+    return isBrowserForm(req) ? redirectToScoop(res, false) : res.status(500).json({ error: 'We could not add you to the waitlist. Please try again.' });
   }
 }
