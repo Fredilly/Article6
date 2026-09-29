@@ -8,6 +8,7 @@ import {
   type ScoopWaitlistPersona,
   type ScoopWaitlistPlatform,
 } from '../../lib/scoop-waitlist';
+import { sendScoopWaitlistConfirmation } from '../../lib/scoop-waitlist-email';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -102,7 +103,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     await storeScoopWaitlist(input);
-    return isBrowserForm(req) ? redirectToScoop(res, true) : res.status(200).json({ ok: true });
+    const emailSent = await sendScoopWaitlistConfirmation({ name: input.name, email: input.email });
+    if (!emailSent) console.warn('[scoop-waitlist] Signup saved but confirmation email was not sent', { email: input.email });
+    return isBrowserForm(req) ? redirectToScoop(res, true) : res.status(200).json({ ok: true, email_sent: emailSent });
   } catch (error) {
     console.error('[scoop-waitlist] Failed to store waitlist signup', error);
     return isBrowserForm(req) ? redirectToScoop(res, false) : res.status(500).json({ error: 'We could not add you to the waitlist. Please try again.' });
