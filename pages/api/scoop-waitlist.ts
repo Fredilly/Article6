@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const honeypot = clean(req.body?.companyWebsite, 200);
   if (honeypot) return res.status(200).json({ ok: true });
 
-  if (req.body?.feedbackOnly === true) {
+  if (req.body?.feedbackOnly === true || req.body?.feedbackOnly === 'true') {
     const email = clean(req.body?.email, 254).toLowerCase();
     const triggerForTrying = clean(req.body?.triggerForTrying, 1200);
 
