@@ -95,7 +95,7 @@ export default function ScoopLearningDashboard({ report, error, reviewed }: Infe
             <h1 className="mt-1 text-3xl font-bold tracking-tight">Alpha Learning</h1>
             <p className="mt-2 max-w-2xl text-sm text-gray-600">What testers are teaching Scoop: outcomes, failure patterns, corrections, cost and reusable product memory.</p>
           </div>
-          <a href="/internal/sales/visual-commerce/learning" className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Refresh data</a>
+          <Link href="/internal/sales/visual-commerce/learning" className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Refresh data</Link>
         </div>
 
         {reviewed ? <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">Review saved: {reviewed.replaceAll("_", " ")}.</div> : null}
