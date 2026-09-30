@@ -62,12 +62,15 @@ export async function sendScoopWaitlistConfirmation(input: ScoopWaitlistConfirma
 </html>`;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
       body: JSON.stringify({
         from: `Scoop <${fromAddress}>`,
         to: [input.email],
@@ -79,6 +82,7 @@ export async function sendScoopWaitlistConfirmation(input: ScoopWaitlistConfirma
       }),
     });
 
+    clearTimeout(timeout);
     if (!response.ok) {
       console.error('[scoop-waitlist-email] Resend failed', {
         status: response.status,
