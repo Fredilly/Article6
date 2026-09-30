@@ -96,9 +96,9 @@ function notesFor(input: ScoopWaitlistInput): string {
   if (platform) lines.push(`Platform: ${platform}`);
   const handle = cleanHandle(input.handle);
   if (handle) lines.push(`Channel / handle: ${handle}`);
-  if (input.youtubeUrl?.trim()) lines.push(`YouTube: ${cleanHandle(input.youtubeUrl)}`);
-  if (input.instagramUrl?.trim()) lines.push(`Instagram: ${cleanHandle(input.instagramUrl)}`);
-  if (input.tiktokUrl?.trim()) lines.push(`TikTok: ${cleanHandle(input.tiktokUrl)}`);
+  if (input.youtubeUrl?.trim()) lines.push(`YouTube: ${normalizeSocialUrl('youtube', input.youtubeUrl)}`);
+  if (input.instagramUrl?.trim()) lines.push(`Instagram: ${normalizeSocialUrl('instagram', input.instagramUrl)}`);
+  if (input.tiktokUrl?.trim()) lines.push(`TikTok: ${normalizeSocialUrl('tiktok', input.tiktokUrl)}`);
   if (input.organization?.trim()) lines.push(`Organization: ${input.organization.trim()}`);
   return lines.join('\n');
 }
@@ -263,9 +263,9 @@ export async function storeScoopWaitlist(input: ScoopWaitlistInput): Promise<{
       `Email: ${email}`,
       input.platform ? `Platform: ${platformLabel(input.platform)}` : null,
       input.handle?.trim() ? `Channel / handle: ${cleanHandle(input.handle)}` : null,
-      input.youtubeUrl?.trim() ? `YouTube: ${cleanHandle(input.youtubeUrl)}` : null,
-      input.instagramUrl?.trim() ? `Instagram: ${cleanHandle(input.instagramUrl)}` : null,
-      input.tiktokUrl?.trim() ? `TikTok: ${cleanHandle(input.tiktokUrl)}` : null,
+      input.youtubeUrl?.trim() ? `YouTube: ${normalizeSocialUrl('youtube', input.youtubeUrl)}` : null,
+      input.instagramUrl?.trim() ? `Instagram: ${normalizeSocialUrl('instagram', input.instagramUrl)}` : null,
+      input.tiktokUrl?.trim() ? `TikTok: ${normalizeSocialUrl('tiktok', input.tiktokUrl)}` : null,
       input.organization?.trim() ? `Organization: ${input.organization.trim()}` : null,
       `Source: ${input.source || 'scoop_site'}`,
       `Source page: ${input.sourcePage || 'homepage'}`,
