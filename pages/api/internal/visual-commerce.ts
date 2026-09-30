@@ -102,6 +102,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: "A contact name and email are required before alpha approval." });
       }
 
+      const alreadyApproved = detail.interactions.some(
+        (interaction) => interaction.contactId === contactId && interaction.interactionType === "ALPHA_INVITE",
+      );
+      if (alreadyApproved) return redirect(res, organizationId, "alpha=already");
+
       const inviteId = `crm-${contact.id}`;
       const invite = await createScoopAlphaInvite(inviteId);
       await sendScoopAlphaInviteEmail({
