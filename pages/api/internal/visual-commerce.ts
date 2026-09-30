@@ -1,5 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { hasInternalUploadSession } from "../../../lib/internal-auth";
+import { createScoopAlphaInvite } from "../../../lib/scoop-alpha-approval";
+import { sendScoopAlphaInviteEmail } from "../../../lib/scoop-alpha-email";
+import { addSalesInteraction, getSalesOrganizationDetail } from "../../../lib/sales-store";
 import {
   VISUAL_COMMERCE_CUSTOMER_TYPES,
   VISUAL_COMMERCE_EMAIL_TYPES,
@@ -30,8 +33,8 @@ function optionalIso(input: string): string | null {
   return date.toISOString();
 }
 
-function redirect(res: NextApiResponse, organizationId: string) {
-  return res.redirect(303, `/internal/sales/visual-commerce/${encodeURIComponent(organizationId)}?updated=1`);
+function redirect(res: NextApiResponse, organizationId: string, extra = "updated=1") {
+  return res.redirect(303, `/internal/sales/visual-commerce/${encodeURIComponent(organizationId)}?${extra}`);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -80,6 +83,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
       await upsertSalesVisualCommerceProfile(organizationId, patch);
       return redirect(res, organizationId);
+    }
+
+    if (action === "approve_alpha") {
+      const contactId = value(req.body, "contactId");
+      if (!contactId) return res.status(400).json({ error: "Contact id is required." });
+
+      const detail = await getSalesOrganizationDetail(organizationId);
+      if (!detail || detail.organization.experiment !== "VISUAL_COMMERCE") {
+        return res.status(404).json({ error: "Visual Commerce lead not found." });
+      }
+      if (detail.organization.doNotContact) {
+        return res.status(400).json({ error: "This lead is marked do not contact." });
+      }
+
+      const contact = detail.contacts.find((candidate) => candidate.id === contactId);
+      if (!contact?.name || !contact.email) {
+        return res.status(400).json({ error: "A contact name and email are required before alpha approval." });
+      }
+
+      const inviteId = `crm-${contact.id}`;
+      const invite = await createScoopAlphaInvite(inviteId);
+      await sendScoopAlphaInviteEmail({
+        name: contact.name,
+        email: contact.email,
+        inviteUrl: invite.invite_url,
+      });
+
+      await addSalesInteraction({
+        organizationId,
+        contactId,
+        channel: "EMAIL",
+        direction: "OUTBOUND",
+        interactionType: "ALPHA_INVITE",
+        occurredAt: new Date().toISOString(),
+        subject: "Scoop founding alpha invite sent",
+        summary: `Approved for Scoop founding alpha. Personal invite sent to ${contact.email}. Invite expires in 7 days and supports up to 2 installs.`,
+      });
+
+      return redirect(res, organizationId, "alpha=sent");
     }
 
     if (action === "update_contact_metadata") {
