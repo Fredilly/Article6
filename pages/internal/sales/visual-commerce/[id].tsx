@@ -18,6 +18,7 @@ interface Props {
   searchEntries: ReturnType<typeof buildSalesMemorySearchEntries>;
   initialQuery: string;
   initialStatus: "ALL" | SalesOrganizationDetail["organization"]["status"];
+  alphaResult: "" | "sent";
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ params, query }) => {
@@ -35,6 +36,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ params, qu
       searchEntries: buildSalesMemorySearchEntries(homepageData.details),
       initialQuery: typeof query.q === "string" ? query.q : "",
       initialStatus,
+      alphaResult: query.alpha === "sent" ? "sent" : "",
     },
   };
 };
@@ -52,7 +54,7 @@ function Field({ name, children }: { name: string; children: ReactNode }) {
   return <div><dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{name}</dt><dd className="mt-1 font-medium text-gray-900">{children}</dd></div>;
 }
 
-export default function VisualCommerceOrganizationPage({ detail, profile, contacts, searchEntries, initialQuery, initialStatus }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function VisualCommerceOrganizationPage({ detail, profile, contacts, searchEntries, initialQuery, initialStatus, alphaResult }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { organization, interactions } = detail;
   const lastInteraction = interactions.length ? interactions[interactions.length - 1]?.occurredAt : undefined;
   const conversations = groupSalesInteractions(interactions);
@@ -64,6 +66,8 @@ export default function VisualCommerceOrganizationPage({ detail, profile, contac
     <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900"><div className="mx-auto max-w-6xl">
       <Link href="/internal/sales" className="text-sm font-medium text-forest-700">← Sales memory</Link>
       <SalesHeader entries={searchEntries} initialQuery={initialQuery} initialStatus={initialStatus} />
+
+      {alphaResult === "sent" ? <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">Scoop alpha invite sent.</div> : null}
 
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-bold tracking-tight">{organization.name}</h1><p className="mt-1 text-sm text-gray-600">{organization.domain || "No domain"}{organization.country ? ` · ${organization.country}` : ""}</p><span className="mt-2 inline-block rounded-full bg-fuchsia-50 px-2.5 py-1 text-xs font-semibold text-fuchsia-700">Visual Commerce</span></div><div className="text-right"><div className="text-sm font-semibold">{organization.status}</div>{organization.doNotContact ? <div className="mt-2 rounded bg-red-100 px-2 py-1 text-xs font-bold text-red-700">DO NOT CONTACT</div> : null}</div></div>
 
@@ -79,6 +83,7 @@ export default function VisualCommerceOrganizationPage({ detail, profile, contac
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"><h2 className="font-semibold">Contacts <span className="ml-1 text-xs font-normal text-gray-500">({detail.contacts.length})</span></h2>
           <div className="mt-3 space-y-3">{detail.contacts.length ? detail.contacts.map((contact) => { const metadata = metadataById.get(contact.id); return <div key={contact.id} className="rounded-md border border-gray-100 p-3 text-sm"><div className="flex items-start justify-between gap-2"><div><div className="font-medium">{contact.name}</div><div className="text-gray-600">{contact.title || "No title"}</div></div><Link href={`/internal/sales/visual-commerce/${organization.id}?contactId=${encodeURIComponent(contact.id)}`} className="text-xs font-medium text-forest-700 hover:underline">View history</Link></div><div className="mt-2 grid gap-1 text-xs text-gray-500 sm:grid-cols-2"><div>Email: {contact.email || "Not recorded"}</div><div>Email type: {metadata?.emailType || "Not recorded"}</div><div>Phone: {contact.phone || "Not recorded"}</div><div>WhatsApp: {metadata?.whatsapp || "Not recorded"}</div></div>
+            {contact.email && !organization.doNotContact ? <form method="post" action="/api/internal/visual-commerce" className="mt-3"><input type="hidden" name="action" value="approve_alpha" /><input type="hidden" name="organizationId" value={organization.id} /><input type="hidden" name="contactId" value={contact.id} /><button className="w-full rounded-md bg-[#1769FF] px-3 py-2 text-xs font-bold text-white hover:bg-[#0f5fe9] sm:w-auto">Approve for Scoop Alpha →</button></form> : null}
             <details className="mt-2"><summary className="cursor-pointer text-xs font-medium text-forest-700 hover:underline">Edit contact</summary><form method="post" action="/api/internal/sales" className="mt-2 grid gap-2 rounded border border-gray-200 bg-gray-50 p-2"><input type="hidden" name="action" value="update_contact" /><input type="hidden" name="organizationId" value={organization.id} /><input type="hidden" name="contactId" value={contact.id} /><input required name="name" defaultValue={contact.name} className={fieldClass} /><input name="title" defaultValue={contact.title} placeholder="Title" className={fieldClass} /><input name="email" type="email" defaultValue={contact.email} placeholder="Email" className={fieldClass} /><input name="phone" defaultValue={contact.phone} placeholder="Phone" className={fieldClass} /><textarea name="notes" defaultValue={contact.notes} placeholder="Notes" className={fieldClass} /><button className="rounded bg-forest-700 px-3 py-2 text-xs font-medium text-white">Save contact</button></form></details>
             <details className="mt-2"><summary className="cursor-pointer text-xs font-medium text-forest-700 hover:underline">Edit VCL contact metadata</summary><form method="post" action="/api/internal/visual-commerce" className="mt-2 grid gap-2 rounded border border-gray-200 bg-gray-50 p-2"><input type="hidden" name="action" value="update_contact_metadata" /><input type="hidden" name="organizationId" value={organization.id} /><input type="hidden" name="contactId" value={contact.id} /><select name="emailType" defaultValue={metadata?.emailType || ""} className={fieldClass}><option value="">Email type</option><option>DIRECT</option><option>DEPARTMENT</option><option>GENERAL</option><option>NOT_VERIFIED</option></select><input name="whatsapp" defaultValue={metadata?.whatsapp} placeholder="WhatsApp" className={fieldClass} /><input name="sourceUrl" defaultValue={metadata?.sourceUrl} placeholder="Evidence URL" className={fieldClass} /><button className="rounded bg-gray-900 px-3 py-2 text-xs font-medium text-white">Save metadata</button></form></details>
           </div>; }) : <p className="text-sm text-gray-500">No contacts yet.</p>}</div>
