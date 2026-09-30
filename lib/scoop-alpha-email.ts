@@ -76,7 +76,28 @@ export function validScoopInviteUrl(value: string): boolean {
   }
 }
 
-export async function sendScoopAlphaInviteEmail(input: { name: string; email: string; inviteUrl: string }): Promise<void> {
+export type ScoopAlphaEmailResult = {
+  id: string;
+  status: string;
+};
+
+const FAILURE_STATUSES = new Set(['suppressed', 'bounced', 'failed']);
+
+async function readResendStatus(apiKey: string, id: string): Promise<string> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt) await new Promise((resolve) => setTimeout(resolve, 500));
+    const response = await fetch(`https://api.resend.com/emails/${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!response.ok) continue;
+    const payload = await response.json().catch(() => ({})) as { last_event?: string; status?: string };
+    const status = String(payload.last_event || payload.status || '').trim().toLowerCase();
+    if (status) return status;
+  }
+  return 'sent';
+}
+
+export async function sendScoopAlphaInviteEmail(input: { name: string; email: string; inviteUrl: string }): Promise<ScoopAlphaEmailResult> {
   const name = input.name.trim().slice(0, 120);
   const email = input.email.trim().toLowerCase().slice(0, 254);
   const inviteUrl = input.inviteUrl.trim().slice(0, 2000);
@@ -113,4 +134,14 @@ export async function sendScoopAlphaInviteEmail(input: { name: string; email: st
     console.error('[scoop-alpha-email] Resend failed', { status: response.status, body: responseText });
     throw new Error('Invite created, but the email could not be sent.');
   }
+
+  const payload = await response.json().catch(() => ({})) as { id?: string };
+  const id = typeof payload.id === 'string' ? payload.id : '';
+  if (!id) throw new Error('Invite created, but Resend did not return an email id.');
+
+  const status = await readResendStatus(apiKey, id);
+  if (FAILURE_STATUSES.has(status)) {
+    return { id, status };
+  }
+  return { id, status };
 }
