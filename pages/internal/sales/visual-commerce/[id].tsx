@@ -18,7 +18,8 @@ interface Props {
   searchEntries: ReturnType<typeof buildSalesMemorySearchEntries>;
   initialQuery: string;
   initialStatus: "ALL" | SalesOrganizationDetail["organization"]["status"];
-  alphaResult: "" | "sent";
+  alphaResult: "" | "sent" | "failed";
+  alphaFailureReason: string;
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ params, query }) => {
@@ -36,7 +37,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ params, qu
       searchEntries: buildSalesMemorySearchEntries(homepageData.details),
       initialQuery: typeof query.q === "string" ? query.q : "",
       initialStatus,
-      alphaResult: query.alpha === "sent" ? "sent" : "",
+      alphaResult: query.alpha === "sent" ? "sent" : query.alpha === "failed" ? "failed" : "",
+      alphaFailureReason: typeof query.reason === "string" ? query.reason : "",
     },
   };
 };
@@ -54,7 +56,7 @@ function Field({ name, children }: { name: string; children: ReactNode }) {
   return <div><dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{name}</dt><dd className="mt-1 font-medium text-gray-900">{children}</dd></div>;
 }
 
-export default function VisualCommerceOrganizationPage({ detail, profile, contacts, searchEntries, initialQuery, initialStatus, alphaResult }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function VisualCommerceOrganizationPage({ detail, profile, contacts, searchEntries, initialQuery, initialStatus, alphaResult, alphaFailureReason }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { organization, interactions } = detail;
   const lastInteraction = interactions.length ? interactions[interactions.length - 1]?.occurredAt : undefined;
   const conversations = groupSalesInteractions(interactions);
@@ -73,6 +75,7 @@ export default function VisualCommerceOrganizationPage({ detail, profile, contac
       <SalesHeader entries={searchEntries} initialQuery={initialQuery} initialStatus={initialStatus} />
 
       {alphaResult === "sent" ? <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">Scoop alpha invite sent.</div> : null}
+      {alphaResult === "failed" ? <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">Scoop alpha invite failed{alphaFailureReason ? `: ${alphaFailureReason}` : ""}. Fix the email or retry approval.</div> : null}
 
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-bold tracking-tight">{organization.name}</h1><p className="mt-1 text-sm text-gray-600">{organization.domain || "No domain"}{organization.country ? ` · ${organization.country}` : ""}</p><span className="mt-2 inline-block rounded-full bg-fuchsia-50 px-2.5 py-1 text-xs font-semibold text-fuchsia-700">Visual Commerce</span></div><div className="text-right"><div className="text-sm font-semibold">{organization.status}</div>{organization.doNotContact ? <div className="mt-2 rounded bg-red-100 px-2 py-1 text-xs font-bold text-red-700">DO NOT CONTACT</div> : null}</div></div>
 

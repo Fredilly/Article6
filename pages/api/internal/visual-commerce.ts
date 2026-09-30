@@ -109,11 +109,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const inviteId = `crm-${contact.id}`;
       const invite = await createScoopAlphaInvite(inviteId);
-      await sendScoopAlphaInviteEmail({
+      const emailResult = await sendScoopAlphaInviteEmail({
         name: contact.name,
         email: contact.email,
         inviteUrl: invite.invite_url,
       });
+
+      if (["suppressed", "bounced", "failed"].includes(emailResult.status)) {
+        await addSalesInteraction({
+          organizationId,
+          contactId,
+          channel: "EMAIL",
+          direction: "OUTBOUND",
+          interactionType: "ALPHA_INVITE_FAILED",
+          occurredAt: new Date().toISOString(),
+          subject: "Scoop founding alpha invite failed",
+          summary: `Scoop alpha invite was not delivered to ${contact.email}. Resend status: ${emailResult.status}.`,
+          outcomeCode: emailResult.status.toUpperCase(),
+          externalReference: emailResult.id,
+        });
+        return redirect(res, organizationId, `alpha=failed&reason=${encodeURIComponent(emailResult.status)}`);
+      }
 
       await addSalesInteraction({
         organizationId,
@@ -123,7 +139,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         interactionType: "ALPHA_INVITE",
         occurredAt: new Date().toISOString(),
         subject: "Scoop founding alpha invite sent",
-        summary: `Approved for Scoop founding alpha. Personal invite sent to ${contact.email}. Invite expires in 7 days and supports up to 2 installs.`,
+        summary: `Approved for Scoop founding alpha. Personal invite sent to ${contact.email}. Resend status: ${emailResult.status}. Invite expires in 7 days and supports up to 2 installs.`,
+        outcomeCode: emailResult.status.toUpperCase(),
+        externalReference: emailResult.id,
       });
 
       return redirect(res, organizationId, "alpha=sent");
