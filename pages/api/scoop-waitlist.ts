@@ -36,7 +36,7 @@ function isBrowserForm(req: NextApiRequest): boolean {
 }
 
 function redirectToScoop(res: NextApiResponse, ok: boolean) {
-  return res.redirect(303, ok ? 'https://scoop.article6.org/?joined=1#waitlist' : 'https://scoop.article6.org/?join_error=1#waitlist');
+  return res.redirect(303, ok ? 'https://scoop.article6.org/waitlist-callback?joined=1' : 'https://scoop.article6.org/waitlist-callback?join_error=1');
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
