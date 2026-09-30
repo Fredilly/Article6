@@ -48,6 +48,17 @@ function cleanHandle(value?: string): string {
   return handle.startsWith('@') ? handle : `@${handle}`;
 }
 
+function normalizeSocialUrl(platform: 'youtube' | 'instagram' | 'tiktok', value?: string): string {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const handle = raw.replace(/^@/, '').replace(/^\/+/, '');
+  if (!handle) return '';
+  if (platform === 'youtube') return `https://www.youtube.com/@${handle}`;
+  if (platform === 'instagram') return `https://www.instagram.com/${handle}/`;
+  return `https://www.tiktok.com/@${handle}`;
+}
+
 function personaLabel(persona: ScoopWaitlistPersona): string {
   if (persona === 'CREATOR') return 'Creator / Influencer';
   if (persona === 'SHOPPER') return 'Shopper';
@@ -92,17 +103,19 @@ function notesFor(input: ScoopWaitlistInput): string {
   return lines.join('\n');
 }
 
-function profileCustomerType(persona: ScoopWaitlistPersona): 'CREATOR' | 'ECOMMERCE_BRAND' | undefined {
+function profileCustomerType(persona: ScoopWaitlistPersona): 'CREATOR' | 'ECOMMERCE_BRAND' | 'SHOPPER' | 'DEVELOPER' | 'OTHER' {
   if (persona === 'CREATOR') return 'CREATOR';
   if (persona === 'BRAND_RETAILER') return 'ECOMMERCE_BRAND';
-  return undefined;
+  if (persona === 'SHOPPER') return 'SHOPPER';
+  if (persona === 'DEVELOPER') return 'DEVELOPER';
+  return 'OTHER';
 }
 
 function creatorChannelPatch(input: ScoopWaitlistInput): { youtubeUrl?: string; instagramUrl?: string; tiktokUrl?: string } {
   const direct = {
-    youtubeUrl: cleanHandle(input.youtubeUrl),
-    instagramUrl: cleanHandle(input.instagramUrl),
-    tiktokUrl: cleanHandle(input.tiktokUrl),
+    youtubeUrl: normalizeSocialUrl('youtube', input.youtubeUrl),
+    instagramUrl: normalizeSocialUrl('instagram', input.instagramUrl),
+    tiktokUrl: normalizeSocialUrl('tiktok', input.tiktokUrl),
   };
 
   const legacyHandle = cleanHandle(input.handle);
@@ -205,7 +218,7 @@ export async function storeScoopWaitlist(input: ScoopWaitlistInput): Promise<{
     );
 
     const customerType = profileCustomerType(input.persona);
-    if (customerType) {
+    {
       const channelPatch = creatorChannelPatch(input);
       await client.query(
         `INSERT INTO sales_visual_commerce_profiles
@@ -223,7 +236,15 @@ export async function storeScoopWaitlist(input: ScoopWaitlistInput): Promise<{
         [
           organizationId,
           customerType,
-          input.persona === 'CREATOR' ? 'Creator / influencer alpha tester' : 'Brand / retailer visual commerce lead',
+          input.persona === 'CREATOR'
+            ? 'Creator / influencer alpha tester'
+            : input.persona === 'BRAND_RETAILER'
+              ? 'Brand / retailer visual commerce lead'
+              : input.persona === 'SHOPPER'
+                ? 'Viewer / shopper alpha tester'
+                : input.persona === 'DEVELOPER'
+                  ? 'Developer alpha tester'
+                  : 'Scoop alpha tester',
           'Inbound Scoop waitlist signup. Self-identified; not yet qualified.',
           sourceUrl,
           channelPatch.youtubeUrl || null,
