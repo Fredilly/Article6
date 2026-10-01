@@ -45,3 +45,12 @@ test("project deletion is confirmation-gated, transactional, and preserves non-p
   assert.match(page, /Linked organization relationships, project contacts, documents/);
   assert.match(page, /The organization and contacts will be preserved/);
 });
+
+
+test("GitHub CRM automation supports confirmation-gated organization deletion", () => {
+  const route = fs.readFileSync(new URL("../pages/api/internal/crm-automation.ts", import.meta.url), "utf8");
+  assert.match(route, /operation: "delete_organization"/);
+  assert.match(route, /hasDeleteConfirmation\(command\.confirmation\)/);
+  assert.match(route, /deleteSalesOrganization\(organization\.id\)/);
+  assert.match(route, /CRM organization deletion verification failed/);
+});
