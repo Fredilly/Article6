@@ -54,3 +54,17 @@ test("GitHub CRM automation supports confirmation-gated organization deletion", 
   assert.match(route, /deleteSalesOrganization\(organization\.id\)/);
   assert.match(route, /CRM organization deletion verification failed/);
 });
+
+
+test("organization deletion removes interactions before relationship links", () => {
+  const store = fs.readFileSync(new URL("../lib/sales-store.ts", import.meta.url), "utf8");
+  const interactionDelete = store.indexOf("DELETE FROM sales_interactions WHERE organization_id = $1");
+  const relationshipDelete = store.indexOf("DELETE FROM sales_organization_projects WHERE organization_id = $1");
+  const organizationDelete = store.indexOf("DELETE FROM sales_organizations WHERE id = $1 RETURNING id");
+  assert.ok(interactionDelete >= 0);
+  assert.ok(relationshipDelete > interactionDelete);
+  assert.ok(organizationDelete > relationshipDelete);
+  assert.match(store, /await client\.query\("BEGIN"\)/);
+  assert.match(store, /await client\.query\("COMMIT"\)/);
+  assert.match(store, /await client\.query\("ROLLBACK"\)/);
+});
