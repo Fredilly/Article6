@@ -6,6 +6,7 @@ import {
   createSalesOrganization,
   createSalesTenderOpportunity,
   deleteSalesInteraction,
+  deleteSalesOrganization,
   getSalesOrganizationDetail,
   listSalesOrganizations,
   updateSalesContact,
@@ -20,6 +21,7 @@ import {
   type SalesObjectionCode,
   type SalesOrganizationStatus,
 } from "../../../lib/sales-memory";
+import { hasDeleteConfirmation } from "../../../lib/sales-destructive-actions";
 import {
   getSalesInteractionSignals,
   getSalesProcurementProfile,
@@ -139,6 +141,13 @@ interface DeleteInteractionCommand {
   interactionId: string;
 }
 
+interface DeleteOrganizationCommand {
+  version: 1;
+  operation: "delete_organization";
+  organization: OrganizationSelector;
+  confirmation: string;
+}
+
 interface InspectOrganizationCommand {
   version: 1;
   operation: "inspect_organization";
@@ -166,6 +175,7 @@ type CrmAutomationCommand =
   | CreateTenderCommand
   | UpdateOrganizationCommand
   | DeleteInteractionCommand
+  | DeleteOrganizationCommand
   | InspectOrganizationCommand
   | InspectProcurementProfileCommand
   | UpsertProcurementProfileCommand;
@@ -563,6 +573,15 @@ async function deleteInteraction(command: DeleteInteractionCommand) {
   return { organizationId: organization.id, organizationName: organization.name, interactionId, deleted: true };
 }
 
+async function deleteOrganization(command: DeleteOrganizationCommand) {
+  if (!hasDeleteConfirmation(command.confirmation)) throw new Error("Type delete to confirm organization deletion.");
+  const organization = await resolveOrganization(command.organization);
+  await deleteSalesOrganization(organization.id);
+  const verified = await getSalesOrganizationDetail(organization.id);
+  if (verified) throw new Error("CRM organization deletion verification failed.");
+  return { organizationId: organization.id, organizationName: organization.name, deleted: true };
+}
+
 async function inspectOrganization(command: InspectOrganizationCommand) {
   const organization = await resolveOrganization(command.organization);
   const detail = await getSalesOrganizationDetail(organization.id);
@@ -660,8 +679,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               ? await updateOrganization(command)
               : command.operation === "delete_interaction"
                 ? await deleteInteraction(command)
-                : command.operation === "inspect_organization"
-                  ? await inspectOrganization(command)
+                : command.operation === "delete_organization"
+                  ? await deleteOrganization(command)
+                  : command.operation === "inspect_organization"
+                    ? await inspectOrganization(command)
                   : command.operation === "inspect_procurement_profile"
                     ? await inspectProcurementProfile(command)
                     : command.operation === "upsert_procurement_profile"
