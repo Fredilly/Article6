@@ -361,8 +361,22 @@ export async function deleteSalesContact(organizationId: string, contactId: stri
 }
 
 export async function deleteSalesOrganization(organizationId: string): Promise<void> {
-  const result = await getPool().query("DELETE FROM sales_organizations WHERE id = $1 RETURNING id", [organizationId]);
-  if (!result.rows[0]) throw new Error("Organization not found.");
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    // Interactions can hold the composite project/organization relationship FK,
+    // so remove them before deleting organization-project links.
+    await client.query("DELETE FROM sales_interactions WHERE organization_id = $1", [organizationId]);
+    await client.query("DELETE FROM sales_organization_projects WHERE organization_id = $1", [organizationId]);
+    const result = await client.query("DELETE FROM sales_organizations WHERE id = $1 RETURNING id", [organizationId]);
+    if (!result.rows[0]) throw new Error("Organization not found.");
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function mergeSalesOrganizations(sourceId: string, targetId: string): Promise<void> {
