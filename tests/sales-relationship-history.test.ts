@@ -173,3 +173,14 @@ test("canonical CRM email messages use concise summaries, not full email bodies"
   assert.doesNotMatch(automation, /Email body is required/);
   assert.match(automation, /summary: email\.summary\.trim\(\)/);
 });
+
+
+test("visual commerce relationship history uses the same sender-footer message layout", () => {
+  const page = fs.readFileSync(new URL("../pages/internal/sales/visual-commerce/[id].tsx", import.meta.url), "utf8");
+  assert.match(page, /relationshipHistoryPresentation/);
+  assert.match(page, /addressLabel = interaction\.direction === "INBOUND" \? "From" : "To"/);
+  assert.match(page, /presentation\.actorName/);
+  assert.match(page, /items-end/);
+  assert.match(page, /items-start/);
+  assert.match(page, /border-blue-100 bg-blue-50/);
+});
