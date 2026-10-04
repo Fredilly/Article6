@@ -71,6 +71,24 @@ interface RecordInteractionCommand {
   };
 }
 
+interface RecordEmailMessageCommand {
+  version: 1;
+  operation: "record_email_message";
+  organization: OrganizationSelector;
+  email: {
+    occurredAt: string;
+    direction: "OUTBOUND" | "INBOUND";
+    subject: string;
+    body: string;
+    gmailMessageId: string;
+    gmailThreadId: string;
+    contactId?: string;
+    contactEmail?: string;
+    contactName?: string;
+  };
+  organizationUpdate?: RecordInteractionCommand["organizationUpdate"];
+}
+
 interface CreateOrganizationCommand {
   version: 1;
   operation: "create_organization";
@@ -170,6 +188,7 @@ interface UpsertProcurementProfileCommand {
 
 type CrmAutomationCommand =
   | RecordInteractionCommand
+  | RecordEmailMessageCommand
   | CreateOrganizationCommand
   | UpsertContactCommand
   | CreateTenderCommand
@@ -406,6 +425,36 @@ async function recordInteraction(command: RecordInteractionCommand) {
     hypothesisKey: verifiedSignals.hypothesisKey || null,
     verifiedFromDatabase: true,
   };
+}
+
+async function recordEmailMessage(command: RecordEmailMessageCommand) {
+  const email = command.email;
+  if (!email?.occurredAt?.trim()) throw new Error("Email occurredAt is required.");
+  if (email.direction !== "OUTBOUND" && email.direction !== "INBOUND") throw new Error("Email direction must be OUTBOUND or INBOUND.");
+  if (!email.subject?.trim()) throw new Error("Email subject is required.");
+  if (!email.body?.trim()) throw new Error("Email body is required.");
+  if (!email.gmailMessageId?.trim()) throw new Error("Gmail message id is required.");
+  if (!email.gmailThreadId?.trim()) throw new Error("Gmail thread id is required.");
+
+  return recordInteraction({
+    version: 1,
+    operation: "record_interaction",
+    organization: command.organization,
+    interaction: {
+      occurredAt: email.occurredAt,
+      channel: "EMAIL",
+      direction: email.direction,
+      interactionType: "MESSAGE",
+      subject: email.subject.trim(),
+      summary: email.body.trim(),
+      externalReference: `gmail:${email.gmailMessageId.trim()}`,
+      gmailThreadId: email.gmailThreadId.trim(),
+      contactId: email.contactId?.trim(),
+      contactEmail: email.contactEmail?.trim(),
+      contactName: email.contactName?.trim(),
+    },
+    organizationUpdate: command.organizationUpdate,
+  });
 }
 
 async function createOrganization(command: CreateOrganizationCommand) {
@@ -667,8 +716,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: "Invalid CRM automation command." });
     }
 
-    const result = command.operation === "record_interaction"
-      ? await recordInteraction(command)
+    const result = command.operation === "record_email_message"
+      ? await recordEmailMessage(command)
+      : command.operation === "record_interaction"
+        ? await recordInteraction(command)
       : command.operation === "create_organization"
         ? await createOrganization(command)
         : command.operation === "upsert_contact"
