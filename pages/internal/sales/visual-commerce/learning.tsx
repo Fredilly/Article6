@@ -1,3 +1,4 @@
+import { isLearningReaderAuthorization } from "../../../../lib/scoop-reader-auth.ts";
 import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
@@ -7,13 +8,19 @@ interface Props {
   report: ScoopLearningReport | null;
   error: string;
   reviewed: string;
+  readOnly: boolean;
 }
 
-export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => {
+export const getServerSideProps: GetServerSideProps<Props> = async ({ query, req, res }) => {
+  const readOnly = isLearningReaderAuthorization(req.headers.authorization, process.env);
+  res.setHeader("Cache-Control", "private, no-store");
   try {
     return {
       props: {
-        report: await getScoopLearningReport(),
+        report: readOnly
+          ? readerReport(await getScoopLearningReport())
+          : await getScoopLearningReport(),
+        readOnly,
         error: typeof query.error === "string" ? query.error : "",
         reviewed: typeof query.reviewed === "string" ? query.reviewed : "",
       },
@@ -22,12 +29,45 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     return {
       props: {
         report: null,
-        error: error instanceof Error ? error.message : "Could not load Scoop learning data.",
+        readOnly,
+        error: !readOnly && error instanceof Error ? error.message : "Could not load Scoop learning data.",
         reviewed: "",
       },
     };
   }
 };
+
+// Only send fields displayed by this dashboard to the restricted reader.
+// In particular, omit raw corrections, session identifiers and evidence keys.
+function readerReport(report: ScoopLearningReport): ScoopLearningReport {
+  return {
+    session_id: null,
+    totals: report.totals,
+    learning: report.learning,
+    corrections: [],
+    failure_categories: report.failure_categories.map(({ category, subcategory, failures }) => ({ category, subcategory, failures })),
+    repeated_bad_candidates: report.repeated_bad_candidates.map(({ candidate_key, wrong_count, correct_count }) => ({ candidate_key, wrong_count, correct_count })),
+    provider_query_patterns: report.provider_query_patterns.map(({ provider, corrections }) => ({ provider, corrections })),
+    learning_queue: report.learning_queue.map((item) => ({
+      event_id: item.event_id,
+      result_id: item.result_id,
+      feedback_type: item.feedback_type,
+      result_class: item.result_class,
+      created_at: item.created_at,
+      brand: item.brand,
+      model: item.model,
+      category: item.category,
+      subcategory: item.subcategory,
+      provider: item.provider,
+      vision_model: item.vision_model,
+      visible_text_json: item.visible_text_json,
+      logos_markings_json: item.logos_markings_json,
+      distinctive_features_json: item.distinctive_features_json,
+      latency_ms: item.latency_ms,
+      verification_cost_usd: item.verification_cost_usd,
+    })),
+  };
+}
 
 function n(value: unknown): number {
   const parsed = Number(value ?? 0);
@@ -70,7 +110,7 @@ function Stat({ label, value, note }: { label: string; value: string | number; n
   </div>;
 }
 
-export default function ScoopLearningDashboard({ report, error, reviewed }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function ScoopLearningDashboard({ report, error, reviewed, readOnly }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const learning = report?.learning ?? {};
   const totals = report?.totals ?? {};
   const scoops = n(learning.scoop_count);
@@ -90,7 +130,7 @@ export default function ScoopLearningDashboard({ report, error, reviewed }: Infe
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Link href="/internal/sales" className="text-sm font-medium text-forest-700 hover:underline">← Sales memory</Link>
+            {readOnly ? <span className="text-sm font-medium text-gray-500">Read-only reviewer</span> : <Link href="/internal/sales" className="text-sm font-medium text-forest-700 hover:underline">← Sales memory</Link>}
             <p className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-[#1769FF]">Scoop Founding Alpha</p>
             <h1 className="mt-1 text-3xl font-bold tracking-tight">Alpha Learning</h1>
             <p className="mt-2 max-w-2xl text-sm text-gray-600">What testers are teaching Scoop: outcomes, failure patterns, corrections, cost and reusable product memory.</p>
@@ -191,7 +231,7 @@ export default function ScoopLearningDashboard({ report, error, reviewed }: Infe
                       </div>
                     </div>
 
-                    <div className="space-y-3">
+                    {!readOnly ? <div className="space-y-3">
                       <form method="post" action="/api/internal/scoop-learning" className="flex flex-wrap gap-2">
                         <input type="hidden" name="event_id" value={item.event_id} />
                         <input type="hidden" name="result_id" value={item.result_id} />
@@ -213,7 +253,7 @@ export default function ScoopLearningDashboard({ report, error, reviewed }: Infe
                           <button className="rounded-md bg-[#1769FF] px-3 py-2 text-sm font-bold text-white">Add to Product Memory</button>
                         </form>
                       </details>
-                    </div>
+                    </div> : null}
                   </div>
                 </article>;
               })}
