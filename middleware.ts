@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isLearningReaderAuthorization, isLearningReaderActive, isLearningReaderRequestAllowed } from "./lib/scoop-reader-auth.ts";
 import { createInternalSessionToken, INTERNAL_SESSION_COOKIE } from "./lib/internal-auth";
 
 export const config = { matcher: ["/internal/:path*"] };
@@ -14,6 +15,20 @@ function unauthorized(message = "Authentication required.") {
 }
 
 export default async function middleware(request: NextRequest) {
+  if (isLearningReaderAuthorization(request.headers.get("authorization"), process.env)) {
+    if (!isLearningReaderActive(process.env)) {
+      return new NextResponse("Learning reviewer access has expired.", { status: 403 });
+    }
+    if (!isLearningReaderRequestAllowed(request.nextUrl.pathname, request.method)) {
+      return new NextResponse("Learning reviewer access is restricted to reading the learning page.", { status: 403 });
+    }
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "private, no-store");
+    // Clear a previous admin cookie when switching identities in the same browser.
+    response.cookies.delete(INTERNAL_SESSION_COOKIE);
+    return response;
+  }
+
   const adminUsername = process.env.INTERNAL_UPLOAD_USERNAME;
   const adminPassword = process.env.INTERNAL_UPLOAD_PASSWORD;
   if (!adminUsername || !adminPassword) {
