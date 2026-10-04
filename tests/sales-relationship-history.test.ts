@@ -149,11 +149,11 @@ test("CRM email automation has one canonical message schema", () => {
   assert.match(automation, /operation: "record_email_message"/);
   assert.match(automation, /direction: "OUTBOUND" \| "INBOUND"/);
   assert.match(automation, /subject: string/);
-  assert.match(automation, /body: string/);
+  assert.match(automation, /summary: string/);
   assert.match(automation, /gmailMessageId: string/);
   assert.match(automation, /gmailThreadId: string/);
   assert.match(automation, /interactionType: "MESSAGE"/);
-  assert.match(automation, /summary: email\.body\.trim\(\)/);
+  assert.match(automation, /summary: email\.summary\.trim\(\)/);
   assert.match(automation, /externalReference: \`gmail:\$\{email\.gmailMessageId\.trim\(\)\}\`/);
 });
 
@@ -164,4 +164,12 @@ test("relationship history remains the canonical chronological message presentat
   assert.match(page, /new Date\(interaction\.occurredAt\)\.toLocaleString\(\)/);
   assert.match(page, /presentation\.actorName/);
   assert.match(page, /addressLabel = interaction\.direction === "INBOUND" \? "From" : "To"/);
+});
+
+
+test("canonical CRM email messages use concise summaries, not full email bodies", () => {
+  const automation = fs.readFileSync(new URL("../pages/api/internal/crm-automation.ts", import.meta.url), "utf8");
+  assert.match(automation, /Email summary is required/);
+  assert.doesNotMatch(automation, /Email body is required/);
+  assert.match(automation, /summary: email\.summary\.trim\(\)/);
 });

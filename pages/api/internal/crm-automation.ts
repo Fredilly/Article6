@@ -79,7 +79,7 @@ interface RecordEmailMessageCommand {
     occurredAt: string;
     direction: "OUTBOUND" | "INBOUND";
     subject: string;
-    body: string;
+    summary: string;
     gmailMessageId: string;
     gmailThreadId: string;
     contactId?: string;
@@ -432,7 +432,7 @@ async function recordEmailMessage(command: RecordEmailMessageCommand) {
   if (!email?.occurredAt?.trim()) throw new Error("Email occurredAt is required.");
   if (email.direction !== "OUTBOUND" && email.direction !== "INBOUND") throw new Error("Email direction must be OUTBOUND or INBOUND.");
   if (!email.subject?.trim()) throw new Error("Email subject is required.");
-  if (!email.body?.trim()) throw new Error("Email body is required.");
+  if (!email.summary?.trim()) throw new Error("Email summary is required.");
   if (!email.gmailMessageId?.trim()) throw new Error("Gmail message id is required.");
   if (!email.gmailThreadId?.trim()) throw new Error("Gmail thread id is required.");
 
@@ -446,7 +446,7 @@ async function recordEmailMessage(command: RecordEmailMessageCommand) {
       direction: email.direction,
       interactionType: "MESSAGE",
       subject: email.subject.trim(),
-      summary: email.body.trim(),
+      summary: email.summary.trim(),
       externalReference: `gmail:${email.gmailMessageId.trim()}`,
       gmailThreadId: email.gmailThreadId.trim(),
       contactId: email.contactId?.trim(),
