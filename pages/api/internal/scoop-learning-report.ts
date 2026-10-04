@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { isLearningReaderActive, isLearningReaderAuthorization } from "../../../lib/scoop-reader-auth";
 import { getScoopLearningReport } from "../../../lib/scoop-learning";
-import { sanitizeScoopLearningReport } from "../../../lib/scoop-learning-reader";
+import { aggregateScoopLearningReport } from "../../../lib/scoop-learning-reader";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "private, no-store");
@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const report = sanitizeScoopLearningReport(await getScoopLearningReport());
+    const report = aggregateScoopLearningReport(await getScoopLearningReport());
     if (req.method === "HEAD") return res.status(200).end();
     return res.status(200).json(report);
   } catch {
