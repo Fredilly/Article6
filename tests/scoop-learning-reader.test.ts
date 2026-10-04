@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { sanitizeScoopLearningReport } from "../lib/scoop-learning-reader";
+import { sanitizeScoopLearningReport } from "../lib/scoop-learning-reader.ts";
 import type { ScoopLearningReport } from "../lib/scoop-learning";
 
 test("sanitized Scoop learning report removes sensitive and raw fields", () => {
