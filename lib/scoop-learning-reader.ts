@@ -40,3 +40,31 @@ export function sanitizeScoopLearningReport(report: ScoopLearningReport): ScoopL
     })),
   };
 }
+
+
+export type ScoopLearningAggregateReport = {
+  totals: ScoopLearningReport["totals"];
+  learning: ScoopLearningReport["learning"];
+  failure_categories: ScoopLearningReport["failure_categories"];
+  provider_corrections: Array<{ provider?: string; corrections?: number }>;
+  repeated_bad_candidate_count: number;
+  unresolved_learning_items: number;
+};
+
+export function aggregateScoopLearningReport(report: ScoopLearningReport): ScoopLearningAggregateReport {
+  return {
+    totals: report.totals,
+    learning: report.learning,
+    failure_categories: report.failure_categories.map(({ category, subcategory, failures }) => ({
+      category,
+      subcategory,
+      failures,
+    })),
+    provider_corrections: report.provider_query_patterns.map(({ provider, corrections }) => ({
+      provider,
+      corrections,
+    })),
+    repeated_bad_candidate_count: report.repeated_bad_candidates.length,
+    unresolved_learning_items: report.learning_queue.length,
+  };
+}
