@@ -173,3 +173,10 @@ test("canonical CRM email messages use concise summaries, not full email bodies"
   assert.doesNotMatch(automation, /Email body is required/);
   assert.match(automation, /summary: email\.summary\.trim\(\)/);
 });
+
+
+test("relationship message cards render the sender as a footer beneath the bubble", () => {
+  const page = fs.readFileSync(new URL("../pages/internal/sales/organizations/[id].tsx", import.meta.url), "utf8");
+  const bubbleEnd = page.indexOf("</div><div className=\"mt-1 px-1 text-xs font-medium text-gray-500\">{presentation.actorName}</div>");
+  assert.ok(bubbleEnd >= 0, "sender footer must render immediately beneath each message bubble");
+});
