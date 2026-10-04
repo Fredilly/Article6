@@ -142,3 +142,26 @@ test("unlinked messages remain separate when nearby threads are ambiguous", () =
   assert.equal(conversations.length, 3);
   assert.equal(conversations[2]?.contactName, undefined);
 });
+
+
+test("CRM email automation has one canonical message schema", () => {
+  const automation = fs.readFileSync(new URL("../pages/api/internal/crm-automation.ts", import.meta.url), "utf8");
+  assert.match(automation, /operation: "record_email_message"/);
+  assert.match(automation, /direction: "OUTBOUND" \| "INBOUND"/);
+  assert.match(automation, /subject: string/);
+  assert.match(automation, /body: string/);
+  assert.match(automation, /gmailMessageId: string/);
+  assert.match(automation, /gmailThreadId: string/);
+  assert.match(automation, /interactionType: "MESSAGE"/);
+  assert.match(automation, /summary: email\.body\.trim\(\)/);
+  assert.match(automation, /externalReference: \`gmail:\$\{email\.gmailMessageId\.trim\(\)\}\`/);
+});
+
+test("relationship history remains the canonical chronological message presentation", () => {
+  const page = fs.readFileSync(new URL("../pages/internal/sales/organizations/[id].tsx", import.meta.url), "utf8");
+  assert.match(page, /Relationship history/);
+  assert.match(page, /oldest message first/);
+  assert.match(page, /new Date\(interaction\.occurredAt\)\.toLocaleString\(\)/);
+  assert.match(page, /presentation\.actorName/);
+  assert.match(page, /addressLabel = interaction\.direction === "INBOUND" \? "From" : "To"/);
+});
