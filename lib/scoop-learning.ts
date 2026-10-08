@@ -79,6 +79,8 @@ export type ScoopLearningReviewInput = {
     title?: string;
     brand?: string;
     image_reference?: string;
+    sku?: string;
+    object_type?: string;
   };
 };
 

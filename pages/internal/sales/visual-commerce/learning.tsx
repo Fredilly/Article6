@@ -171,7 +171,7 @@ export default function ScoopLearningDashboard({ report, error, reviewed, readOn
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-gray-100 px-5 py-4">
               <div>
                 <h2 className="font-semibold">Correction review queue</h2>
-                <p className="mt-1 text-xs text-gray-500">Resolve bad Scoops into useful learning. Verified products become canonical Product Memory.</p>
+                <p className="mt-1 text-xs text-gray-500">Resolve bad Scoops into useful learning. Reviewed corrections save candidate-only Product Memory. Exact matches still require visual verification.</p>
               </div>
               <span className="rounded-full bg-[#1769FF]/10 px-3 py-1 text-xs font-bold text-[#1769FF]">{queue.length} unresolved</span>
             </div>
@@ -216,10 +216,11 @@ export default function ScoopLearningDashboard({ report, error, reviewed, readOn
                           <input type="hidden" name="action" value="verify_product" />
                           <input name="brand" defaultValue={item.brand ?? ""} placeholder="Brand" className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm" />
                           <input name="title" placeholder="Correct product title" className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm" />
-                          <input required name="product_id" placeholder="SKU / model" className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm" />
+                          <input required name="product_id" placeholder="Exact SKU / variant ID" className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm" />
                           <input required name="destination" type="url" placeholder="Product URL" className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm" />
+                          <input name="image_reference" type="url" placeholder="Reference product image URL (optional when product page provides one)" className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm" />
                           <input name="note" placeholder="Optional note" className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm" />
-                          <button className="rounded-md bg-[#1769FF] px-3 py-2 text-sm font-bold text-white">Add to Product Memory</button>
+                          <button className="rounded-md bg-[#1769FF] px-3 py-2 text-sm font-bold text-white">Save corrected product</button>
                         </form>
                       </details>
                     </div> : null}
