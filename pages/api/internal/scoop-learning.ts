@@ -24,6 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           destination: value(req.body, "destination", 1200),
           id: value(req.body, "product_id", 160),
           model: value(req.body, "product_id", 160),
+          sku: value(req.body, "product_id", 160),
+          image_reference: value(req.body, "image_reference", 1200),
           title: value(req.body, "title", 300),
           brand: value(req.body, "brand", 120),
         }
