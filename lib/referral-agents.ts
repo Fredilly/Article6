@@ -56,7 +56,7 @@ export async function validateReferralSession(token: string): Promise<ReferralAg
   if(Buffer.byteLength(expected)!==Buffer.byteLength(provided)||!timingSafeEqual(Buffer.from(expected),Buffer.from(provided)))return null;
   let payload: {id?:string;v?:number;exp?:number};
   try { payload=JSON.parse(Buffer.from(parts[0],"base64url").toString("utf8")); } catch {return null;}
-  if(!payload.id||!Number.isFinite(payload.exp)||Number(payload.exp)<Date.now()||Number(payload.exp)>Date.now()+8*3600_000)return null;
+  if(!payload.id||typeof payload.exp!=="number"||!Number.isFinite(payload.exp)||payload.exp<Date.now()||payload.exp>Date.now()+8*3600_000)return null;
   const result=await db().query("SELECT * FROM sales_referral_agents WHERE id=$1 AND active=TRUE",[payload.id]);
   const row=result.rows[0];
   if(!row||row.session_version!==payload.v)return null;
