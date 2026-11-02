@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { timingSafeEqual } from "node:crypto";
 import { createSalesOrganization, addSalesContact, addSalesInteraction, updateSalesOrganizationState } from "../../../lib/sales-store";
 import { upsertSalesWebServiceProfile } from "../../../lib/sales-web-services";
-import { validateReferralSession } from "../../../lib/referral-agents";
+import { validateReferralSession, recordReferralAttribution } from "../../../lib/referral-agents";
 
 const text = (value: unknown, max = 500) => typeof value === "string" ? value.trim().slice(0, max) : "";
 function authorized(req: NextApiRequest) {
@@ -69,6 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       channel: "OTHER", direction: "INBOUND", interactionType: "NOTE",
       occurredAt: new Date().toISOString(), subject: "Partner website referral - " + agent.displayName, summary
     });
+    await recordReferralAttribution({ agentId:agent.id, organizationId:organization.id, contactId:contact.id, service, interest, budget, notes });
     return res.status(201).json({ ok: true });
   } catch (error) {
     console.error("Referral intake failed", error);
