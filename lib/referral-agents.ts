@@ -10,14 +10,14 @@ function db() {
   }
   return pool;
 }
-export type ReferralAgent = { id: string; username: string; displayName: string; active: boolean; createdAt: string };
+export type ReferralAgent = { id: string; username: string; displayName: string; active: boolean; createdAt: string; referralCount?: number };
 function publicAgent(row: any): ReferralAgent {
-  return { id: String(row.id), username: String(row.username), displayName: String(row.display_name), active: Boolean(row.active), createdAt: new Date(row.created_at).toISOString() };
+  return { id: String(row.id), username: String(row.username), displayName: String(row.display_name), active: Boolean(row.active), createdAt: new Date(row.created_at).toISOString(), ...(row.referral_count != null ? {referralCount:Number(row.referral_count)} : {}) };
 }
 function hashPassword(password: string, salt: string) {return scryptSync(password, Buffer.from(salt, "hex"), 64).toString("hex");}
 function generatePassword() {return randomBytes(21).toString("base64url");}
 export async function listReferralAgents() {
-  const result = await db().query("SELECT id, username, display_name, active, created_at FROM sales_referral_agents ORDER BY created_at DESC");
+  const result = await db().query("SELECT a.id, a.username, a.display_name, a.active, a.created_at, COUNT(r.id)::int AS referral_count FROM sales_referral_agents a LEFT JOIN sales_partner_referrals r ON r.agent_id=a.id GROUP BY a.id ORDER BY a.created_at DESC");
   return result.rows.map(publicAgent);
 }
 export async function createReferralAgent(username: string, displayName: string) {
@@ -90,4 +90,13 @@ export async function changeReferralPassword(id:string,oldPassword:string,newPas
   await db().query(`UPDATE sales_referral_agents SET password_salt=$2,password_hash=$3,session_version=session_version+1,
     updated_at=NOW() WHERE id=$1`,[id,salt,hashPassword(newPassword,salt)]);
   return true;
+}
+
+export async function recordReferralAttribution(input:{
+  agentId:string; organizationId:string;contactId:string;service:string;interest:string;budget:string;notes:string
+}) {
+  await db().query(`INSERT INTO sales_partner_referrals
+    (id,agent_id,organization_id,contact_id,service,interest,budget,notes)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [randomUUID(),input.agentId,input.organizationId,input.contactId,input.service,input.interest,input.budget||null,input.notes||null]);
 }
