@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { timingSafeEqual } from "node:crypto";
 import { createSalesOrganization, addSalesContact, addSalesInteraction, updateSalesOrganizationState } from "../../../lib/sales-store";
 import { upsertSalesWebServiceProfile } from "../../../lib/sales-web-services";
+import { validateReferralSession, recordReferralAttribution } from "../../../lib/referral-agents";
 
 const text = (value: unknown, max = 500) => typeof value === "string" ? value.trim().slice(0, max) : "";
 function authorized(req: NextApiRequest) {
@@ -16,6 +17,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed." });
   if (!authorized(req)) return res.status(401).json({ error: "Unauthorized." });
   const body = req.body ?? {};
+  const agent = await validateReferralSession(text(body.agentSession, 1024));
+  if (!agent) return res.status(401).json({ error: "Referral account disabled or session expired." });
   const company = text(body.company, 120), name = text(body.name, 120);
   const email = text(body.email, 254), phone = text(body.whatsapp, 40);
   const website = text(body.website, 400), service = text(body.service, 80);
@@ -31,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (website && !/^https?:\/\/[^\s/]+/i.test(website)) return res.status(400).json({ error: "Invalid website." });
   const domain = website ? new URL(website).hostname.toLowerCase().replace(/^www\./, "") : "";
   const summary = [
-    "Referral: Claudia / Fiverr", "Service: " + service, "Interest: " + interest,
+    "Referral agent: " + agent.displayName + " (" + agent.username + "; " + agent.id + ")", "Service: " + service, "Interest: " + interest,
     budget ? "Budget discussed: " + budget : "", notes ? "Notes: " + notes : ""
   ].filter(Boolean).join("\n");
   try {
@@ -64,8 +67,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await addSalesInteraction({
       organizationId: organization.id, contactId: contact.id,
       channel: "OTHER", direction: "INBOUND", interactionType: "NOTE",
-      occurredAt: new Date().toISOString(), subject: "Claudia website referral", summary
+      occurredAt: new Date().toISOString(), subject: "Partner website referral - " + agent.displayName, summary
     });
+    await recordReferralAttribution({ agentId:agent.id, organizationId:organization.id, contactId:contact.id, service, interest, budget, notes });
     return res.status(201).json({ ok: true });
   } catch (error) {
     console.error("Referral intake failed", error);
