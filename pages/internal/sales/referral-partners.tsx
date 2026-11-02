@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import {useEffect,useState} from "react";
-type Agent={id:string;username:string;displayName:string;active:boolean;createdAt:string};
+type Agent={id:string;username:string;displayName:string;active:boolean;createdAt:string;referralCount?:number};
 export default function ReferralAgents(){
   const [agents,setAgents]=useState<Agent[]>([]);
   const [username,setUsername]=useState(""),[displayName,setDisplayName]=useState("");
@@ -52,7 +52,7 @@ export default function ReferralAgents(){
       <section className="mt-7 rounded-xl border bg-white p-5"><h2 className="font-semibold">Accounts</h2>
         <div className="mt-4 divide-y">{agents.map(agent=><div key={agent.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
           <div><div className="font-semibold">{agent.displayName} <span className="text-sm font-normal text-gray-500">@{agent.username}</span></div>
-            <div className="text-sm text-gray-500">{agent.active?"Active":"Disabled"}</div></div>
+            <div className="text-sm text-gray-500">{agent.active?"Active":"Disabled"} · {agent.referralCount??0} referrals</div></div>
           <div className="flex flex-wrap gap-2">
             <button disabled={busy} className="rounded-lg border px-3 py-2 text-sm" onClick={()=>void act("reset",agent.id)}>Reset password</button>
             <button disabled={busy} className="rounded-lg border px-3 py-2 text-sm" onClick={()=>void act(agent.active?"disable":"enable",agent.id)}>{agent.active?"Disable":"Enable"}</button>
