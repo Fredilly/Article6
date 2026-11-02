@@ -19,8 +19,8 @@ CREATE INDEX IF NOT EXISTS sales_referral_agents_active_idx ON sales_referral_ag
 CREATE TABLE IF NOT EXISTS sales_partner_referrals (
   id UUID PRIMARY KEY,
   agent_id UUID NOT NULL REFERENCES sales_referral_agents(id) ON DELETE RESTRICT,
-  organization_id UUID NOT NULL REFERENCES sales_organizations(id) ON DELETE RESTRICT,
-  contact_id UUID NOT NULL REFERENCES sales_contacts(id) ON DELETE RESTRICT,
+  organization_id UUID NOT NULL REFERENCES sales_organizations(id) ON DELETE CASCADE,
+  contact_id UUID NOT NULL REFERENCES sales_contacts(id) ON DELETE CASCADE,
   service TEXT NOT NULL,
   interest TEXT NOT NULL,
   budget TEXT,
