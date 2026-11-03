@@ -116,3 +116,23 @@ export async function listOwnPartnerReferrals(agentId:string):Promise<PartnerRef
     createdAt:new Date(row.created_at).toISOString()
   }));
 }
+
+export interface AdminPartnerReferral {
+ id:string; organizationId:string; company:string; contact:string; email:string; phone:string;
+ service:string; interest:string; status:string; budget:string|null; notes:string|null; createdAt:string;
+}
+export async function listAdminPartnerReferrals(agentId:string):Promise<AdminPartnerReferral[]> {
+ const result=await db().query(`SELECT r.id,r.organization_id,o.name AS company,
+  c.name AS contact,c.email,c.phone,r.service,r.interest,o.status,r.budget,r.notes,r.created_at
+  FROM sales_partner_referrals r
+  JOIN sales_organizations o ON o.id=r.organization_id
+  JOIN sales_contacts c ON c.id=r.contact_id
+  WHERE r.agent_id=$1
+  ORDER BY r.created_at DESC LIMIT 200`,[agentId]);
+ return result.rows.map(row=>({
+  id:String(row.id),organizationId:String(row.organization_id),company:String(row.company),
+  contact:String(row.contact||""),email:String(row.email||""),phone:String(row.phone||""),
+  service:String(row.service),interest:String(row.interest),status:String(row.status),
+  budget:row.budget||null,notes:row.notes||null,createdAt:new Date(row.created_at).toISOString()
+ }));
+}
