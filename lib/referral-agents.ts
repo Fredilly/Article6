@@ -136,3 +136,49 @@ export async function listAdminPartnerReferrals(agentId:string):Promise<AdminPar
   budget:row.budget||null,notes:row.notes||null,createdAt:new Date(row.created_at).toISOString()
  }));
 }
+
+export async function pageOwnPartnerReferrals(agentId:string,options:{
+  page:number;pageSize:number;search:string;status:string
+}) {
+  const page=Math.max(1,Math.min(100000,Math.trunc(options.page)||1));
+  const pageSize=Math.max(1,Math.min(20,Math.trunc(options.pageSize)||8));
+  const search=options.search.trim().slice(0,120);
+  const allowed=["ALL","NEW","CONTACTED","ENGAGED","OPPORTUNITY","CLOSED_WON","OTHER"];
+  const status=allowed.includes(options.status)?options.status:"ALL";
+  const params=[agentId,search,"%"+search.replace(/[\\%_]/g,"\\$&")+"%",status];
+  const filter=`r.agent_id=$1 AND ($2='' OR o.name ILIKE $3 ESCAPE '\\')
+    AND ($4='ALL' OR ($4='OTHER' AND o.status NOT IN ('NEW','CONTACTED','ENGAGED','OPPORTUNITY','CLOSED_WON'))
+    OR o.status=$4)`;
+  const summary=await db().query(`
+    SELECT COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE o.status='ENGAGED')::int AS engaged,
+      COUNT(*) FILTER (WHERE o.status='OPPORTUNITY')::int AS opportunities,
+      COUNT(*) FILTER (WHERE o.status='CLOSED_WON')::int AS won
+    FROM sales_partner_referrals r JOIN sales_organizations o ON o.id=r.organization_id
+    WHERE r.agent_id=$1`,[agentId]);
+  const count=await db().query(`
+    SELECT COUNT(*)::int AS matching
+    FROM sales_partner_referrals r JOIN sales_organizations o ON o.id=r.organization_id
+    WHERE ${filter}`,params);
+  const matching=Number(count.rows[0]?.matching||0);
+  const totalPages=Math.max(1,Math.ceil(matching/pageSize));
+  const currentPage=Math.min(page,totalPages);
+  const result=await db().query(`
+    SELECT r.id,o.name AS company,r.service,r.interest,o.status,r.created_at
+    FROM sales_partner_referrals r JOIN sales_organizations o ON o.id=r.organization_id
+    WHERE ${filter}
+    ORDER BY r.created_at DESC,r.id DESC LIMIT $5 OFFSET $6`,
+    [...params,pageSize,(currentPage-1)*pageSize]);
+  return {
+    page:currentPage,pageSize,matching,
+    total:Number(summary.rows[0]?.total||0),
+    engaged:Number(summary.rows[0]?.engaged||0),
+    opportunities:Number(summary.rows[0]?.opportunities||0),
+    won:Number(summary.rows[0]?.won||0),
+    referrals:result.rows.map(row=>({
+      id:String(row.id),company:String(row.company),service:String(row.service),
+      interest:String(row.interest),status:String(row.status),
+      createdAt:new Date(row.created_at).toISOString()
+    }))
+  };
+}
