@@ -100,3 +100,19 @@ export async function recordReferralAttribution(input:{
     VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
     [randomUUID(),input.agentId,input.organizationId,input.contactId,input.service,input.interest,input.budget||null,input.notes||null]);
 }
+
+export interface PartnerReferralSummary {
+  id:string; company:string; service:string; interest:string; status:string; createdAt:string;
+}
+export async function listOwnPartnerReferrals(agentId:string):Promise<PartnerReferralSummary[]> {
+  const result=await db().query(`SELECT r.id,o.name AS company,r.service,r.interest,o.status,r.created_at
+    FROM sales_partner_referrals r
+    JOIN sales_organizations o ON o.id=r.organization_id
+    WHERE r.agent_id=$1
+    ORDER BY r.created_at DESC LIMIT 100`,[agentId]);
+  return result.rows.map(row=>({
+    id:String(row.id),company:String(row.company),service:String(row.service),
+    interest:String(row.interest),status:String(row.status),
+    createdAt:new Date(row.created_at).toISOString()
+  }));
+}
