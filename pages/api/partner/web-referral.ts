@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { createSalesOrganization, addSalesContact, addSalesInteraction, updateSalesOrganizationState } from "../../../lib/sales-store";
 import { upsertSalesWebServiceProfile } from "../../../lib/sales-web-services";
 import { validateReferralSession, recordReferralAttribution } from "../../../lib/referral-agents";
+import { sendPartnerReferralNotification } from "../../../lib/referral-notification";
 
 const text = (value: unknown, max = 500) => typeof value === "string" ? value.trim().slice(0, max) : "";
 function authorized(req: NextApiRequest) {
@@ -70,7 +71,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       occurredAt: new Date().toISOString(), subject: "Partner website referral - " + agent.displayName, summary
     });
     await recordReferralAttribution({ agentId:agent.id, organizationId:organization.id, contactId:contact.id, service, interest, budget, notes });
-    return res.status(201).json({ ok: true });
+    const notified=await sendPartnerReferralNotification({
+      organizationId:organization.id, company, contact:name, email, phone,
+      agentName:agent.displayName, username:agent.username,
+      service, interest, budget, notes
+    });
+    if(!notified) console.error("[partner-referral] Referral saved but notification not delivered",{organizationId:organization.id});
+    return res.status(201).json({ ok: true, notificationSent:notified });
   } catch (error) {
     console.error("Referral intake failed", error);
     return res.status(500).json({ error: "CRM could not save the referral. Please retry or contact Article6." });
