@@ -1,12 +1,19 @@
 import type {NextApiRequest,NextApiResponse} from "next";
 import {hasInternalUploadSession} from "../../../lib/internal-auth";
-import {listReferralAgents,createReferralAgent,resetReferralPassword,setReferralAgentActive} from "../../../lib/referral-agents";
+import {listReferralAgents,createReferralAgent,resetReferralPassword,setReferralAgentActive,listAdminPartnerReferrals} from "../../../lib/referral-agents";
 const str=(v:unknown)=>typeof v==="string"?v.trim():"";
 export default async function handler(req:NextApiRequest,res:NextApiResponse){
   res.setHeader("Cache-Control","no-store");
   if(!(await hasInternalUploadSession(req)))return res.status(401).json({error:"Administrator session required."});
   if(req.method==="GET"){
-    try{return res.status(200).json({agents:await listReferralAgents()});}
+    try{
+      const agentId=typeof req.query.agentId==="string"?req.query.agentId:"";
+      if(agentId){
+        if(!/^[0-9a-f-]{36}$/i.test(agentId))return res.status(400).json({error:"Invalid agent ID."});
+        return res.status(200).json({referrals:await listAdminPartnerReferrals(agentId)});
+      }
+      return res.status(200).json({agents:await listReferralAgents()});
+    }
     catch(error){console.error("Referral agents list failed",error);return res.status(503).json({error:"Agent database unavailable. Apply migration 021."});}
   }
   if(req.method!=="POST")return res.status(405).json({error:"Method not allowed."});
