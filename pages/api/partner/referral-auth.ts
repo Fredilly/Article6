@@ -1,6 +1,6 @@
 import type {NextApiRequest,NextApiResponse} from "next";
 import {timingSafeEqual} from "node:crypto";
-import {authenticateReferralAgent,validateReferralSession,changeReferralPassword,listOwnPartnerReferrals} from "../../../lib/referral-agents";
+import {authenticateReferralAgent,validateReferralSession,changeReferralPassword,listOwnPartnerReferrals,pageOwnPartnerReferrals} from "../../../lib/referral-agents";
 
 function authorized(req:NextApiRequest){
   const secret=process.env.WEB_REFERRAL_INGEST_TOKEN,actual=req.headers.authorization?.replace(/^Bearer\s+/i,"")||"";
@@ -24,6 +24,14 @@ export default async function handler(req:NextApiRequest,res:NextApiResponse){
     if(!agent)return res.status(401).json({error:"Session expired or account disabled."});
     if(action==="session")return res.status(200).json({ok:true,agent});
     if(action==="my_referrals")return res.status(200).json({ok:true,referrals:await listOwnPartnerReferrals(agent.id)});
+    if(action==="my_referrals_page"){
+      const parse=(v:unknown,fallback:number)=>typeof v==="number"&&Number.isInteger(v)?v:fallback;
+      const result=await pageOwnPartnerReferrals(agent.id,{
+        page:parse(body.page,1),pageSize:parse(body.pageSize,8),
+        search:str(body.search,120),status:str(body.status,32)
+      });
+      return res.status(200).json({ok:true,...result});
+    }
     if(action==="change_password"){
       const changed=await changeReferralPassword(agent.id,str(body.currentPassword,128),str(body.newPassword,128));
       if(!changed)return res.status(400).json({error:"Current password incorrect."});
