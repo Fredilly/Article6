@@ -42,7 +42,9 @@ test("optional email is validated when supplied", () => {
 
 test("file size boundaries, empty files, and content type are enforced", () => {
   assert.equal(validateSubmissionMetadata({ ...base, submissionSource: "internal", fileSize: MAX_FILE_SIZE - 1 }), null);
-  assert.match(validateSubmissionMetadata({ ...base, submissionSource: "internal", fileSize: MAX_FILE_SIZE + 1 }) || "", /50MB/i);
+  assert.equal(validateSubmissionMetadata({ ...base, submissionSource: "internal", fileSize: MAX_FILE_SIZE }), null);
+  assert.match(validateSubmissionMetadata({ ...base, submissionSource: "internal", fileSize: MAX_FILE_SIZE + 1 }) || "", /150MB/i);
+  assert.equal(isPdfUpload({ type: "application/pdf", size: MAX_FILE_SIZE }), null);
   assert.match(isPdfUpload({ type: "application/pdf", size: 0 }) || "", /empty/i);
   assert.match(isPdfUpload({ type: "text/plain", size: 10 }) || "", /PDF/i);
 });
@@ -72,7 +74,7 @@ test("original filenames are sanitized for safe download headers", () => {
 test("confirmation rejects missing, mismatched, oversized, and non-PDF objects", () => {
   assert.match(validateStoredObject({ exists: false, size: 0 }, 1) || "", /not found/i);
   assert.match(validateStoredObject({ exists: true, size: 100 }, 99) || "", /match/i);
-  assert.match(validateStoredObject({ exists: true, size: MAX_FILE_SIZE + 1 }, MAX_FILE_SIZE + 1) || "", /50MB/i);
+  assert.match(validateStoredObject({ exists: true, size: MAX_FILE_SIZE + 1 }, MAX_FILE_SIZE + 1) || "", /150MB/i);
   assert.match(validateStoredObject({ exists: true, size: 100, contentType: "text/plain" }, 100) || "", /PDF/i);
   assert.match(validateStoredObject({ exists: true, size: 100 }, 100) || "", /PDF/i);
 });
